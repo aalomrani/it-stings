@@ -27,6 +27,7 @@ import { z } from 'zod';
 import * as counters from '@/lib/db/repos/counters';
 import * as profilesRepo from '@/lib/db/repos/profiles';
 import * as runsRepo from '@/lib/db/repos/runs';
+import { isInflight, markInflight } from '@/lib/engine/inflight';
 import { ENGINE_VERSION, runCacheHash, runPipeline } from '@/lib/engine/pipeline';
 import { clientIp } from '@/lib/gate';
 import { profileIdFrom } from '@/lib/profile';
@@ -183,8 +184,24 @@ export function GET(request: Request) {
     ...(weights ? { weights } : {}),
   };
 
+  const cached = wouldReplay(seedKey, options);
+  // The same identity the run cache uses (weights are already out of `runCacheHash`, so a
+  // re-rank is not a new run). Used to de-duplicate concurrent identical runs.
+  const key = `${seedKey}|${runCacheHash(options)}|${ENGINE_VERSION}`;
+
+  // A fresh run for this seed is already executing — its first client may have been cut off
+  // by the host, but the run keeps going and will cache. Tell this caller to retry shortly
+  // rather than start a SECOND slow run against the rate-limited sources. A `pending` costs
+  // no run budget.
+  if (!cached && isInflight(key)) {
+    return sseResponse((sink) => {
+      sink.send({ type: 'pending' } satisfies PipelineEvent);
+      sink.close();
+    });
+  }
+
   // Cached replays cost nothing and count for nothing (docs/tasks/phase7-ship.md §5).
-  if (!wouldReplay(seedKey, options)) {
+  if (!cached) {
     // A counters table that cannot be written is not a reason to refuse the listener a
     // run; the pipeline reports whatever is wrong with the database on its own.
     let verdict = { ok: true } as ReturnType<typeof counters.consumeRunBudget>;
@@ -199,20 +216,28 @@ export function GET(request: Request) {
   const previous = options.corrections ? previousFingerprint(seedKey) : null;
 
   return sseResponse(
-    async (sink, signal) => {
-      await runPipeline({
+    async (sink) => {
+      // The run is deliberately NOT tied to this client's connection. On a free host the
+      // platform closes long-lived streams; aborting then would throw away minutes of work
+      // and the song would never cache, so every retry would re-run and re-fail. Instead the
+      // pipeline runs to completion and `runsRepo.save` caches the result (the detached
+      // async keeps running on the Node server after the socket closes); `sink.send` no-ops
+      // once the client is gone. The in-flight key stops a concurrent retry from duplicating
+      // the run. A weight-only replay of a cached pool is instant, so it needs neither.
+      const run = runPipeline({
         seedKey,
         options,
-        signal,
         ...(previous ? { previous } : {}),
         onEvent: (event: PipelineEvent) => {
           sink.send(event);
         },
       });
+      if (!cached) markInflight(key, run);
+      await run;
     },
     {
       signal: request.signal,
-      // A failed run still owes the client an explanation before the stream closes.
+      // A failed run still owes a still-connected client an explanation before the close.
       errorEvent: (error): PipelineEvent => ({
         type: 'error',
         message: error instanceof Error ? error.message : String(error),

@@ -92,6 +92,8 @@ function describe(event: PipelineEvent): string {
       return `result   ${event.item.track.artist} — ${event.item.track.title}  ${event.item.finalScore.toFixed(2)}`;
     case 'final':
       return `final    ${event.results.length} results, ${event.degraded.length} degraded note(s), ${event.stats.durationMs}ms`;
+    case 'pending':
+      return `pending  a run for this seed is already in flight (retry)`;
     case 'error':
       return `error    ${event.message}`;
   }

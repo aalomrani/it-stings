@@ -94,22 +94,26 @@ export function runProgress(run: RunState): Progress {
     ? 'stopped'
     : done
       ? 'done'
-      : current
-        ? PHASE_LABEL[current]
-        : run.streaming
-          ? PHASE_LABEL[stage]
-          : '';
+      : run.pending
+        ? 'new song — still finding matches, this can take a minute'
+        : current
+          ? PHASE_LABEL[current]
+          : run.streaming
+            ? PHASE_LABEL[stage]
+            : '';
 
   // Byte-for-byte the receipt's old announcement, so the screen-reader contract is unchanged.
   const announcement = failed
     ? `run stopped — ${run.error ?? `${brokeAt ? STAGE_LABEL[brokeAt] : 'a stage'} failed`}`
     : run.final
       ? `finished — ${run.final.length} tracks, sorted by final score`
-      : current
-        ? `${STAGE_LABEL[current]} — running`
-        : run.streaming
-          ? 'starting'
-          : '';
+      : run.pending
+        ? 'new song — still finding matches'
+        : current
+          ? `${STAGE_LABEL[current]} — running`
+          : run.streaming
+            ? 'starting'
+            : '';
 
   return { fraction, stage, caption, failed, done, announcement };
 }

@@ -54,6 +54,9 @@ export interface RunState {
   stats: RunRecord['stats'] | null;
   error: string | null;
   streaming: boolean;
+  /** True while the run is a new song still being worked on server-side and we are
+   *  retrying to pick up its result — a soft "still finding matches", never a hard error. */
+  pending: boolean;
 }
 
 export const STAGE_ORDER: PipelineStage[] = [
@@ -112,12 +115,14 @@ export function emptyRun(): RunState {
     stats: null,
     error: null,
     streaming: false,
+    pending: false,
   };
 }
 
 type Action =
   | { kind: 'reset' }
   | { kind: 'open' }
+  | { kind: 'pending' }
   | { kind: 'closed'; unexpected: boolean }
   | { kind: 'event'; event: PipelineEvent };
 
@@ -127,11 +132,16 @@ function reduce(state: RunState, action: Action): RunState {
       return emptyRun();
     case 'open':
       return { ...state, streaming: true };
+    case 'pending':
+      // A new song is still being worked on server-side; we are waiting to retry. Soft
+      // state, never the hard "stream closed" error.
+      return { ...state, streaming: false, pending: true, error: null };
     case 'closed':
-      if (!action.unexpected) return { ...state, streaming: false };
+      if (!action.unexpected) return { ...state, streaming: false, pending: false };
       return {
         ...state,
         streaming: false,
+        pending: false,
         error:
           state.error ??
           (state.final
@@ -139,7 +149,9 @@ function reduce(state: RunState, action: Action): RunState {
             : 'the stream closed before the run finished — nothing below is complete'),
       };
     case 'event':
-      return apply(state, action.event);
+      // Any real pipeline event means the run is streaming to us for real now, so the
+      // "still working" state is over.
+      return { ...apply(state, action.event), pending: false };
   }
 }
 
@@ -211,6 +223,11 @@ function apply(state: RunState, event: PipelineEvent): RunState {
 
     case 'error':
       return { ...state, error: event.message };
+
+    case 'pending':
+      // Handled by the stream loop (triggers a retry), never fed through here; a no-op keeps
+      // the switch exhaustive.
+      return state;
   }
 }
 
@@ -247,6 +264,10 @@ export function recommendUrl(args: StreamArgs): string | null {
   return `/api/recommend?${params.toString()}`;
 }
 
+/** How many times to retry a new song whose run is still finishing, and how long to wait. */
+export const MAX_RETRIES = 18;
+export const RETRY_DELAY_MS = 12_000;
+
 export function useRecommendStream(args: StreamArgs): RunState {
   const [state, dispatch] = useReducer(reduce, undefined, emptyRun);
   const url = recommendUrl(args);
@@ -255,42 +276,86 @@ export function useRecommendStream(args: StreamArgs): RunState {
     dispatch({ kind: 'reset' });
     if (!url) return;
 
-    const source = new EventSource(url);
-    let finished = false;
+    let attempt = 0;
+    let source: EventSource | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let finished = false; // a real `final`/`done` landed — stop for good
+    let cancelled = false; // unmounted or the url changed
 
-    source.onopen = () => dispatch({ kind: 'open' });
+    const clearTimer = (): void => {
+      if (timer !== null) {
+        clearTimeout(timer);
+        timer = null;
+      }
+    };
 
-    source.onmessage = (message: MessageEvent<string>) => {
-      let event: PipelineEvent;
-      try {
-        const parsed: unknown = JSON.parse(message.data);
-        if (!parsed || typeof parsed !== 'object' || typeof (parsed as PipelineEvent).type !== 'string') {
-          return;
-        }
-        event = parsed as PipelineEvent;
-      } catch {
+    // The run for a NEW song keeps going server-side even when the host cuts our stream, so
+    // a drop or an explicit `pending` is not a failure — wait, then re-open. Once the run
+    // caches, a retry returns the full result instantly.
+    const scheduleRetry = (): void => {
+      if (cancelled || finished) return;
+      if (attempt >= MAX_RETRIES) {
+        dispatch({ kind: 'closed', unexpected: true });
         return;
       }
-      dispatch({ kind: 'event', event });
-      // The server closes right after `stage done`; close from this side too so the
-      // browser's automatic reconnect never re-runs the pipeline.
-      if (event.type === 'stage' && event.stage === 'done' && event.status !== 'start') {
-        finished = true;
-        source.close();
-        dispatch({ kind: 'closed', unexpected: false });
-      }
+      attempt += 1;
+      dispatch({ kind: 'pending' });
+      timer = setTimeout(connect, RETRY_DELAY_MS);
     };
 
-    source.onerror = () => {
-      const closed = source.readyState === EventSource.CLOSED;
-      source.close();
-      if (!finished) dispatch({ kind: 'closed', unexpected: true });
-      else if (closed) dispatch({ kind: 'closed', unexpected: false });
-    };
+    function connect(): void {
+      if (cancelled || finished) return;
+      const es = new EventSource(url as string);
+      source = es;
+
+      es.onopen = () => dispatch({ kind: 'open' });
+
+      es.onmessage = (message: MessageEvent<string>) => {
+        let event: PipelineEvent;
+        try {
+          const parsed: unknown = JSON.parse(message.data);
+          if (!parsed || typeof parsed !== 'object' || typeof (parsed as PipelineEvent).type !== 'string') {
+            return;
+          }
+          event = parsed as PipelineEvent;
+        } catch {
+          return;
+        }
+
+        // A run for this seed is already executing: close and retry shortly, do not render
+        // it as an event or an error.
+        if (event.type === 'pending') {
+          es.close();
+          scheduleRetry();
+          return;
+        }
+
+        dispatch({ kind: 'event', event });
+        // The server closes right after `stage done`; close from this side too so the
+        // browser's automatic reconnect never re-runs the pipeline.
+        if (event.type === 'stage' && event.stage === 'done' && event.status !== 'start') {
+          finished = true;
+          es.close();
+          dispatch({ kind: 'closed', unexpected: false });
+        }
+      };
+
+      es.onerror = () => {
+        es.close();
+        if (finished || cancelled) return;
+        // The stream dropped before the run finished — on a free host, the platform cutting
+        // a long run. The run continues server-side, so retry until it caches (or we give up).
+        scheduleRetry();
+      };
+    }
+
+    connect();
 
     return () => {
+      cancelled = true;
       finished = true;
-      source.close();
+      clearTimer();
+      source?.close();
     };
   }, [url]);
 

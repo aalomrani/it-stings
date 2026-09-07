@@ -162,6 +162,9 @@ export type PipelineEvent =
   | { type: 'verified'; channel: Channel; kept: number; dropped: number }
   | { type: 'result'; item: Recommendation; provisional: true }    // streamed as batches are scored
   | { type: 'final'; results: Recommendation[]; degraded: string[]; stats: RunRecord['stats'] }
+  // Route-level, never emitted by the pipeline: a run for this seed is already executing
+  // (see engine/inflight.ts), so the client should retry shortly rather than start a second.
+  | { type: 'pending' }
   | { type: 'error'; message: string };
 
 /* ------------------------------------------------------------------------------------ *
@@ -445,6 +448,7 @@ export const PipelineEventSchema = z.discriminatedUnion('type', [
     degraded: z.array(z.string()),
     stats: RunStatsSchema,
   }),
+  z.object({ type: z.literal('pending') }),
   z.object({ type: z.literal('error'), message: z.string() }),
 ]);
 
