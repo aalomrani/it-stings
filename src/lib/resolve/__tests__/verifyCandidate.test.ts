@@ -158,7 +158,11 @@ describe('verifyMany', () => {
     expect(results.size).toBe(1);
     expect([...results.keys()]).toEqual(['cure|the lovecats']);
     expect(results.get('cure|the lovecats')?.ok).toBe(true);
-    expect(h.urls().filter((u) => u.includes('musicbrainz')).length).toBe(1);
+    // Candidates take the FAST path (resolveTrack `candidate: true`): they skip the strictly
+    // serial MusicBrainz queue AND AcousticBrainz entirely, so the deduped candidate makes
+    // ZERO MusicBrainz calls (it scores on Deezer tempo + Deezer album genre instead). This
+    // is the speedup: MusicBrainz and AcousticBrainz are the slow, often-degraded sources.
+    expect(h.urls().filter((u) => u.includes('musicbrainz')).length).toBe(0);
   });
 
   it('keeps hits and misses apart in one pass', async () => {

@@ -235,7 +235,7 @@ export function ProvenanceFoot({ run, health }: { run: RunState; health: Health 
           <a href="https://music.apple.com" target="_blank" rel="noopener noreferrer">
             iTunes
           </a>
-          ; search and artwork by iTunes; canonical ids by{' '}
+          ; artwork by iTunes; canonical ids by{' '}
           <a href="https://musicbrainz.org" target="_blank" rel="noopener noreferrer">
             MusicBrainz
           </a>

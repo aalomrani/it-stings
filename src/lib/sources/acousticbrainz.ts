@@ -152,7 +152,15 @@ function notInDataset<T>(reason: string): SourceResult<T> {
 export async function getLowLevel(mbid: string): Promise<SourceResult<AcousticLowLevel>> {
   if (!isMbid(mbid)) return fail('invalid_request', `bad MBID ${mbid}`);
 
-  const res = await fetchExternal({ url: `${BASE}/${mbid}/low-level`, ttlMs: TTL.acousticbrainz });
+  // AcousticBrainz is a best-effort enrichment (the engine handles a track with no features),
+  // and the public service is often slow or down. Fail FAST instead of blocking a run behind
+  // the 10 s x 3-retry default — a slow AcousticBrainz must never make a search take 40 s.
+  const res = await fetchExternal({
+    url: `${BASE}/${mbid}/low-level`,
+    ttlMs: TTL.acousticbrainz,
+    timeoutMs: 2500,
+    retries: 0,
+  });
   if (!res.ok) {
     if (res.status === 404) return notInDataset(`no AcousticBrainz low-level data for ${mbid}`);
     return failureFromHttp(res);
@@ -180,7 +188,12 @@ export async function getLowLevel(mbid: string): Promise<SourceResult<AcousticLo
 export async function getHighLevel(mbid: string): Promise<SourceResult<AcousticHighLevel>> {
   if (!isMbid(mbid)) return fail('invalid_request', `bad MBID ${mbid}`);
 
-  const res = await fetchExternal({ url: `${BASE}/${mbid}/high-level`, ttlMs: TTL.acousticbrainz });
+  const res = await fetchExternal({
+    url: `${BASE}/${mbid}/high-level`,
+    ttlMs: TTL.acousticbrainz,
+    timeoutMs: 2500,
+    retries: 0,
+  });
   if (!res.ok) {
     if (res.status === 404) return notInDataset(`no AcousticBrainz high-level data for ${mbid}`);
     return failureFromHttp(res);

@@ -93,13 +93,27 @@ import { trackNormKey } from '@/lib/util/normalize';
  * weights change re-ranks it instantly (no network, no model). A pre-engine-4 run has no
  * pool and would re-rank from `results`, so it is retired by this bump instead.
  */
-export const ENGINE_VERSION = 'engine-4-weights';
+export const ENGINE_VERSION = 'engine-10-fast-tempo-era';
 
 /** The channels, in the order their `start` events are emitted. */
 export const CHANNELS: readonly Channel[] = ['A', 'B', 'C'] as const;
 
-/** Stage 4 concurrency. Deezer allows 45 req/5 s; the verifier is the run's long pole. */
-export const VERIFY_CONCURRENCY = 6;
+/** Stage 4 concurrency. Deezer allows 45 req/5 s (~9/s); the verifier is the run's long
+ * pole now that candidates skip MusicBrainz, so run it wider — 8 in flight stays inside the
+ * Deezer window while cutting the verify wall-clock. */
+export const VERIFY_CONCURRENCY = 8;
+
+/**
+ * Cap on how many candidates a whole run sends to Stage 4. Candidates are verified on Deezer
+ * ALONE (no MusicBrainz, no AcousticBrainz — those slow, serial, often-degraded sources are
+ * spent only on the seed), so a candidate is cheap: ~3 Deezer calls at `VERIFY_CONCURRENCY`
+ * = 6 in parallel. That lets the cap be generous — more candidates means more survive rule 4
+ * and the results list fills out. Combined with the one-track-per-artist rule below, 18
+ * verified candidates span 18 artists. Held at 18 (not higher) because every candidate is
+ * still ~2-3 Deezer calls against a 45-req/5-s window, so the verify stage stays the run's
+ * long pole — 18 keeps a fresh run comfortably under the 20 s target. `rank` keeps ~9-15.
+ */
+export const MAX_VERIFIED_CANDIDATES = 18;
 
 /**
  * What the ACCOUNT behind the key did, in plain words — `isAccountFailure` in `model.ts`
@@ -582,6 +596,31 @@ export async function runPipeline(args: RunPipelineArgs): Promise<RunRecord> {
   };
 
   const byNormKey = new Map<string, PoolEntry>();
+  // Candidates sent to Stage 4 so far this run — the pool cap (MAX_VERIFIED_CANDIDATES),
+  // persisting across channels so verification stays fast.
+  let verifiedCount = 0;
+  // Artists already sent to Stage 4. Deezer related->top returns many tracks per popular
+  // artist and `rank` keeps only ONE per artist, so verifying several tracks of the same
+  // artist wastes the cap and starves other artists. Verify at most one track per artist so
+  // the capped budget spans many artists — that is what fills the results list out.
+  const verifiedArtists = new Set<string>();
+  const artistKey = (name: string): string => name.toLowerCase().replace(/\s+/g, ' ').trim();
+  // One track per new artist, up to the remaining run cap. Marks (and counts) ONLY the
+  // entries it actually returns, so an artist dropped for lack of budget is not falsely
+  // recorded as verified. Used for BOTH a channel's first pass and Channel C's retry, so the
+  // stricter re-ask cannot flood the cap with more tracks of artists already covered.
+  const takeDiverse = (entries: PoolEntry[]): PoolEntry[] => {
+    const picked: PoolEntry[] = [];
+    for (const e of entries) {
+      if (verifiedCount + picked.length >= MAX_VERIFIED_CANDIDATES) break;
+      const a = artistKey(e.candidate.artist);
+      if (!a || verifiedArtists.has(a)) continue;
+      verifiedArtists.add(a);
+      picked.push(e);
+    }
+    verifiedCount += picked.length;
+    return picked;
+  };
   const byTrackKey = new Map<string, PoolEntry>();
   const recommendations: Recommendation[] = [];
   const liveChannels = new Set<Channel>();
@@ -756,7 +795,17 @@ export async function runPipeline(args: RunPipelineArgs): Promise<RunRecord> {
     let found = 0;
     const fresh = ingest(channel, outcome);
     found += outcome.candidates.length;
-    let verified = await verify(fresh);
+    // One track per artist (diversity), then the run cap — so the verify budget covers many
+    // artists instead of several tracks of the same few. Extra candidates stay in the pool,
+    // unscored; they were going to be cut as duplicate-artist or over the cap anyway.
+    const toVerify = takeDiverse(fresh);
+    if (fresh.length > toVerify.length) {
+      log(
+        `pool cap: Channel ${channel} verifying ${toVerify.length} of ${fresh.length} new ` +
+          `candidate(s) (one per artist, run cap ${MAX_VERIFIED_CANDIDATES})`,
+      );
+    }
+    let verified = await verify(toVerify);
     throwIfAborted(signal);
 
     // Step 5 — the Channel-C guard. `channelC` is asked once more, with the stricter
@@ -780,7 +829,7 @@ export async function runPipeline(args: RunPipelineArgs): Promise<RunRecord> {
         throwIfAborted(signal);
         if (retry.outcome.status === 'done') {
           if (retry.outcome.live) liveChannels.add('C');
-          const retryFresh = ingest('C', retry.outcome);
+          const retryFresh = takeDiverse(ingest('C', retry.outcome));
           found += retry.outcome.candidates.length;
           const retryVerified = await verify(retryFresh);
           verified = [...verified, ...retryVerified];

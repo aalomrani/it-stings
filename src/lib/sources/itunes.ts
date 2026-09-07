@@ -43,6 +43,9 @@ export interface TypeaheadHit {
   durationMs: number | null;
   releaseYear: number | null;
   releaseDate: string | null;
+  /** iTunes `primaryGenreName` — a coarse genre used as a fast keyless tag for candidates
+   *  that skip the MusicBrainz/AcousticBrainz path (see resolveTrack `candidate` mode). */
+  genre: string | null;
   url: string | null;
   country: string;
 }
@@ -61,6 +64,7 @@ const ItunesTrackSchema = z
     trackTimeMillis: z.number().optional(),
     releaseDate: z.string().optional(),
     trackViewUrl: z.string().optional(),
+    primaryGenreName: z.string().optional(),
   })
   .loose();
 
@@ -92,6 +96,7 @@ function toHit(t: ItunesTrack, country: string): TypeaheadHit | null {
     durationMs: typeof t.trackTimeMillis === 'number' ? t.trackTimeMillis : null,
     releaseYear: yearOf(t.releaseDate),
     releaseDate: t.releaseDate ?? null,
+    genre: t.primaryGenreName ?? null,
     url: t.trackViewUrl ?? null,
     country,
   };

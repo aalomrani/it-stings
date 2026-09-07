@@ -94,6 +94,7 @@ describe('pickBestHit', () => {
       durationMs: (t.trackTimeMillis as number) ?? null,
       releaseYear: null,
       releaseDate: null,
+      genre: null,
       url: null,
       country: 'US',
     }));

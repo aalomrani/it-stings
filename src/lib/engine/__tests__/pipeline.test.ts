@@ -516,7 +516,6 @@ describe('the candidate pool', () => {
  * ------------------------------------------------------------------------------------ */
 
 describe('the Channel-C drop-rate guard', () => {
-  const wide = ['Louis Prima', 'Jump Jive an Wail'] as const;
 
   function cDeps(cFn: PipelineDeps['channels']['C']) {
     return deps({
@@ -527,13 +526,14 @@ describe('the Channel-C drop-rate guard', () => {
     });
   }
 
-  it('re-runs C once with the stricter prompt when too much of it does not exist', async () => {
+  it('does NOT re-run C on a high drop rate — the tightening retry is disabled', async () => {
+    // The retry was an LLM-era safety valve; keyless Deezer never names a non-existent track
+    // and `CHANNEL_C_TIGHTEN_DROP_RATE` is now unreachable (> 1.0), so even a 0.667 drop rate
+    // does not trigger a second, stricter pass. The channel's first-pass hits are shipped and
+    // the run stays fast. `channelCRetry` still records the first drop rate for the stats.
     const calls: (string | undefined)[] = [];
     const C: PipelineDeps['channels']['C'] = async (_seed, _fp, _ctx, opts) => {
       calls.push(opts?.tightness);
-      if (opts?.tightness === 'tight') {
-        return channelResult('C', { candidates: [candidate(wide[0], wide[1], 'C')] });
-      }
       return channelResult('C', {
         candidates: [
           candidate('Squirrel Nut Zippers', 'Hell', 'C'),
@@ -545,8 +545,7 @@ describe('the Channel-C drop-rate guard', () => {
 
     const { record, labels } = await run({ deps: cDeps(C) });
 
-    expect(calls).toEqual(['normal', 'tight']);
-    // One `channel C` block and one tally, covering both passes.
+    expect(calls).toEqual(['normal']);
     expect(labels.filter((l) => l.startsWith('channel:C'))).toEqual([
       'channel:C:start',
       'channel:C:done',
@@ -554,12 +553,12 @@ describe('the Channel-C drop-rate guard', () => {
     expect(labels.filter((l) => l === 'verified:C')).toHaveLength(1);
     expect(record.stats.channelCRetry).toEqual({
       firstDropRate: 0.667,
-      retryDropRate: 0,
-      added: 1,
+      retryDropRate: null,
+      added: 0,
     });
-    expect(record.stats.perChannel.C).toMatchObject({ found: 4, verified: 2 });
-    expect(record.results.map((r) => r.track.key).sort()).toEqual(['deezer:1', 'deezer:3']);
-    expect(record.degraded.join('\n')).toMatch(/Channel C drop rate 67%/);
+    expect(record.stats.perChannel.C).toMatchObject({ found: 3, verified: 1 });
+    expect(record.results.map((r) => r.track.key)).toEqual(['deezer:1']);
+    expect(record.degraded.join('\n')).not.toMatch(/drop rate/);
   });
 
   it('leaves C alone when its drop rate is inside the budget', async () => {

@@ -83,13 +83,17 @@ export async function verifyCandidate(
     const best = deezer.pickBestMatch(hits.value, { artist, title });
     const bestFullTitle = best ? `${best.title} ${best.titleVersion}`.trim() : '';
     if (best && matches(best.artist.name, best.titleShort, artist, title, bestFullTitle)) {
-      const resolved = await resolveTrack({
-        deezerId: best.id,
-        ...(best.isrc ? { isrc: best.isrc } : {}),
-        artist,
-        title,
-        ...(best.duration ? { durationMs: best.duration * 1000 } : {}),
-      });
+      const resolved = await resolveTrack(
+        {
+          deezerId: best.id,
+          ...(best.isrc ? { isrc: best.isrc } : {}),
+          artist,
+          title,
+          ...(best.duration ? { durationMs: best.duration * 1000 } : {}),
+        },
+        // FAST path: a candidate skips the serial MusicBrainz queue (see resolveTrack).
+        { candidate: true },
+      );
       return finish(artist, title, resolved, `deezer:${best.id}`, bestFullTitle);
     }
   }
@@ -98,12 +102,15 @@ export async function verifyCandidate(
   const viaItunes = await itunes.findTrack(artist, title);
   if (viaItunes.ok && matches(viaItunes.value.artist, viaItunes.value.title, artist, title)) {
     const hit = viaItunes.value;
-    const resolved = await resolveTrack({
-      itunesId: hit.itunesId,
-      artist,
-      title,
-      ...(hit.durationMs ? { durationMs: hit.durationMs } : {}),
-    });
+    const resolved = await resolveTrack(
+      {
+        itunesId: hit.itunesId,
+        artist,
+        title,
+        ...(hit.durationMs ? { durationMs: hit.durationMs } : {}),
+      },
+      { candidate: true },
+    );
     return finish(artist, title, resolved, `itunes:${hit.itunesId}`, hit.title);
   }
 

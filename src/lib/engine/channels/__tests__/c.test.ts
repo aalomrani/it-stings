@@ -302,8 +302,12 @@ describe('measureNeighbourSpread', () => {
     expect(measureNeighbourSpread([], 0).ok).toBe(false);
   });
 
-  it('keeps the LLM-era tightening constant for the pipeline guard', () => {
-    expect(CHANNEL_C_TIGHTEN_DROP_RATE).toBe(0.2);
+  it('disables the LLM-era tightening retry (threshold above 1.0)', () => {
+    // The keyless Deezer channel never names a non-existent track, and the pipeline's
+    // one-track-per-artist filter makes any reachable drop-rate threshold fire the retry on
+    // every run — doubling wall-clock for no benefit. The constant is kept (the pipeline
+    // guard still reads it) but set unreachable so the retry never triggers.
+    expect(CHANNEL_C_TIGHTEN_DROP_RATE).toBeGreaterThan(1);
     expect(CHANNEL_C_MAX_CANDIDATES).toBeGreaterThan(0);
     expect(CHANNEL_C_PROMPT_VERSION).toMatch(/deezer/);
   });

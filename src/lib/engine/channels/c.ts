@@ -37,15 +37,19 @@ import { normArtist, normTitle, trackNormKey } from '@/lib/util/normalize';
 export const CHANNEL_C_PROMPT_VERSION = 'ch-c-deezer-1';
 
 /** Hard cap on what this channel hands the pipeline, after dedupe. */
-export const CHANNEL_C_MAX_CANDIDATES = 40;
+export const CHANNEL_C_MAX_CANDIDATES = 60;
 
 /**
  * The Stage-4 drop rate above which the pipeline re-runs this channel with
- * `tightness: 'tight'`. Kept (and still exported) so the pipeline's Channel-C guard needs
- * no change; a keyless Deezer pool almost never trips it, since every entry is a real
- * Deezer track, but a stricter re-run is still available.
+ * `tightness: 'tight'`. Set ABOVE 1.0 — i.e. DISABLED — on purpose. The retry was a
+ * safety valve for the old LLM channel, which could name tracks that did not exist; keyless
+ * Deezer never does, so every "drop" now is just the pipeline's one-track-per-artist
+ * diversity filter deciding not to verify a candidate, NOT a missing track. Under that
+ * filter the measured drop rate is always high, so any reachable threshold fires the retry
+ * on every run and doubles this channel's wall-clock for zero benefit. Kept exported so the
+ * pipeline's guard needs no change; it simply never triggers.
  */
-export const CHANNEL_C_TIGHTEN_DROP_RATE = 0.2;
+export const CHANNEL_C_TIGHTEN_DROP_RATE = 1.1;
 
 /** `'tight'` pulls fewer, more canonical tracks per neighbour after a bad drop rate. */
 export type Tightness = 'normal' | 'tight';
@@ -53,9 +57,16 @@ export type Tightness = 'normal' | 'tight';
 /** Neighbours (related artists) expanded per run, before the second hop. */
 export const RELATED_LIMIT = 20;
 
-/** Top tracks pulled per neighbour: normal vs the stricter `tight` re-run. */
-export const TOP_PER_ARTIST_NORMAL = 12;
-export const TOP_PER_ARTIST_TIGHT = 6;
+/**
+ * Top tracks pulled per neighbour: normal vs the stricter `tight` re-run. Kept SMALL on
+ * purpose — the pipeline verifies and ships at most ONE track per artist, so a neighbour's
+ * top 2-3 (its most-played, most-recognisable tracks) is all that is ever used. Pulling a
+ * dozen just let a few popular artists eat the candidate cap and starved the rest; a small
+ * per-artist take spreads the cap across MANY more distinct artists, which is what fills the
+ * results list when only this channel is producing candidates.
+ */
+export const TOP_PER_ARTIST_NORMAL = 3;
+export const TOP_PER_ARTIST_TIGHT = 2;
 
 /**
  * Below this many distinct neighbours, widen with a second related hop

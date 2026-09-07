@@ -154,15 +154,24 @@ function toRecording(raw: RawRecording): MbRecording | null {
 }
 
 /**
- * docs/architecture.md: "retry 503 up to 5 times with 1.2 / 2.4 / 4.8 / 6 / 6 s backoff".
- * api-reality.md addendum B4 is the measurement behind it — 10 of 22 attempts 503'd, with
- * two runs of three consecutive 503s that only succeeded on the 4th attempt, so a budget
- * of 3 retries (4 attempts) had zero margin against the observed worst case.
+ * MusicBrainz is best-effort enrichment on a strictly serial 1 req/s queue, and the public
+ * service regularly HANGS (10 s of no response), not just 503s. A run must stay under ~20 s,
+ * so a MusicBrainz call must FAIL FAST: a 4 s timeout (vs the 10 s default) and a single
+ * retry, so one hanging call costs ~4 s, not 10, and a merely-flaky 503 still gets one more
+ * chance. The seed's and Channel B's MusicBrainz stages ALSO sit under their own hard
+ * wall-clock deadlines (`SEED_ENRICH_BUDGET_MS`, `CHANNEL_B_BUDGET_MS`), so a degraded
+ * service can never blow the run's time budget even if several calls hang back to back.
  */
-const MB_RETRIES = 5;
+const MB_RETRIES = 1;
+const MB_TIMEOUT_MS = 4000;
 
 async function getJson<S extends z.ZodType>(url: string, schema: S): Promise<SourceResult<z.infer<S>>> {
-  const res = await fetchExternal({ url, ttlMs: TTL.musicbrainz, retries: MB_RETRIES });
+  const res = await fetchExternal({
+    url,
+    ttlMs: TTL.musicbrainz,
+    retries: MB_RETRIES,
+    timeoutMs: MB_TIMEOUT_MS,
+  });
   // 400 is MusicBrainz rejecting our own query (a bad `inc` list), not an outage.
   if (!res.ok) return failureFromHttp(res, { 400: 'invalid_request' });
   return parseBody(res, schema);

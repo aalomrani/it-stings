@@ -19,6 +19,8 @@
 
 import * as musicbrainz from '@/lib/sources/musicbrainz';
 import type { MbRecording } from '@/lib/sources/musicbrainz';
+import { fail, type SourceResult } from '@/lib/sources/common';
+import { withDeadline } from '@/lib/util/deadline';
 import { normalizeTags, type WeightedTag } from '@/lib/util/genreTags';
 import type { Candidate, Fingerprint, TrackRecord } from '@/lib/types';
 import { normArtist, trackNormKey } from '@/lib/util/normalize';
@@ -46,6 +48,15 @@ export const MAX_COHORT_TAGS = 3;
 
 /** A seed needs at least this many usable tags for a cohort to exist. */
 export const MIN_USABLE_TAGS = 2;
+
+/**
+ * Hard wall-clock cap on this channel's MusicBrainz work. MusicBrainz is a strictly serial
+ * 1 req/s queue that can hang for its full per-call timeout, and this channel makes up to
+ * two cohort searches; without a cap a degraded MusicBrainz would stall the whole run at the
+ * end (the pipeline waits for every channel). Over budget, the channel reports `error` with
+ * no candidates and the run ships what Channels A and C found.
+ */
+export const CHANNEL_B_BUDGET_MS = 5000;
 
 /* ------------------------------------------------------------------------------------ *
  * Seed tags
@@ -127,20 +138,34 @@ export async function channelB(
   const cohort = tags.slice(0, MAX_COHORT_TAGS).map((t) => t.name);
   ctx.log(`channel B: MusicBrainz cohort tag:"${cohort.join('" AND tag:"')}" (${CHANNEL_B_PROMPT_VERSION})`);
 
+  // Every MusicBrainz search here is capped by a shared time budget: over it, the search
+  // resolves to an `upstream_error` and the channel bows out with no candidates rather than
+  // stalling the run behind a degraded MusicBrainz.
+  const budgetAt = Date.now() + CHANNEL_B_BUDGET_MS;
+  const overBudget = (): SourceResult<MbRecording[]> =>
+    fail<MbRecording[]>('upstream_error', 'channel B: MusicBrainz cohort over time budget');
+
   let live = false;
-  let res = await musicbrainz.searchRecordingsByTags(cohort, { limit: SEARCH_LIMIT, minScore: MIN_SCORE });
+  let res = await withDeadline(
+    CHANNEL_B_BUDGET_MS,
+    overBudget(),
+    musicbrainz.searchRecordingsByTags(cohort, { limit: SEARCH_LIMIT, minScore: MIN_SCORE }),
+  );
   if (isAborted(ctx.signal)) return result('error', { reason: 'aborted', live });
   if (res.ok) live ||= !res.fromCache;
 
-  // The AND of three strong tags can be too tight; widen to the top two and retry once.
+  // The AND of three strong tags can be too tight; widen to the top two and retry once —
+  // but only if the budget has time left for it.
   let usedCohort = cohort;
-  if (res.ok && res.value.length === 0 && cohort.length > MIN_USABLE_TAGS) {
+  const remaining = budgetAt - Date.now();
+  if (res.ok && res.value.length === 0 && cohort.length > MIN_USABLE_TAGS && remaining > 500) {
     const narrower = cohort.slice(0, MIN_USABLE_TAGS);
     ctx.log(`channel B: 0 hits for ${cohort.length} tags, retrying with tag:"${narrower.join('" AND tag:"')}"`);
-    const retry = await musicbrainz.searchRecordingsByTags(narrower, {
-      limit: SEARCH_LIMIT,
-      minScore: MIN_SCORE,
-    });
+    const retry = await withDeadline(
+      remaining,
+      overBudget(),
+      musicbrainz.searchRecordingsByTags(narrower, { limit: SEARCH_LIMIT, minScore: MIN_SCORE }),
+    );
     if (isAborted(ctx.signal)) return result('error', { reason: 'aborted', live });
     if (retry.ok) {
       live ||= !retry.fromCache;

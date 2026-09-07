@@ -347,7 +347,7 @@ export function App() {
 
   const credits = (
     <>
-      search <b>itunes</b> · previews <b>deezer</b>
+      search · previews <b>deezer</b>
       {keys?.lastfm ? (
         <>
           {' '}

@@ -31,6 +31,7 @@ import * as lastfm from '@/lib/sources/lastfm';
 import * as musicbrainz from '@/lib/sources/musicbrainz';
 import * as spotify from '@/lib/sources/spotify';
 import { log, yearOf } from '@/lib/sources/common';
+import { withDeadline } from '@/lib/util/deadline';
 import { hydratePreview, stripVolatilePreview } from '@/lib/resolve/hydratePreview';
 import type { SourceRef, Sourced, TrackRecord } from '@/lib/types';
 
@@ -49,6 +50,17 @@ export type ResolveResult =
 
 /** A stored record older than this is re-resolved on the next request. */
 export const TRACK_MAX_AGE_MS = 30 * 86_400_000;
+
+/**
+ * Hard wall-clock cap on the SEED's MusicBrainz + AcousticBrainz enrichment. Kept TIGHT: the
+ * seed's AcousticBrainz mood/key never helps scoring (candidates carry no AcousticBrainz, so
+ * every pair is at best a bpm+tags match), so the only thing worth waiting on is the seed's
+ * MusicBrainz release-group YEAR, which a healthy MusicBrainz returns inside this window. If
+ * MusicBrainz is degraded the seed abandons enrichment here and takes its year/tempo from
+ * Deezer, so one slow service can never stall a run before candidates are even gathered.
+ * Candidates never enrich, so this budget is spent at most once per run.
+ */
+export const SEED_ENRICH_BUDGET_MS = 4000;
 
 /**
  * The `source.field` stamp architecture.md requires when the year came from an iTunes or
@@ -74,7 +86,12 @@ async function timed<T>(
 
 export async function resolveTrack(
   input: ResolveInput,
-  opts: { force?: boolean } = {},
+  // `candidate: true` is the FAST path for verifying a recommendation candidate: it skips
+  // the entire MusicBrainz -> AcousticBrainz block (MusicBrainz is strictly serial at 1 req/s,
+  // and pushing 40+ candidates through it is what made a fresh run take minutes). A candidate
+  // then scores on Deezer tempo + edition year + the coarse iTunes genre tag — enough for
+  // tempo/era/genre similarity — while the SEED keeps the full resolve. Never set it for a seed.
+  opts: { force?: boolean; candidate?: boolean } = {},
 ): Promise<ResolveResult> {
   const started = Date.now();
   const timings: Record<string, number> = {};
@@ -91,6 +108,10 @@ export async function resolveTrack(
       if (byId.ok) return byId.value;
       degraded.push(`iTunes: id ${input.itunesId} did not resolve (${byId.reason})`);
     }
+    // FAST candidate path: skip the iTunes SEARCH entirely. iTunes is rate-limited to 20
+    // requests / 60 s, so searching it for every candidate re-introduces a serial wait; a
+    // candidate scores on Deezer tempo/year + the Deezer album genre instead.
+    if (opts.candidate) return null;
     if (!input.artist?.trim() || !input.title?.trim()) return null;
     const found = await itunes.findTrack(input.artist, input.title, {
       durationMs: input.durationMs,
@@ -180,7 +201,30 @@ export async function resolveTrack(
   }
 
   /* ---- 4+5. MusicBrainz -> AcousticBrainz, 6. Last.fm, 7. Spotify (concurrent) -- */
-  const mbAndAb = timed('musicbrainz+acousticbrainz', timings, async () => {
+  // The FAST candidate path skips MusicBrainz + AcousticBrainz entirely — the serial 1 req/s
+  // MusicBrainz queue is the whole reason a fresh run was minutes long.
+  // The shape both the fast candidate path and the seed's deadline fallback resolve to.
+  const noMbAb = {
+    recording: null as musicbrainz.MbRecording | null,
+    features: null as acousticbrainz.AcousticFeatures | null,
+    via: 'isrc' as 'isrc' | 'search',
+    releaseGroupYear: null as number | null,
+  };
+
+  const mbAndAb = opts.candidate
+    ? // FAST candidate path: skip MusicBrainz AND AcousticBrainz entirely. Both are the slow,
+      // frequently-degraded dependencies — MusicBrainz is a strictly serial 1 req/s queue and
+      // AcousticBrainz is often down (10 s / multi-retry timeouts either one), which is what
+      // made a fresh run take minutes. A candidate is scored on Deezer instead: tempo (Deezer
+      // BPM), edition year (Deezer release date) and its genre tag (Deezer album genres) —
+      // enough for a tempo / era / genre match. Only the SEED pays for MusicBrainz+AcousticBrainz.
+      Promise.resolve(noMbAb)
+    : // The SEED enriches with MusicBrainz + AcousticBrainz, but under a HARD deadline: those
+      // sources can each hang for 10 s and the seed makes up to three serial MusicBrainz calls,
+      // so a degraded service could otherwise stall the whole run for a minute before a single
+      // candidate is gathered. If enrichment does not finish in time the seed proceeds on its
+      // Deezer features (tempo / year / genre) — the same tier candidates score on anyway.
+      withDeadline(SEED_ENRICH_BUDGET_MS, noMbAb, timed('musicbrainz+acousticbrainz', timings, async () => {
     let recording: musicbrainz.MbRecording | null = null;
     let via: 'isrc' | 'search' = 'isrc';
 
@@ -226,7 +270,7 @@ export async function resolveTrack(
       return { recording, features: null, via, releaseGroupYear };
     }
     return { recording, features: features.value, via, releaseGroupYear };
-  });
+  }));
 
   const tagsTask = timed('lastfm', timings, async () => {
     const res = await lastfm.getTopTags(artist, title);
@@ -259,12 +303,21 @@ export async function resolveTrack(
     return null;
   });
 
-  const [{ recording: mb, features: ab, via: mbVia, releaseGroupYear }, tags, sp, gsb] = await Promise.all([
-    mbAndAb,
-    tagsTask,
-    spotifyTask,
-    tempoFallbackTask,
-  ]);
+  // Fast candidate genre: one keyless Deezer /album call — no iTunes, no MusicBrainz — so a
+  // candidate that skipped both still carries a coarse genre tag for the tag-overlap scoring.
+  const deezerGenreTask = timed('deezer-genre', timings, async () => {
+    if (!opts.candidate || !dz?.album.id) return null;
+    const res = await deezer.getAlbumGenres(dz.album.id);
+    return res.ok ? res.value : null;
+  });
+
+  const [
+    { recording: mb, features: ab, via: mbVia, releaseGroupYear },
+    tags,
+    sp,
+    gsb,
+    deezerGenres,
+  ] = await Promise.all([mbAndAb, tagsTask, spotifyTask, tempoFallbackTask, deezerGenreTask]);
 
   /* ---- 8. tempo, key, year, duration, artwork --------------------------------- */
   let tempoBpm: Sourced<number> | null = null;
@@ -417,6 +470,24 @@ export async function resolveTrack(
         .sort((a, b) => b.count - a.count)
         .slice(0, 25),
       { source: 'musicbrainz', id: mb.mbid, field: 'tags+genres' },
+    );
+  } else if (itunesHit?.genre) {
+    // Coarse iTunes genre when we do have an iTunes hit (e.g. the iTunes-fallback verify path).
+    trackTags = sourced([{ name: itunesHit.genre, count: 1 }], {
+      source: 'itunes',
+      id: String(itunesHit.itunesId),
+      field: 'primaryGenreName',
+    });
+  } else if (deezerGenres && deezerGenres.length > 0) {
+    // FAST candidate path: the Deezer album genre keeps the tag-overlap dimensions from going
+    // empty without any iTunes or MusicBrainz call.
+    trackTags = sourced(
+      deezerGenres.slice(0, 5).map((name) => ({ name, count: 1 })),
+      {
+        source: 'deezer',
+        ...(dz?.album.id ? { id: String(dz.album.id) } : {}),
+        field: 'album.genres',
+      },
     );
   }
 

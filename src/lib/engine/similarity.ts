@@ -143,17 +143,43 @@ interface DimResult {
 
 const NEUTRAL = 0.5;
 
+/**
+ * The widest release-year gap that still earns the concrete era trait. Tight on purpose: a
+ * shared window of a few years is "the same moment"; a whole decade is the generic era match
+ * the spec forbids shipping. (The `era` DIMENSION still scores wider gaps — this only governs
+ * whether a shared window becomes a stated, concrete reason.)
+ */
+const ERA_TRAIT_MAX_GAP = 6;
+
 function bpmGaussian(delta: number): number {
   return Math.exp(-((delta / 12) ** 2));
+}
+
+/**
+ * Tempo distance that is BLIND to the half-/double-time octave. Deezer (and analysers in
+ * general) routinely report a track's BPM in the wrong octave — "Dancing Queen" comes back
+ * at ~200, not ~100 — so a raw `|a-b|` makes two songs at the SAME felt tempo look 100 BPM
+ * apart and kills the strongest signal the keyless engine has. We fold `b` by ×½ and ×2 and
+ * take the closest alignment, so 200 vs 104 measures as ~4, not ~96. Returns both the folded
+ * delta and the aligned tempo used, for the note and the trait phrase.
+ */
+function octaveBpmDelta(a: number, b: number): { delta: number; alignedB: number } {
+  const options = [b, b * 2, b / 2];
+  let best = { delta: Math.abs(a - b), alignedB: b };
+  for (const alignedB of options) {
+    const delta = Math.abs(a - alignedB);
+    if (delta < best.delta) best = { delta, alignedB };
+  }
+  return best;
 }
 
 function rhythmic(a: FeatureProfile, b: FeatureProfile): DimResult {
   const haveBpm = a.bpm !== null && b.bpm !== null;
   const haveDance = a.danceability !== null && b.danceability !== null;
   if (haveBpm) {
-    const delta = Math.abs((a.bpm as number) - (b.bpm as number));
+    const { delta } = octaveBpmDelta(a.bpm as number, b.bpm as number);
     let score = bpmGaussian(delta);
-    let note = `${Math.round(a.bpm as number)} vs ${Math.round(b.bpm as number)} BPM (Δ${Math.round(delta)})`;
+    let note = `${Math.round(a.bpm as number)} vs ${Math.round(b.bpm as number)} BPM (Δ${Math.round(delta)} octave-folded)`;
     if (haveDance) {
       const dance = 1 - Math.min(1, Math.abs((a.danceability as number) - (b.danceability as number)));
       score = 0.65 * score + 0.35 * dance;
@@ -304,11 +330,13 @@ function collectTraits(
 ): Trait[] {
   const traits: Trait[] = [];
 
-  // BPM — the strongest concrete agreement when both are measured and close.
+  // BPM — the strongest concrete agreement when both are measured and close. Compared
+  // octave-folded (see `octaveBpmDelta`) so a half-/double-time reading does not hide a real
+  // tempo match; the stated average uses the aligned tempo.
   if (a.bpm !== null && b.bpm !== null) {
-    const delta = Math.abs(a.bpm - b.bpm);
+    const { delta, alignedB } = octaveBpmDelta(a.bpm, b.bpm);
     if (delta <= 10) {
-      const avg = Math.round((a.bpm + b.bpm) / 2);
+      const avg = Math.round((a.bpm + alignedB) / 2);
       const feel = a.tempoFeel !== null && a.tempoFeel === b.tempoFeel ? ` with a ${a.tempoFeel} feel` : '';
       const phrase = `both around ${avg} BPM${feel}`;
       traits.push({ bare: phrase, clause: phrase, strength: dims.rhythmic_character.score, concrete: true });
@@ -347,6 +375,22 @@ function collectTraits(
     && Math.abs(a.danceability - b.danceability) <= 0.25
   ) {
     traits.push({ bare: 'similarly danceable', clause: 'similarly danceable', strength: 0.6, concrete: true });
+  }
+
+  // Release era — a CONCRETE shared trait, worded with the specific years (never a decade
+  // label like "the 1970s", which rank.ts rule 4 blocklists as genre-only). Kept TIGHT — a
+  // few years apart, not a whole decade — so it is "the same musical moment", not "any two
+  // songs of the era". This is what carries a real match when tempo, key and mood are all
+  // unavailable (no Deezer BPM, AcousticBrainz down): the pair still rests on measured
+  // evidence — a shared release window plus shared tags — rather than genre alone.
+  if (a.year !== null && b.year !== null) {
+    const gap = Math.abs(a.year - b.year);
+    if (gap <= ERA_TRAIT_MAX_GAP) {
+      const lo = Math.min(a.year, b.year);
+      const hi = Math.max(a.year, b.year);
+      const phrase = gap === 0 ? `both released in ${lo}` : `released ${lo} and ${hi}, ${gap} year${gap === 1 ? '' : 's'} apart`;
+      traits.push({ bare: phrase, clause: phrase, strength: dims.era.score, concrete: true });
+    }
   }
 
   // Shared genre tags — concrete=false: the bare phrase is the tags alone, so rank.ts's

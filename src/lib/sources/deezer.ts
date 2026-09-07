@@ -351,6 +351,41 @@ export async function getTrackByIsrc(isrc: string): Promise<SourceResult<DeezerT
   return trackAt(`${BASE}/track/isrc:${clean}`, false);
 }
 
+const AlbumGenresResponseSchema = z
+  .object({
+    genres: z
+      .object({ data: z.array(z.object({ name: z.string() }).loose()).optional() })
+      .optional(),
+    error: ErrorSchema.optional(),
+  })
+  .loose();
+
+/**
+ * `GET /album/{id}` -> the album's genre names (keyless). Gives a Channel-C candidate a
+ * coarse genre tag WITHOUT the rate-limited iTunes search or the strictly-serial MusicBrainz
+ * queue, so verification stays fast even under concurrent use. One cached call per candidate.
+ */
+export async function getAlbumGenres(albumId: number): Promise<SourceResult<string[]>> {
+  if (!Number.isFinite(albumId) || albumId <= 0) {
+    return fail('invalid_request', `bad album id ${albumId}`);
+  }
+  const res = await fetchExternal({
+    url: `${BASE}/album/${albumId}`,
+    ttlMs: TTL.track,
+    retries: 1,
+    isRetryableBody,
+    isCacheableBody,
+  });
+  if (!res.ok) return failureFromHttp(res, { 200: 'rate_limited' });
+  const parsed = parseBody(res, AlbumGenresResponseSchema);
+  if (!parsed.ok) return parsed;
+  if (parsed.value.error) return failureFromBody(parsed.value.error);
+  const names = [
+    ...new Set((parsed.value.genres?.data ?? []).map((g) => g.name).filter((n) => n.length > 0)),
+  ];
+  return ok(names, { fromCache: parsed.fromCache, fetchedAt: parsed.fetchedAt });
+}
+
 async function trackAt(url: string, forPreview: boolean): Promise<SourceResult<DeezerTrack>> {
   const res = await fetchExternal({
     url,

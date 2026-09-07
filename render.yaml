@@ -4,8 +4,8 @@
 # becomes the public URL: https://<name>.onrender.com. "itstings" if it is free, else
 # Render appends a suffix (rename it in the dashboard to itstings-<something>).
 #
-# The engine is deterministic and keyless (engine-4-weights): no ANTHROPIC key, no cost,
-# no run caps. Nothing secret is needed to run it.
+# The engine is deterministic and keyless: no ANTHROPIC key, no cost, no run caps. Nothing
+# secret is needed to run it.
 #
 # NOTE ON DATA: Render's FREE tier has no persistent disk, so the SQLite file at
 # ITSTINGS_DB_PATH resets whenever the service restarts (a redeploy, or waking from the
