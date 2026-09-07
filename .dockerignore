@@ -1,0 +1,34 @@
+# Keep the build context small and keep secrets out of the image.
+# Note: `src/lib/db/migrations/*.sql` MUST stay in the context — the runtime reads them.
+
+# Installed and built artefacts: the image builds its own.
+node_modules
+.next
+out
+build
+
+# The local database and its WAL sidecars. Production data lives on the /data volume.
+data
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# Secrets. Every key is passed in as an environment variable / Fly secret.
+# `.env.example` holds no values but is excluded too: nothing in the image reads it.
+.env*
+
+# Eval output and design proposals: neither is shipped.
+eval/out
+docs/design/proposals
+
+# Local tooling noise.
+.git
+.gitignore
+.DS_Store
+*.log
+npm-debug.log*
+tsconfig.tsbuildinfo
+coverage
+.vscode
+.idea
+.claude

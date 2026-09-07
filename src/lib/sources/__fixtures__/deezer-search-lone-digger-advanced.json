@@ -1,0 +1,46 @@
+{
+  "data": [
+    {
+      "id": 109590416,
+      "readable": true,
+      "title": "Lone Digger",
+      "title_short": "Lone Digger",
+      "title_version": "",
+      "isrc": "FR89R1500001",
+      "link": "https://www.deezer.com/track/109590416",
+      "duration": 230,
+      "rank": 388160,
+      "explicit_lyrics": false,
+      "explicit_content_lyrics": 0,
+      "explicit_content_cover": 2,
+      "preview": "https://cdnt-preview.dzcdn.net/api/1/1/d/7/c/0/d7c0bbd1b231519d8efd9cde9d7bd5f8.mp3?hdnea=exp=1788701706~acl=/api/1/1/d/7/c/0/d7c0bbd1b231519d8efd9cde9d7bd5f8.mp3*~data=user_id=0,application_id=42~hmac=6bd1c6dfe58fb13ac62299d642f5a02670e94c56f767df1d7a472abd474f29ef",
+      "md5_image": "d9925fe3b605bf2cae8e2b5f9ffd54be",
+      "artist": {
+        "id": 259767,
+        "name": "Caravan Palace",
+        "link": "https://www.deezer.com/artist/259767",
+        "picture": "https://api.deezer.com/artist/259767/image",
+        "picture_small": "https://cdn-images.dzcdn.net/images/artist/c21b8be75fa4fbcdc63ce2664694c36c/56x56-000000-80-0-0.jpg",
+        "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c21b8be75fa4fbcdc63ce2664694c36c/250x250-000000-80-0-0.jpg",
+        "picture_big": "https://cdn-images.dzcdn.net/images/artist/c21b8be75fa4fbcdc63ce2664694c36c/500x500-000000-80-0-0.jpg",
+        "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c21b8be75fa4fbcdc63ce2664694c36c/1000x1000-000000-80-0-0.jpg",
+        "tracklist": "https://api.deezer.com/artist/259767/top?limit=50",
+        "type": "artist"
+      },
+      "album": {
+        "id": 11416782,
+        "title": "<I°_°I>",
+        "cover": "https://api.deezer.com/album/11416782/image",
+        "cover_small": "https://cdn-images.dzcdn.net/images/cover/d9925fe3b605bf2cae8e2b5f9ffd54be/56x56-000000-80-0-0.jpg",
+        "cover_medium": "https://cdn-images.dzcdn.net/images/cover/d9925fe3b605bf2cae8e2b5f9ffd54be/250x250-000000-80-0-0.jpg",
+        "cover_big": "https://cdn-images.dzcdn.net/images/cover/d9925fe3b605bf2cae8e2b5f9ffd54be/500x500-000000-80-0-0.jpg",
+        "cover_xl": "https://cdn-images.dzcdn.net/images/cover/d9925fe3b605bf2cae8e2b5f9ffd54be/1000x1000-000000-80-0-0.jpg",
+        "md5_image": "d9925fe3b605bf2cae8e2b5f9ffd54be",
+        "tracklist": "https://api.deezer.com/album/11416782/tracks",
+        "type": "album"
+      },
+      "type": "track"
+    }
+  ],
+  "total": 1
+}

@@ -1,0 +1,109 @@
+{
+  "_readme": "Eval seeds for It Stings. Run with `npm run eval` (all) or `npm run eval -- lovecats`. Each seed has notes on what a passing and a failing answer look like. Review the dumped results by hand against these notes after every change to the fingerprint, channel, scoring, or ranking logic. Seed 1 is the acceptance test.",
+  "seeds": [
+    {
+      "id": "lovecats",
+      "title": "The Lovecats",
+      "artist": "The Cure",
+      "year": 1983,
+      "what_it_is": "A post-punk band playing jazz on purpose: swung upright-bass shuffle, brushed drums, playful affected vocal that dissolves into scatting and cat noises, arch and flirtatious.",
+      "passing": [
+        "Results share the jazz-shuffle-plus-playful-vocal-affectation axis, from multiple scenes and decades: swing revival (Squirrel Nut Zippers, Cherry Poppin' Daddies), jump blues (Louis Prima, Louis Jordan), lounge-influenced pop, arch British art-pop (Blur's music-hall moments, Madness, Ian Dury, The Divine Comedy), electro-swing (Caravan Palace, Parov Stelar).",
+        "At least a few picks a genre engine would never surface: a 1950s jump-blues side next to a 2010s electro-swing track next to an 80s art-pop single.",
+        "Every `why` names a concrete shared trait: the walking upright bass, the brushed shuffle, the vocal that slides into nonsense syllables, the wink in the delivery.",
+        "Spread across at least three decades and three scenes in the top 15."
+      ],
+      "failing": [
+        "Other Cure singles. 'Close to Me' is not an answer; it is the absence of one.",
+        "Generic 1980s alternative rock that shares nothing but the decade and the label (Echo & the Bunnymen, Siouxsie, early New Order) unless the `why` names a real shared trait.",
+        "Any `why` that reads 'similar mood and style' or 'same era and genre'.",
+        "Any track that doesn't exist."
+      ]
+    },
+    {
+      "id": "golden-brown",
+      "title": "Golden Brown",
+      "artist": "The Stranglers",
+      "year": 1981,
+      "what_it_is": "Harpsichord waltz by a punk band: 3/4 with a recurring 4/4 bar that trips the meter, baroque-pop arpeggios, unhurried croon, sinister calm under a pretty surface.",
+      "passing": [
+        "Harpsichord or harpsichord-like keyboard textures across eras: 60s baroque pop (The Left Banke, The Zombies' 'Time of the Season' family, early Bee Gees), 90s/00s chamber-pop, modern acts using the instrument.",
+        "Odd-meter or waltz-time pop with a calm, slightly menacing vocal.",
+        "Tracks whose `why` names the waltz lilt, the harpsichord arpeggio figure, or the pretty-surface-dark-undertow contrast."
+      ],
+      "failing": [
+        "Other Stranglers songs, or generic punk/new wave from 1981.",
+        "Anything justified by 'classic 80s sound'.",
+        "Non-existent tracks."
+      ]
+    },
+    {
+      "id": "psycho-killer",
+      "title": "Psycho Killer",
+      "artist": "Talking Heads",
+      "year": 1977,
+      "what_it_is": "Nervous, angular, minimal funk-punk: a stalking bass riff, jerky guitar stabs, a vocal that is twitchy and deadpan, breaks into French, and has a nonsense-syllable hook ('fa fa fa').",
+      "passing": [
+        "Tracks with a stalking, repetitive bass figure and a twitchy deadpan vocal, from any scene: post-punk (Gang of Four, Wire), 2000s dance-punk (Franz Ferdinand, LCD Soundsystem), art-funk, new wave with a nonsense-syllable hook.",
+        "At least one cross-language or spoken/sung switch match, and at least one pick from outside 1976–1984.",
+        "`why` lines that name the bass riff, the vocal tic, the tension-without-release arrangement."
+      ],
+      "failing": [
+        "Other Talking Heads songs (excluded by default).",
+        "A list that is just 'CBGB-era punk'.",
+        "Non-existent tracks."
+      ]
+    },
+    {
+      "id": "fever",
+      "title": "Fever",
+      "artist": "Peggy Lee",
+      "year": 1958,
+      "what_it_is": "Minimalism as seduction: finger snaps, a walking upright bass, a whisper of drums, and a cool, held-back vocal that never raises its voice. The arrangement is the hook.",
+      "passing": [
+        "Tracks built on an almost-empty arrangement with snaps or claps and a restrained, sultry vocal, across eras: 50s/60s cool jazz vocals, trip-hop and downtempo (Portishead, Morcheeba), modern minimal pop (Billie Eilish's quieter cuts, Fiona Apple), neo-soul.",
+        "`why` lines that name the snaps, the walking bass alone under the vocal, the space in the mix.",
+        "Spread across at least four decades."
+      ],
+      "failing": [
+        "Other Peggy Lee songs; a list of 'jazz standards' with no arrangement link.",
+        "Big-band or heavily orchestrated versions that share nothing but the songbook.",
+        "Non-existent tracks."
+      ]
+    },
+    {
+      "id": "bad-guy",
+      "title": "bad guy",
+      "artist": "Billie Eilish",
+      "year": 2019,
+      "what_it_is": "Whispered, close-mic'd vocal over a bouncing sub-bass and a clicky minimal beat; cheeky and menacing; a spoken 'duh' punchline and a tempo-drop coda.",
+      "passing": [
+        "Tracks with whisper-close vocals over sparse, bass-heavy production and a smirk in the delivery: 2010s alt-pop, some 90s trip-hop, minimal electro, art-pop with a spoken punchline.",
+        "At least a few picks from before 2010 that share the whisper-and-bass axis rather than the era.",
+        "`why` lines that name the whisper, the sub-bass bounce, the deadpan punchline, or the structural swerve at the end."
+      ],
+      "failing": [
+        "Other Billie Eilish or Finneas-produced songs (same artist excluded; producer-only links are not a musical trait on their own).",
+        "A list of 2019 chart pop.",
+        "Non-existent tracks."
+      ]
+    },
+    {
+      "id": "lone-digger",
+      "title": "Lone Digger",
+      "artist": "Caravan Palace",
+      "year": 2015,
+      "what_it_is": "Electro-swing: a 1930s-style brass and clarinet riff and a swung vocal chopped over a four-on-the-floor house kick and a filtered bass; playful, cartoonish, dance-floor.",
+      "passing": [
+        "Reaches backward to the source material (1930s–40s swing and hot jazz: Cab Calloway, Benny Goodman, Django Reinhardt) and sideways to swing-house/electro-swing peers (Parov Stelar, Tape Five) and to 90s big-beat or house tracks that sample swing.",
+        "`why` lines that name the clarinet/brass riff, the swung vocal over a straight kick, the sampled-78 texture.",
+        "Spread across at least three decades, including at least one pre-1960 recording."
+      ],
+      "failing": [
+        "Other Caravan Palace tracks.",
+        "A list that is only 2010s electro-swing.",
+        "Non-existent tracks."
+      ]
+    }
+  ]
+}

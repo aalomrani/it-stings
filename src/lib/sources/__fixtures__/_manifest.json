@@ -1,0 +1,177 @@
+{
+  "deezer-quota-code-4": {
+    "status": 200,
+    "note": "HAND-WRITTEN from docs/api-reality.md §3.2 (needs a 70-request burst to trigger live)",
+    "source": "hand-written"
+  },
+  "itunes-search-lovecats": {
+    "url": "https://itunes.apple.com/search?country=US&entity=song&limit=8&media=music&term=the%20cure%20the%20lovecats",
+    "method": "GET",
+    "status": 200,
+    "note": "body begins with three newlines; no isrc field anywhere",
+    "recordedAt": "2026-09-06T13:19:55.933Z"
+  },
+  "itunes-lookup-1288102536": {
+    "url": "https://itunes.apple.com/lookup?country=US&entity=song&id=1288102536",
+    "method": "GET",
+    "status": 200,
+    "note": "the US Lovecats trackId; the same id 404s (resultCount 0) in the GB storefront",
+    "recordedAt": "2026-09-06T13:19:57.457Z"
+  },
+  "itunes-search-vampire": {
+    "url": "https://itunes.apple.com/search?country=US&entity=song&limit=8&media=music&term=olivia%20rodrigo%20vampire",
+    "method": "GET",
+    "status": 200,
+    "note": "explicit tracks arrive as \"cleaned\" edits from this IP",
+    "recordedAt": "2026-09-06T13:19:59.146Z"
+  },
+  "deezer-search-lovecats-advanced": {
+    "url": "https://api.deezer.com/search?limit=10&q=artist%3A%22The%20Cure%22%20track%3A%22The%20Lovecats%22",
+    "method": "GET",
+    "status": 200,
+    "note": "advanced syntax; total 4",
+    "recordedAt": "2026-09-06T13:20:00.743Z"
+  },
+  "deezer-search-lovecats-plain": {
+    "url": "https://api.deezer.com/search?limit=10&q=The%20Cure%20The%20Lovecats",
+    "method": "GET",
+    "status": 200,
+    "note": "plain query; top hit 1143631 on Greatest Hits, isrc GBALB8300001",
+    "recordedAt": "2026-09-06T13:20:02.248Z"
+  },
+  "deezer-track-1143631": {
+    "url": "https://api.deezer.com/track/1143631",
+    "method": "GET",
+    "status": 200,
+    "note": "bpm 91.9, isrc GBALB8300001, release_date 2001-11-12 (the edition, not the song)",
+    "recordedAt": "2026-09-06T13:20:03.698Z"
+  },
+  "deezer-search-lone-digger-plain": {
+    "url": "https://api.deezer.com/search?limit=10&q=Caravan%20Palace%20Lone%20Digger",
+    "method": "GET",
+    "status": 200,
+    "note": "THE wrong-hit case: plain search leads with \"Lone Digger (Mixed)\", a 2025 DJ mix, bpm 0",
+    "recordedAt": "2026-09-06T13:20:05.187Z"
+  },
+  "deezer-search-lone-digger-advanced": {
+    "url": "https://api.deezer.com/search?limit=10&q=artist%3A%22Caravan%20Palace%22%20track%3A%22Lone%20Digger%22",
+    "method": "GET",
+    "status": 200,
+    "note": "advanced syntax rescues the original 109590416 (bpm 124.2)",
+    "recordedAt": "2026-09-06T13:20:06.664Z"
+  },
+  "deezer-search-vampire-plain": {
+    "url": "https://api.deezer.com/search?limit=10&q=Olivia%20Rodrigo%20vampire",
+    "method": "GET",
+    "status": 200,
+    "note": "2023 track: Deezer bpm is 0 and AcousticBrainz has nothing",
+    "recordedAt": "2026-09-06T13:20:08.152Z"
+  },
+  "deezer-track-2440763155": {
+    "url": "https://api.deezer.com/track/2440763155",
+    "method": "GET",
+    "status": 200,
+    "note": "bpm 0 = unknown, never zero beats per minute",
+    "recordedAt": "2026-09-06T13:20:09.610Z"
+  },
+  "deezer-track-not-found": {
+    "url": "https://api.deezer.com/track/0",
+    "method": "GET",
+    "status": 200,
+    "note": "HTTP 200 with {\"error\":{\"code\":800}} — Deezer never uses HTTP status for errors",
+    "recordedAt": "2026-09-06T13:20:11.107Z"
+  },
+  "mb-isrc-GBALB8300001": {
+    "url": "https://musicbrainz.org/ws/2/isrc/GBALB8300001?fmt=json&inc=artist-credits%2Bisrcs%2Btags",
+    "method": "GET",
+    "status": 200,
+    "note": "the ISRC join: recording 1c19fbb9…, first-release-date 1983-11-28",
+    "recordedAt": "2026-09-06T13:21:21.914Z"
+  },
+  "mb-isrc-not-found": {
+    "url": "https://musicbrainz.org/ws/2/isrc/USCA29900213?fmt=json&inc=artist-credits%2Bisrcs",
+    "method": "GET",
+    "status": 404,
+    "note": "HTTP 404 — 2 of 15 sample ISRCs miss",
+    "recordedAt": "2026-09-06T13:20:14.390Z"
+  },
+  "mb-search-lovecats": {
+    "url": "https://musicbrainz.org/ws/2/recording?fmt=json&limit=5&query=recording%3A%22The%20Lovecats%22%20AND%20artist%3A%22The%20Cure%22",
+    "method": "GET",
+    "status": 200,
+    "note": "the fallback when the ISRC misses; several recordings share score 100",
+    "recordedAt": "2026-09-06T13:20:15.867Z"
+  },
+  "ab-high-level-1c19fbb9": {
+    "url": "https://acousticbrainz.org/api/v1/1c19fbb9-edce-49e1-a934-de6071dd7964/high-level",
+    "method": "GET",
+    "status": 200,
+    "note": "mood/danceability probabilities under highlevel.<classifier>.all",
+    "recordedAt": "2026-09-06T13:20:17.514Z",
+    "pruned": true
+  },
+  "ab-low-level-1c19fbb9": {
+    "url": "https://acousticbrainz.org/api/v1/1c19fbb9-edce-49e1-a934-de6071dd7964/low-level",
+    "method": "GET",
+    "status": 200,
+    "note": "rhythm.bpm 91.7, tonal.key_key F major",
+    "recordedAt": "2026-09-06T13:20:19.035Z",
+    "pruned": true
+  },
+  "ab-high-level-not-found": {
+    "url": "https://acousticbrainz.org/api/v1/0c846a8e-debd-4a63-bb93-6c57f5178b45/high-level",
+    "method": "GET",
+    "status": 404,
+    "note": "HTTP 404 for vampire (2023): the dataset was frozen in 2022",
+    "recordedAt": "2026-09-06T13:20:20.457Z"
+  },
+  "lastfm-error-6": {
+    "url": "https://ws.audioscrobbler.com/2.0/?method=track.getTopTags&artist=The%20Cure&track=The%20Lovecats&format=json&autocorrect=1",
+    "method": "GET",
+    "status": 400,
+    "note": "NO api_key -> HTTP 400 error 6, the SAME code as \"not found\" (hence the local key check)",
+    "recordedAt": "2026-09-06T13:20:22.425Z"
+  },
+  "lastfm-error-10": {
+    "url": "https://ws.audioscrobbler.com/2.0/?method=track.getTopTags&artist=The%20Cure&track=The%20Lovecats&format=json&autocorrect=1&api_key=INVALID",
+    "method": "GET",
+    "status": 403,
+    "note": "bad key -> HTTP 403 error 10",
+    "recordedAt": "2026-09-06T13:20:23.993Z"
+  },
+  "tavily-401": {
+    "url": "https://api.tavily.com/search",
+    "method": "POST",
+    "status": 401,
+    "note": "HTTP 401 {\"detail\":{\"error\":\"Unauthorized: missing or invalid API key.\"}}",
+    "recordedAt": "2026-09-06T13:20:26.045Z"
+  },
+  "brave-422": {
+    "url": "https://api.search.brave.com/res/v1/web/search?count=8&q=the%20lovecats",
+    "method": "GET",
+    "status": 422,
+    "note": "no key -> HTTP 422 (not 401)",
+    "recordedAt": "2026-09-06T13:20:28.276Z"
+  },
+  "getsongbpm-401": {
+    "url": "https://api.getsong.co/search/?type=both&lookup=song%3AThe%20Lovecats%20artist%3AThe%20Cure&limit=5",
+    "method": "GET",
+    "status": 401,
+    "note": "no key -> HTTP 401 {\"error\":\"API Key is missing.\"} under a text/html content type",
+    "recordedAt": "2026-09-06T13:20:30.276Z"
+  },
+  "spotify-token-400": {
+    "url": "https://accounts.spotify.com/api/token",
+    "method": "POST",
+    "status": 400,
+    "note": "HTTP 400 {\"error\":\"invalid_client\"}",
+    "recordedAt": "2026-09-06T13:20:31.859Z"
+  },
+  "spotify-oembed-lovecats": {
+    "url": "https://open.spotify.com/oembed?url=https%3A%2F%2Fopen.spotify.com%2Ftrack%2F6q2T5xXao6mTS6LLE88L84",
+    "method": "GET",
+    "status": 200,
+    "note": "keyless; a nonexistent id answers 404 with an empty body",
+    "recordedAt": "2026-09-06T13:20:33.666Z"
+  }
+}

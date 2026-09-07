@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>It Stings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;family=Permanent+Marker&amp;display=swap">
+<style>
+/* ------------------------------------------------------------------
+   IT STINGS — direction: PHOTOCOPIED ZINE — empty state
+   Palette tokens. Ground is the paper. Ink reads light (inverted copy).
+   ------------------------------------------------------------------ */
+:root{
+  --ground:#141210;   /* toner black   — the paper */
+  --card:#1D1A16;     /* second pull   — raised patch */
+  --raised:#241F1A;   /* third pull    — inset */
+  --bone:#EDE9DD;     /* copier bone   — 15.40:1 on ground */
+  --dust:#A8A296;     /* dust          —  7.36:1 on ground */
+  --acid:#D9F227;     /* highlighter   — 14.84:1 on ground */
+  --blood:#E33127;    /* blood         —  4.21:1 — marks only, never body text */
+  --blood-t:#F04438;  /* blood thinned —  4.97:1 — the only red allowed to carry text */
+  --mint:#6FBFB1;     /* dead mint     —  8.69:1 */
+  --ochre:#D89B2A;    /* nicotine      —  7.69:1 */
+  --ink:#17140F;      /* ink on bone   — 15.13:1 on bone */
+  --ink-t:#5E574B;    /* ink thinned   —  5.88:1 on bone */
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background-color:var(--ground);
+  /* paper tooth: an SVG dot field, flat colour, no gradient. Never sits under body text —
+     every text block in this app carries its own opaque patch. */
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Ccircle cx='2.5' cy='3' r='0.9' fill='%23EDE9DD' fill-opacity='0.055'/%3E%3Ccircle cx='9.5' cy='8.5' r='0.7' fill='%23EDE9DD' fill-opacity='0.045'/%3E%3Ccircle cx='6' cy='12' r='0.5' fill='%23EDE9DD' fill-opacity='0.035'/%3E%3C/svg%3E");
+  color:var(--bone);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:16px;
+  line-height:1.45;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+
+/* ---------------- layout ---------------- */
+main{
+  position:relative;
+  min-height:100vh;
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:clamp(14px,3vw,34px) 0 clamp(58px,7vh,88px);
+  overflow:hidden;
+}
+/* the plate is capped by BOTH axes so the drawing never gets clipped:
+   width, and the height the viewport can actually spare (art aspect 1100/820 = 1.34) */
+.stage{position:relative;width:min(96vw,calc((100vh - 150px) * 1.34));margin:0 auto}
+.plate{position:relative}
+.art{display:block;width:138%;margin-left:-19%;height:auto}
+
+/* ---------------- the cut: search strip ---------------- */
+.slot{
+  position:absolute;
+  top:52.4%;
+  left:0;right:0;
+  height:clamp(56px,15.8%,116px);
+  display:flex;
+  align-items:stretch;
+}
+.slot-bg{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+.slot input{
+  position:relative;
+  z-index:2;
+  flex:1 1 auto;
+  min-width:0;
+  appearance:none;
+  background:transparent;
+  border:0;
+  outline:0;
+  margin:0;
+  padding:0 13% 0 5%;
+  font-family:"IBM Plex Sans",Helvetica,Arial,sans-serif;
+  font-size:clamp(1.02rem,2.05vw,1.7rem);
+  font-weight:500;
+  letter-spacing:-0.01em;
+  color:var(--ink);
+  caret-color:var(--blood);
+}
+.slot input::placeholder{color:var(--ink-t);font-weight:400;opacity:1}
+.slot input::-webkit-search-decoration,
+.slot input::-webkit-search-cancel-button,
+.slot input::-webkit-search-results-button{-webkit-appearance:none;appearance:none}
+/* focus is drawn, not glowed: a blood cut-line under the text, inside the paper */
+.rule{position:absolute;z-index:2;left:5%;right:13%;bottom:22%;height:3px;background:var(--blood);
+      opacity:0;pointer-events:none}
+.slot:focus-within .rule{opacity:1}
+.slot-mark{position:absolute;z-index:2;right:3.2%;top:50%;transform:translateY(-50%);
+           width:clamp(26px,3.4vw,44px);height:auto;pointer-events:none}
+
+.hint{
+  position:absolute;
+  top:calc(100% + 0.6em);
+  left:5%;
+  margin:0;
+  font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:clamp(11px,1.05vw,13px);
+  letter-spacing:0.01em;
+  color:var(--dust);
+}
+
+/* ---------------- wordmark ---------------- */
+.wordmark{
+  position:relative;
+  margin:-1.5vw 0 0;
+  padding:0 0 0 14px;
+  font-family:"Permanent Marker","Comic Sans MS",cursive;
+  font-weight:400;
+  font-size:clamp(2.9rem,12vw,4.6rem);
+  line-height:0.86;
+  letter-spacing:-0.012em;
+  color:var(--acid);
+  transform:rotate(-2.6deg);
+  transform-origin:left bottom;
+}
+/* screen-print misregistration: a blood pull sitting 4px off the acid pull */
+.wordmark::before{
+  content:"It Stings";
+  position:absolute;
+  left:14px;top:0;
+  color:var(--blood);
+  transform:translate(5px,-6px);
+  z-index:-1;
+}
+
+/* ---------------- edge furniture ---------------- */
+.credits{
+  position:absolute;
+  right:clamp(10px,2.2vw,26px);
+  bottom:clamp(14px,2.4vh,26px);
+  max-width:min(62vw,420px);
+  background:var(--card);
+  padding:9px 15px 10px;
+  transform:rotate(1.4deg);
+  font-family:"IBM Plex Mono",monospace;
+  font-size:11px;
+  line-height:1.5;
+  color:var(--dust);
+  clip-path:polygon(0 6%,3% 0,26% 5%,52% 0,78% 6%,100% 2%,98% 42%,100% 96%,74% 100%,49% 94%,22% 100%,2% 95%);
+}
+.credits b{color:var(--bone);font-weight:500}
+.regmark{position:absolute;top:clamp(12px,2.4vh,26px);right:clamp(12px,2.4vw,28px);
+         width:34px;height:34px;opacity:.75}
+.tornedge{position:absolute;top:0;bottom:0;left:0;width:14px;display:block}
+
+@media (min-width:760px){
+  .stage{width:min(1060px,92vw,calc((100vh - 190px) * 1.34))}
+  .art{width:100%;margin-left:0}
+  .slot{left:-4%;right:-4%}
+  /* the wordmark tracks the plate, not the viewport, so it never runs into the stinger
+     on a short-and-wide window */
+  .wordmark{position:absolute;left:0;bottom:-0.6vw;margin:0;padding:0 0 0 14px;
+            font-size:clamp(2.9rem,min(10.4vw,calc((100vh - 190px) * 0.155)),7rem)}
+}
+
+/* ---------------- THE ONE STEPPED-MOTION MOMENT ----------------
+   The sting. Three hand-drawn frames, swapped — never tweened.
+   frame 1  0 → 70%   stinger held back
+   frame 2 70 → 82%   jab out, one speed tick
+   frame 3 82 → 100%  jab out, bead of blood, three shock ticks
+   steps(1,end) guarantees the switch is a cut, not a fade.            */
+.fr{opacity:0}
+.f1{opacity:1}
+.sting .fr{animation-duration:2.6s;animation-timing-function:steps(1,end);
+           animation-iteration-count:infinite}
+.sting .f1{animation-name:frame1}
+.sting .f2{animation-name:frame2}
+.sting .f3{animation-name:frame3}
+@keyframes frame1{0%,69.99%{opacity:1} 70%,100%{opacity:0}}
+@keyframes frame2{0%,69.99%{opacity:0} 70%,81.99%{opacity:1} 82%,100%{opacity:0}}
+@keyframes frame3{0%,81.99%{opacity:0} 82%,100%{opacity:1}}
+
+@media (prefers-reduced-motion:reduce){
+  .sting .fr{animation:none}
+  .f1,.f2{opacity:0}
+  .f3{opacity:1}
+}
+</style>
+</head>
+<body>
+
+<main>
+  <svg class="tornedge" viewBox="0 0 14 800" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 0 L9 0 L5 42 L11 96 L4 150 L10 206 L3 258 L9 312 L4 366 L11 420 L5 474 L10 528 L3 582 L9 636 L4 690 L10 744 L5 800 L0 800 Z" fill="#1D1A16"></path>
+  </svg>
+
+  <svg class="regmark" viewBox="0 0 40 40" aria-hidden="true">
+    <circle cx="20" cy="20" r="12.4" fill="none" stroke="#A8A296" stroke-width="1.4"></circle>
+    <path d="M20 1 L20 15 M20 25 L20 39 M1 20 L15 20 M25 20 L39 20" stroke="#A8A296" stroke-width="1.4"></path>
+    <path d="M20 3 L20 14" stroke="#E33127" stroke-width="1.4" transform="translate(2,1)"></path>
+  </svg>
+
+  <div class="stage">
+    <div class="plate">
+
+      <!-- ============ THE DRAWING ============ -->
+      <svg class="art" viewBox="0 0 1100 820" preserveAspectRatio="xMidYMid meet"
+           role="img" aria-label="A large hand-inked wasp, cut across the middle by a strip of photocopy paper.">
+        <defs>
+          <!-- photocopy wobble: every hard edge of the drawing gets shoved around by noise -->
+          <filter id="xerox" x="-6%" y="-6%" width="112%" height="112%" color-interpolation-filters="sRGB">
+            <feTurbulence type="fractalNoise" baseFrequency="0.026 0.033" numOctaves="3" seed="17" result="wob"></feTurbulence>
+            <feDisplacementMap in="SourceGraphic" in2="wob" scale="4" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+          </filter>
+          <!-- toner speckle: sparse bone dust, laid over the ILLUSTRATION ONLY -->
+          <filter id="toner" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+            <feTurbulence type="fractalNoise" baseFrequency="0.74" numOctaves="4" seed="5" result="n"></feTurbulence>
+            <feColorMatrix in="n" type="matrix"
+              values="0 0 0 0 0.929  0 0 0 0 0.914  0 0 0 0 0.866  1.6 0 0 0 -0.62"></feColorMatrix>
+          </filter>
+          <!-- halftone screens -->
+          <pattern id="ht-acid" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(18)">
+            <circle cx="4.5" cy="4.5" r="2.05" fill="#D9F227"></circle>
+          </pattern>
+          <pattern id="ht-bone" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-24)">
+            <circle cx="3.5" cy="3.5" r="1.35" fill="#EDE9DD"></circle>
+          </pattern>
+          <clipPath id="gaster">
+            <path d="M528 412 C600 392 690 436 748 512 C800 580 820 640 812 672 C776 684 700 640 636 574 C566 502 508 452 528 412 Z"></path>
+          </clipPath>
+        </defs>
+
+        <!-- collage backdrop: pasted screens, off-grid -->
+        <g class="collage">
+          <rect x="86" y="52" width="330" height="240" fill="url(#ht-acid)" opacity="0.20" transform="rotate(-2.2 251 172)"></rect>
+          <rect x="640" y="86" width="196" height="128" fill="url(#ht-bone)" opacity="0.16" transform="rotate(1.8 738 150)"></rect>
+          <path d="M0 96 L128 88 L262 100 L246 140 L120 132 L0 142 Z" fill="#1D1A16"></path>
+        </g>
+
+        <g class="wasp" filter="url(#xerox)">
+
+          <!-- far wing -->
+          <path d="M436 250 C540 168 678 106 812 76 C840 70 850 90 828 110 C758 178 618 262 498 284 C454 292 426 280 436 250 Z"
+                fill="url(#ht-bone)" opacity="0.42" stroke="#EDE9DD" stroke-width="4" stroke-opacity="0.5"></path>
+
+          <!-- far legs -->
+          <g stroke="#EDE9DD" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.45">
+            <path d="M372 372 C356 404 336 420 306 424"></path>
+            <path d="M424 400 C420 442 404 468 376 484"></path>
+          </g>
+
+          <!-- near legs -->
+          <g stroke="#EDE9DD" stroke-width="11" fill="none" stroke-linecap="round">
+            <path d="M352 386 C330 428 300 448 258 448"></path>
+            <path d="M398 412 C388 462 366 494 328 512"></path>
+            <path d="M446 424 C452 478 436 516 400 542"></path>
+          </g>
+          <g stroke="#EDE9DD" stroke-width="7" fill="none" stroke-linecap="round">
+            <path d="M258 448 L224 468"></path>
+            <path d="M328 512 L296 528"></path>
+            <path d="M400 542 L370 562"></path>
+          </g>
+
+          <!-- abdomen -->
+          <path d="M528 412 C600 392 690 436 748 512 C800 580 820 640 812 672 C776 684 700 640 636 574 C566 502 508 452 528 412 Z"
+                fill="#EDE9DD"></path>
+          <g clip-path="url(#gaster)">
+            <g stroke-linecap="butt" fill="none">
+              <path d="M538 535 L662 405" stroke="#D9F227" stroke-width="46"></path>
+              <path d="M610 603 L734 473" stroke="#D9F227" stroke-width="42"></path>
+              <path d="M682 671 L806 541" stroke="#D9F227" stroke-width="34"></path>
+              <path d="M700 690 L824 560" stroke="#E33127" stroke-width="20"></path>
+              <path d="M566 562 L690 432" stroke="#141210" stroke-width="5"></path>
+              <path d="M638 630 L762 500" stroke="#141210" stroke-width="5"></path>
+              <path d="M710 698 L834 568" stroke="#141210" stroke-width="5"></path>
+            </g>
+          </g>
+
+          <!-- waist -->
+          <path d="M470 388 C494 398 518 412 546 434 L520 468 C494 446 472 430 452 416 Z" fill="#EDE9DD"></path>
+
+          <!-- thorax -->
+          <path d="M326 264 C366 226 438 226 480 268 C522 310 526 372 490 404 C454 436 384 430 346 396 C308 362 296 294 326 264 Z"
+                fill="#EDE9DD"></path>
+          <path d="M356 300 C388 276 432 280 456 306" fill="none" stroke="#141210" stroke-width="7" stroke-linecap="round"></path>
+          <path d="M352 356 C382 380 424 384 456 366" fill="none" stroke="#141210" stroke-width="5" stroke-linecap="round"></path>
+
+          <!-- near hindwing -->
+          <path d="M470 300 C560 266 664 238 762 230 C788 228 794 248 772 268 C712 316 600 358 520 358 C486 358 468 330 470 300 Z"
+                fill="url(#ht-acid)" opacity="0.62" stroke="#EDE9DD" stroke-width="5"></path>
+
+          <!-- near forewing -->
+          <path d="M452 262 C560 188 700 138 852 116 C882 112 892 132 870 154 C798 228 640 302 512 318 C466 324 440 296 452 262 Z"
+                fill="url(#ht-acid)" opacity="0.72" stroke="#EDE9DD" stroke-width="6"></path>
+          <g fill="none" stroke="#EDE9DD" stroke-width="3" opacity="0.85">
+            <path d="M478 274 C578 216 700 172 830 144"></path>
+            <path d="M496 300 C590 254 700 214 812 182"></path>
+            <path d="M640 196 L654 244"></path>
+            <path d="M744 166 L756 212"></path>
+          </g>
+
+          <!-- head -->
+          <path d="M174 256 C168 200 208 158 262 158 C318 158 354 200 350 256 C346 310 308 342 258 342 C208 342 180 312 174 256 Z"
+                fill="#EDE9DD"></path>
+          <path d="M196 206 C232 188 272 202 280 240 C288 278 258 306 224 298 C190 290 180 224 196 206 Z" fill="#E33127"></path>
+          <path d="M212 216 C228 204 250 208 258 222 L230 238 Z" fill="#EDE9DD" opacity="0.92"></path>
+          <path d="M304 214 C324 226 334 250 330 274" fill="none" stroke="#141210" stroke-width="6" stroke-linecap="round"></path>
+
+          <!-- mandibles -->
+          <path d="M194 306 C180 330 176 352 186 368 L204 358 C196 342 198 326 210 312 Z" fill="#EDE9DD"></path>
+          <path d="M226 332 C218 356 220 374 232 386 L250 376 C240 364 240 348 246 336 Z" fill="#EDE9DD"></path>
+
+          <!-- antennae -->
+          <g fill="none" stroke="#EDE9DD" stroke-linecap="round">
+            <path d="M208 190 C176 156 148 132 120 108" stroke-width="14"></path>
+            <path d="M120 108 C110 98 100 90 90 82" stroke-width="8"></path>
+            <path d="M236 168 C218 128 204 100 192 62" stroke-width="12"></path>
+            <path d="M192 62 C188 52 184 44 180 34" stroke-width="7"></path>
+          </g>
+          <ellipse cx="82" cy="74" rx="16" ry="11" fill="#EDE9DD" transform="rotate(-38 82 74)"></ellipse>
+          <ellipse cx="176" cy="26" rx="14" ry="10" fill="#EDE9DD" transform="rotate(-72 176 26)"></ellipse>
+        </g>
+
+        <!-- ============ THE STING: 3 drawn frames ============ -->
+        <g class="sting" filter="url(#xerox)">
+          <g class="fr f1">
+            <path d="M806 650 L866 724 L784 678 Z" fill="#EDE9DD"></path>
+          </g>
+          <g class="fr f2">
+            <path d="M806 650 L916 772 L784 678 Z" fill="#EDE9DD"></path>
+            <path d="M940 754 L978 744" stroke="#E33127" stroke-width="8" stroke-linecap="round" fill="none"></path>
+          </g>
+          <g class="fr f3">
+            <path d="M806 650 L916 772 L784 678 Z" fill="#EDE9DD"></path>
+            <circle cx="924" cy="782" r="15" fill="#E33127"></circle>
+            <circle cx="898" cy="806" r="6" fill="#E33127"></circle>
+            <circle cx="946" cy="808" r="4" fill="#E33127"></circle>
+            <g stroke="#EDE9DD" stroke-width="7" stroke-linecap="round" fill="none" opacity="0.9">
+              <path d="M950 746 L992 732"></path>
+              <path d="M956 792 L998 802"></path>
+              <path d="M918 806 L928 840"></path>
+            </g>
+          </g>
+        </g>
+
+        <!-- toner dust, illustration only, never over text -->
+        <rect x="0" y="0" width="1100" height="820" filter="url(#toner)" opacity="0.5" pointer-events="none"></rect>
+      </svg>
+
+      <!-- ============ THE CUT: search strip ============ -->
+      <form class="slot" action="#" role="search" autocomplete="off">
+        <svg class="slot-bg" viewBox="0 0 1200 160" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 18 L48 12 L96 20 L150 11 L206 21 L262 13 L318 22 L372 12 L430 19 L486 10 L540 21 L598 13 L654 20 L710 11 L766 22 L822 14 L878 19 L934 10 L990 20 L1046 13 L1102 21 L1156 12 L1200 18 L1200 154 L1150 160 L1096 151 L1042 161 L986 152 L932 162 L878 153 L822 159 L768 150 L714 161 L658 152 L604 162 L548 153 L494 160 L438 151 L384 161 L328 152 L274 159 L218 150 L164 161 L108 152 L54 160 L0 152 Z"
+                fill="#E33127"></path>
+          <path d="M0 10 L48 4 L96 12 L150 3 L206 13 L262 5 L318 14 L372 4 L430 11 L486 2 L540 13 L598 5 L654 12 L710 3 L766 14 L822 6 L878 11 L934 2 L990 12 L1046 5 L1102 13 L1156 4 L1200 10 L1200 146 L1150 152 L1096 143 L1042 153 L986 144 L932 154 L878 145 L822 151 L768 142 L714 153 L658 144 L604 154 L548 145 L494 152 L438 143 L384 153 L328 144 L274 151 L218 142 L164 153 L108 144 L54 152 L0 144 Z"
+                fill="#EDE9DD"></path>
+        </svg>
+        <label class="sr" for="q">Search for a song</label>
+        <input id="q" name="q" type="search" autofocus placeholder="a song that got you — title, artist" enterkeyhint="search">
+        <span class="rule"></span>
+        <svg class="slot-mark" viewBox="0 0 60 60" aria-hidden="true">
+          <path d="M8 10 C24 14 40 26 52 46 L44 52 C34 34 20 22 6 18 Z" fill="#17140F"></path>
+          <circle cx="52" cy="49" r="5" fill="#E33127"></circle>
+        </svg>
+        <p class="hint">type it, then pick the exact track from the list</p>
+      </form>
+
+    </div>
+
+    <h1 class="wordmark">It Stings</h1>
+  </div>
+
+  <p class="credits">
+    search <b>itunes</b> · previews <b>deezer</b> · tags <b>last.fm</b> · ids <b>musicbrainz</b>
+  </p>
+</main>
+
+</body>
+</html>

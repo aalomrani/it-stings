@@ -1,0 +1,156 @@
+/* ======================================================================
+   SPOTIFY PUSH — the optional last block on a playlist page.
+
+   Nothing new is invented here: the palette, the nine-slice edges
+   (--e-fb-dust / --e-ch-*), the mono stack and the 3px acid focus ring
+   are all the ones globals.css already defines, and the button itself is
+   the global `.btn` chip. This file only positions the block and gives
+   its four kinds of sentence their colour.
+
+   LAW (docs/design.md §4, §11): the block is one OPAQUE patch on --card
+   with a drawn frame — no texture under a glyph, no border-radius, no
+   gradient, no soft shadow, no rotated sentence. Every state carries a
+   word; nothing is colour-only.
+   ====================================================================== */
+
+.push {
+  position: relative;
+  isolation: isolate;
+  background: var(--card);
+  margin: 0 0 22px;
+  padding: 13px 15px 15px;
+  border: 10px solid transparent;
+  border-image: var(--e-fb-dust) 10 / 10px / 0 round;
+  max-width: 68ch;
+}
+
+/* the block's own lowercase mono label — never an all-caps eyebrow */
+.lbl {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--dust);
+  margin: 0 0 7px;
+}
+
+/* the ordinary mono explanation line */
+.note {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--dust);
+  line-height: 1.75;
+  margin: 0 0 9px;
+  max-width: 64ch;
+}
+
+/* the MANDATORY Development Mode note. Nicotine, the app's caveat colour
+   (7.69:1 on ground, 6.9:1 on --card) — a warning that is still a
+   sentence, not a badge. */
+.devnote {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ochre);
+  line-height: 1.75;
+  margin: 0 0 10px;
+  max-width: 64ch;
+}
+
+.err {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--blood-t);
+  line-height: 1.75;
+  margin: 0 0 9px;
+  max-width: 64ch;
+}
+
+.done {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--mint);
+  line-height: 1.75;
+  margin: 0 0 9px;
+  max-width: 64ch;
+}
+
+/* env var names and URLs, exactly as the degraded notice sets them */
+.push code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--acid);
+  overflow-wrap: anywhere;
+}
+
+.push a {
+  color: var(--acid);
+  text-decoration: underline;
+  text-decoration-color: rgba(217, 242, 39, 0.45);
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+
+.push a:hover {
+  text-decoration-color: var(--acid);
+}
+
+.push a:focus-visible {
+  outline: 3px solid var(--acid);
+  outline-offset: 3px;
+}
+
+/* the control row: the drawn button, then whoever is connected */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px 10px;
+  margin: 2px 0 0;
+}
+
+/* an <a class="btn"> would otherwise carry the browser's underline */
+.linkBtn {
+  text-decoration: none;
+  display: inline-block;
+}
+
+.push a.linkBtn {
+  color: var(--bone);
+  text-decoration: none;
+}
+
+.push a.linkBtn:hover {
+  color: var(--acid);
+}
+
+.who {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--dust);
+}
+
+.who b {
+  color: var(--bone);
+  font-weight: 500;
+}
+
+/* the skipped list — every skip names the track AND why */
+.skips {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.skip {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ochre);
+  line-height: 1.7;
+  margin: 0 0 3px;
+  max-width: 64ch;
+  overflow-wrap: anywhere;
+}
+
+.skip b {
+  color: var(--bone);
+  font-weight: 500;
+}

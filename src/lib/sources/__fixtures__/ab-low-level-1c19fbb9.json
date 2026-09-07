@@ -1,0 +1,35 @@
+{
+  "rhythm": {
+    "bpm": 91.6769332886,
+    "danceability": 1.21954584122,
+    "beats_count": 334,
+    "onset_rate": 4.07772350311
+  },
+  "tonal": {
+    "key_key": "F",
+    "key_scale": "major",
+    "key_strength": 0.504076361656,
+    "chords_key": "F",
+    "chords_scale": "major",
+    "tuning_frequency": 434.193115234
+  },
+  "lowlevel": {
+    "average_loudness": 0.873196959496,
+    "dynamic_complexity": 3.42663097382
+  },
+  "metadata": {
+    "audio_properties": {
+      "analysis_sample_rate": 44100,
+      "bit_rate": 192000,
+      "codec": "mp3",
+      "downmix": "mix",
+      "equal_loudness": 0,
+      "length": 219.715911865,
+      "lossless": false,
+      "md5_encoded": "d2152d7c5d8d4d0257472550f5dbe2be",
+      "replay_gain": -4.48874282837,
+      "sample_rate": 44100
+    }
+  },
+  "_pruned": "lowlevel.{mfcc,gfcc,barkbands,melbands,erbbands,…} dropped by record-fixtures.ts"
+}

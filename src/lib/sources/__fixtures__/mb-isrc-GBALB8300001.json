@@ -1,0 +1,205 @@
+{
+  "recordings": [
+    {
+      "title": "The Lovecats",
+      "disambiguation": "album original mix",
+      "isrcs": [
+        "GBALB0000100",
+        "GBALB8300001",
+        "GBUM72004963"
+      ],
+      "tags": [
+        {
+          "count": 1,
+          "name": "alternative"
+        },
+        {
+          "count": 9,
+          "name": "alternative rock"
+        },
+        {
+          "name": "britannique",
+          "count": 2
+        },
+        {
+          "name": "electronic",
+          "count": 3
+        },
+        {
+          "count": 2,
+          "name": "goth rock"
+        },
+        {
+          "count": 1,
+          "name": "gothic rock"
+        },
+        {
+          "name": "indie rock",
+          "count": 1
+        },
+        {
+          "name": "jazz pop",
+          "count": 1
+        },
+        {
+          "count": 9,
+          "name": "new wave"
+        },
+        {
+          "name": "new wave acoustic",
+          "count": 1
+        },
+        {
+          "name": "new wave pop",
+          "count": 1
+        },
+        {
+          "name": "pop",
+          "count": 2
+        },
+        {
+          "count": 1,
+          "name": "pop rock"
+        },
+        {
+          "count": 3,
+          "name": "post-punk"
+        },
+        {
+          "name": "rhythm and blues",
+          "count": 1
+        },
+        {
+          "name": "rock",
+          "count": 4
+        },
+        {
+          "count": 1,
+          "name": "synth-pop"
+        }
+      ],
+      "id": "1c19fbb9-edce-49e1-a934-de6071dd7964",
+      "video": false,
+      "length": 220000,
+      "first-release-date": "1983-11-28",
+      "artist-credit": [
+        {
+          "joinphrase": "",
+          "artist": {
+            "name": "The Cure",
+            "disambiguation": "",
+            "country": "GB",
+            "sort-name": "Cure, The",
+            "type-id": "e431f5f6-b5d2-343d-8b36-72607fffb74b",
+            "tags": [
+              {
+                "name": "1985",
+                "count": 1
+              },
+              {
+                "name": "80s",
+                "count": 1
+              },
+              {
+                "name": "alternative",
+                "count": 2
+              },
+              {
+                "name": "alternative rock",
+                "count": 22
+              },
+              {
+                "count": 1,
+                "name": "britannique"
+              },
+              {
+                "count": 12,
+                "name": "british"
+              },
+              {
+                "count": 1,
+                "name": "classic pop and rock"
+              },
+              {
+                "name": "dance-rock",
+                "count": 1
+              },
+              {
+                "count": 6,
+                "name": "dark"
+              },
+              {
+                "name": "english",
+                "count": 5
+              },
+              {
+                "name": "goth",
+                "count": 8
+              },
+              {
+                "name": "gothic",
+                "count": 1
+              },
+              {
+                "count": 25,
+                "name": "gothic rock"
+              },
+              {
+                "count": 1,
+                "name": "indie rock"
+              },
+              {
+                "count": 1,
+                "name": "jangle pop"
+              },
+              {
+                "name": "new wave",
+                "count": 26
+              },
+              {
+                "name": "pop",
+                "count": 1
+              },
+              {
+                "count": 1,
+                "name": "pop rock"
+              },
+              {
+                "name": "post-punk",
+                "count": 26
+              },
+              {
+                "count": 2,
+                "name": "punk"
+              },
+              {
+                "count": 7,
+                "name": "rock"
+              },
+              {
+                "count": 2,
+                "name": "synth-pop"
+              },
+              {
+                "count": 3,
+                "name": "synthpop"
+              },
+              {
+                "name": "uk",
+                "count": 2
+              },
+              {
+                "count": 1,
+                "name": "vyrzukhisuc-artiest"
+              }
+            ],
+            "type": "Group",
+            "id": "69ee3720-a7cb-4402-b48d-a02c366f2bcf"
+          },
+          "name": "The Cure"
+        }
+      ]
+    }
+  ],
+  "isrc": "GBALB8300001"
+}

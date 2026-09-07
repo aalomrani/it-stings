@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>It Stings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+/* ── It Stings — empty state ─────────────────────────────────────────────
+   Direction: screen-print misregistration. Printing on black stock:
+   bone key pass first, spot colour passes land 3-6px down-and-right.
+   No gradients. No shadows. No blur. No border-radius above 2px.        */
+
+:root{
+  --stock:      #100C0A;   /* press black — the paper, and the knockout colour */
+  --plate:      #1B1512;   /* second black pass — surfaces only              */
+  --bone:       #EFE6D4;   /* key line + ALL body text        15.70:1        */
+  --bone-dim:   #B9AF9C;   /* metadata, mono numerals          8.97:1        */
+  --sting:      #FF3D6E;   /* spot 1  fluoro pink-red          5.69:1        */
+  --acid:       #B7EF3F;   /* spot 2  acid green              14.30:1        */
+  --blue-plate: #3D6FE0;   /* spot 3  dirty blue — PLATES ONLY, fails 4.5:1  */
+  --blue-ink:   #7AA2F5;   /* the only blue allowed to be a word 7.71:1      */
+  --bar-ink:    #100C0A;   /* typed text on the bone bar      15.70:1        */
+  --bar-ghost:  #4E463C;   /* placeholder on the bone bar      7.48:1        */
+
+  --display: "Bricolage Grotesque", "Archivo Black", "Helvetica Neue", Impact, sans-serif;
+  --sans:    "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono:    "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+*{ box-sizing: border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  background: var(--stock);
+  color: var(--bone);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+.sheet{
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  overflow: hidden;
+}
+
+/* ── layer 0: the print ─────────────────────────────────────────────── */
+.art{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  z-index:0;
+  pointer-events:none;
+}
+/* ── layer 1: paper tooth. Sits BELOW every text node, structurally, so
+      grain can never land on a word. ───────────────────────────────── */
+.grain{
+  position:absolute; inset:0;
+  width:100%; height:100%;
+  z-index:1;
+  opacity:.09;
+  mix-blend-mode: screen;
+  pointer-events:none;
+}
+
+/* ── layer 2: everything you can read ───────────────────────────────── */
+.content{
+  position:relative; z-index:2;
+  min-height:100vh; min-height:100svh;
+  display:grid;
+  grid-template-rows: auto 1fr auto;
+  padding: clamp(20px, 4vw, 56px);
+  gap: clamp(16px, 3vh, 40px);
+}
+
+/* wordmark — artwork, not a header bar. Nothing interactive precedes the
+   search field in the DOM or on the screen. */
+.mark{
+  margin:0;
+  align-self:start;
+  justify-self:start;
+  position:relative;
+  transform: rotate(-2deg);
+  transform-origin: left center;
+  font-family: var(--display);
+  font-variation-settings: "opsz" 96, "wdth" 75, "wght" 800;
+  font-weight:800;
+  font-size: clamp(58px, 12.5vw, 132px);
+  line-height:.86;
+  letter-spacing: -.015em;
+  color: var(--bone);
+  margin-left: -.03em;
+}
+/* the colour pass that missed the line pass */
+.mark span{
+  position:absolute; left:0; top:0;
+  transform: translate(6px, 5px);
+  color: var(--sting);
+  z-index:-1;
+  white-space:nowrap;
+}
+
+/* ── the hero ───────────────────────────────────────────────────────── */
+.hero{
+  align-self:center;
+  width:100%;
+  max-width: 780px;
+  justify-self:center;
+  margin:0;
+}
+.bar{
+  position:relative;
+  /* dead level. the mess is in the frame, never in the content. */
+  transform: none;
+}
+/* the spot pass, 5px down-and-right, poking out from under the slab */
+.bar__plate{
+  position:absolute;
+  left:5px; top:5px; right:-5px; bottom:-5px;
+  background: var(--sting);
+  z-index:0;
+}
+/* hand-wobbled key line, roughened. no text lives inside this element. */
+.bar__key{
+  position:absolute;
+  left:-9px; top:-9px; width:calc(100% + 18px); height:calc(100% + 18px);
+  z-index:2;
+  pointer-events:none;
+  overflow:visible;
+}
+.bar__slab{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  background: var(--bone);
+  padding: 0 18px 0 16px;
+  height: clamp(56px, 9vw, 68px);
+}
+.bar__wound{ flex:none; display:block; }
+.bar input{
+  flex:1 1 auto;
+  min-width:0;
+  border:0;
+  outline:0;
+  background: transparent;
+  -webkit-appearance:none;
+  appearance:none;
+  font-family: var(--sans);
+  font-weight:500;
+  font-size: clamp(16px, 2.2vw, 20px);
+  line-height:1.2;
+  color: var(--bar-ink);
+  padding: 0;
+}
+.bar input::-webkit-search-cancel-button,
+.bar input::-webkit-search-decoration{ -webkit-appearance:none; display:none; }
+.bar input::placeholder{ color: var(--bar-ghost); font-weight:400; opacity:1; }
+.bar input:focus-visible{ outline:0; }
+/* hard-edged focus mark. no glow, no ring blur, no radius. */
+.bar__focus{
+  display:none;
+  position:absolute;
+  left:-16px; top:-16px; right:-16px; bottom:-16px;
+  border: 3px solid var(--acid);
+  z-index:0;
+}
+.bar:focus-within .bar__focus{ display:block; }
+
+.enter{
+  flex:none;
+  border:0;
+  background: var(--stock);
+  color: var(--bone);
+  font-family: var(--sans);
+  font-weight:600;
+  font-size:15px;
+  letter-spacing:.01em;
+  padding: 10px 16px;
+  cursor:pointer;
+}
+.enter:hover{ background: var(--sting); color: var(--stock); }
+.enter:focus-visible{ outline:3px solid var(--acid); outline-offset:2px; }
+
+.sub{
+  margin: 18px 0 0;
+  max-width: 46ch;
+  font-size: clamp(15px, 1.7vw, 17px);
+  line-height:1.5;
+  color: var(--bone);
+}
+.sub b{ font-weight:600; color: var(--acid); }
+
+/* ── foot: provenance, in mono, because it is a claim about data ────── */
+.foot{
+  align-self:end;
+  font-family: var(--mono);
+  font-size:12px;
+  line-height:1.7;
+  color: var(--bone-dim);
+  display:flex;
+  flex-wrap:wrap;
+  gap: 4px 18px;
+}
+.foot span{ white-space:nowrap; }
+.foot i{ font-style:normal; color: var(--acid); }
+
+/* The search bar is a real focusable <input>, not an SVG shape, so the drawn
+   puncture and the bar are registered by composition rather than by geometry.
+   On landscape the visible slice of the viewBox is y 137-763, which lands the
+   burst ~120px above the bar; on portrait the full 0-900 is visible and it
+   already sits on the bar's edge. 86 user units closes the landscape gap. */
+@media (min-aspect-ratio: 1/1){
+  .art-shift{ transform: translateY(86px); }
+}
+
+/* ── THE one stepped-motion moment ──────────────────────────────────────
+   Three drawn frames, 1200 user units apart inside a 1000-unit viewBox,
+   so only one is ever inside the viewport. steps(3) emits exactly
+   0 / -1200 / -2400. There is no in-between state to ease through.   */
+@keyframes strip{
+  from{ transform: translateX(0); }
+  to  { transform: translateX(-3600px); }
+}
+.burst-strip{ animation: strip .72s steps(3) infinite; }
+
+@media (prefers-reduced-motion: reduce){
+  /* park on frame 1 — the middle frame is the best drawing of the three */
+  .burst-strip{ animation: none; transform: translateX(-1200px); }
+  *{ transition-duration: .001s !important; }
+}
+
+@media (max-width: 560px){
+  .content{ grid-template-rows: auto 1fr auto; }
+  .bar__slab{ padding: 0 12px 0 12px; gap:10px; }
+  .enter{ padding: 9px 12px; font-size:14px; }
+  .foot{ font-size:11px; gap: 3px 12px; }
+}
+@media (max-height: 620px){
+  .mark{ font-size: clamp(44px, 9vw, 72px); }
+}
+</style>
+</head>
+<body>
+
+<div class="sheet">
+
+  <!-- ══ the print ═══════════════════════════════════════════════════════
+       viewBox 1000x900, sliced. At 1280x800 this shows y 137-763; at
+       390x844 it shows x 292-708. Everything load-bearing (stinger tip,
+       burst, near edge of the disc) lives inside that intersection.
+       Everything outside it is drawn to be cropped.                     -->
+  <svg class="art" viewBox="0 0 1000 900" preserveAspectRatio="xMidYMid slice"
+       aria-hidden="true" focusable="false">
+    <defs>
+      <!-- LINE pass: high frequency, small amplitude. A nib chattering. -->
+      <filter id="rough-key" x="-12%" y="-12%" width="124%" height="124%"
+              color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.018 0.026"
+                      numOctaves="3" seed="17" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="4.5"
+                           xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <!-- COLOUR pass: low frequency, large amplitude. The sheet stretching.
+           Deliberately mismatched with rough-key so the two passes never
+           track each other — that is what reads as two trips through a press. -->
+      <filter id="rough-plate" x="-14%" y="-14%" width="128%" height="128%"
+              color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.009 0.013"
+                      numOctaves="2" seed="41" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="9"
+                           xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+
+      <!-- halftone: one ruling, three angles 30 degrees apart. never
+           two screens within 30 degrees of each other in a stack. -->
+      <pattern id="ht-pink" width="7" height="7" patternUnits="userSpaceOnUse"
+               patternTransform="rotate(15)">
+        <circle cx="3.5" cy="3.5" r="1.65" fill="#FF3D6E"/>
+      </pattern>
+      <pattern id="ht-acid" width="7" height="7" patternUnits="userSpaceOnUse"
+               patternTransform="rotate(75)">
+        <circle cx="3.5" cy="3.5" r="1.5" fill="#B7EF3F"/>
+      </pattern>
+      <pattern id="ht-blue" width="7" height="7" patternUnits="userSpaceOnUse"
+               patternTransform="rotate(45)">
+        <circle cx="3.5" cy="3.5" r="1.9" fill="#3D6FE0"/>
+      </pattern>
+
+      <clipPath id="clip-stinger">
+        <path d="M-46 46 L28 -58 L318 166 L504 376 L250 232 Z"/>
+      </clipPath>
+    </defs>
+
+    <g class="art-shift">
+    <!-- ── colour passes. isolation:isolate means these multiply against
+         each other and a transparent backdrop, not against the black
+         stock, which would annihilate them. ─────────────────────────── -->
+    <g style="isolation:isolate">
+      <g filter="url(#rough-plate)">
+        <!-- the sash: dirty blue, top-right to bottom-left, bleeding both ends -->
+        <path d="M718 -40 L1062 -40 L402 942 L58 942 Z"
+              fill="#3D6FE0" style="mix-blend-mode:multiply"/>
+        <!-- pink halftone wedge, upper left, behind the stinger.
+             overprints the sash into plum #3D1B61 where they cross. -->
+        <path d="M-40 -40 L534 -40 L296 404 L-40 306 Z"
+              fill="url(#ht-pink)" style="mix-blend-mode:multiply"/>
+        <!-- the disc: acid plate, 6px down-and-right of its key line.
+             overprints the sash into bottle green #2C6837. -->
+        <circle cx="706" cy="695" r="330"
+                fill="#B7EF3F" style="mix-blend-mode:multiply"/>
+        <!-- acid halftone in the lower left, so the corner is not dead -->
+        <path d="M-40 640 L214 700 L142 942 L-40 942 Z"
+              fill="url(#ht-acid)" style="mix-blend-mode:multiply"/>
+        <!-- blue screen under the puncture. 45 degrees; the acid patch it
+             meets is at 75 — 30 apart, so the stack cannot beat. -->
+        <path d="M170 520 L430 470 L470 790 L150 812 Z"
+              fill="url(#ht-blue)" style="mix-blend-mode:multiply"/>
+        <!-- the stinger: fluoro plate, offset. overprints the disc into rust. -->
+        <path d="M-40 51 L34 -53 L324 171 L510 381 L256 237 Z"
+              fill="#FF3D6E" style="mix-blend-mode:multiply"/>
+        <!-- wasp banding, clipped to the stinger, offset with the plate -->
+        <g clip-path="url(#clip-stinger)" stroke="#B7EF3F" stroke-width="26"
+           style="mix-blend-mode:multiply" transform="translate(6,5)">
+          <path d="M10.3 144.3 L141.7 -32.3"/>
+          <path d="M85.3 201.3 L216.7 24.7"/>
+          <path d="M161.3 257.3 L292.7 80.7"/>
+          <path d="M236.3 314.3 L367.7 137.7"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- ── key pass. Bone, on top, normal blending: real opaque white ink
+         would be tinted by every colour laid over it, and a tinted key
+         line is a worse line. Legibility beats authenticity. ─────────── -->
+    <g filter="url(#rough-key)" fill="none" stroke="#EFE6D4"
+       stroke-linecap="butt" stroke-linejoin="miter">
+      <!-- disc: outer edge heavy, grooves light and broken -->
+      <circle cx="700" cy="690" r="330" stroke-width="7"/>
+      <circle cx="700" cy="690" r="302" stroke-width="2.5"
+              stroke-dasharray="210 26 88 34"/>
+      <circle cx="700" cy="690" r="268" stroke-width="3.5"
+              stroke-dasharray="340 40 120 22"/>
+      <circle cx="700" cy="690" r="232" stroke-width="2"
+              stroke-dasharray="140 30 260 18"/>
+      <circle cx="700" cy="690" r="196" stroke-width="3"
+              stroke-dasharray="400 46 90 30"/>
+      <circle cx="700" cy="690" r="158" stroke-width="2"
+              stroke-dasharray="90 24 300 40"/>
+
+      <!-- the stinger. fill:none, so the fluoro plate shows through
+           offset inside its own outline. that gap IS the direction. -->
+      <path d="M-46 46 L28 -58 L318 166 L504 376 L250 232 Z" stroke-width="7"/>
+      <!-- segment lines, drawn at three weights: nib pressure, not a filter -->
+      <path d="M10.3 144.3 L141.7 -32.3" stroke-width="2"/>
+      <path d="M85.3 201.3 L216.7 24.7" stroke-width="3.5"/>
+      <path d="M161.3 257.3 L292.7 80.7" stroke-width="2"/>
+      <path d="M236.3 314.3 L367.7 137.7" stroke-width="6"/>
+      <!-- barbs on the underside, near the point -->
+      <path d="M300 268 L268 306 L330 292" stroke-width="4"/>
+      <path d="M362 314 L336 356 L392 338" stroke-width="4"/>
+      <path d="M424 352 L404 392 L452 372" stroke-width="3"/>
+
+      <!-- ink that ran out of the puncture and down the sheet -->
+      <path d="M470 424 L466 512" stroke-width="6"/>
+      <path d="M520 440 L526 596" stroke-width="4"/>
+      <path d="M560 418 L554 494" stroke-width="8"/>
+
+      <!-- flicks -->
+      <path d="M626 214 L668 190" stroke-width="5"/>
+      <path d="M648 268 L700 258" stroke-width="3"/>
+      <path d="M370 128 L406 96" stroke-width="4"/>
+      <path d="M840 396 L888 372" stroke-width="6"/>
+    </g>
+
+    <!-- blobs at the ends of the drips: solid, so they read as ink -->
+    <g fill="#EFE6D4">
+      <path d="M466 512 L479 522 L474 542 L458 540 L454 522 Z"/>
+      <path d="M526 596 L540 608 L534 628 L518 625 L514 606 Z"/>
+      <path d="M554 494 L570 505 L565 526 L546 523 L543 504 Z"/>
+    </g>
+
+    <!-- the label: knocked out of the grooves, then reprinted off-register -->
+    <g filter="url(#rough-key)">
+      <circle cx="700" cy="690" r="102" fill="#100C0A"/>
+      <circle cx="706" cy="695" r="94"  fill="#FF3D6E"/>
+      <circle cx="700" cy="690" r="94"  fill="none" stroke="#EFE6D4" stroke-width="5"/>
+      <circle cx="700" cy="690" r="12"  fill="#100C0A"/>
+    </g>
+
+    <!-- ══ THE stepped-motion moment: the puncture ══════════════════════
+         Frames sit 1200 units apart; the SVG viewport clips the two that
+         are off-stage. Nothing here carries text or a displacement filter. -->
+    <g class="burst-strip" fill="none" stroke="#EFE6D4" stroke-linecap="butt">
+    <g transform="translate(0,0)">
+      <path d="M519.2 380.9 L545.8 389.6" stroke-width="7"/>
+      <path d="M508.3 389.3 L514.5 408.3" stroke-width="5"/>
+      <path d="M492.9 390.2 L475.7 412.2" stroke-width="8"/>
+      <path d="M489.6 371.9 L467.5 365.5" stroke-width="6"/>
+      <path d="M498.7 359.8 L491 336.1" stroke-width="7"/>
+      <path d="M512.7 366.3 L524.7 353" stroke-width="4.5"/>
+      <path d="M546.9 358.2 L552.9 353.4 L558.3 360 L551.7 364.2 Z" fill="#B7EF3F" stroke="none"/>
+    </g>
+    <g transform="translate(1200,0)">
+      <path d="M523.8 378.8 L585.2 387.4" stroke-width="9"/>
+      <path d="M516.9 388.5 L544.3 414.9" stroke-width="6"/>
+      <path d="M508.6 397.5 L522.3 462.1" stroke-width="10"/>
+      <path d="M497.6 391.8 L485.3 422.4" stroke-width="5.5"/>
+      <path d="M486.2 387.1 L439.5 416.3" stroke-width="8"/>
+      <path d="M485 374.7 L442.2 371.7" stroke-width="7"/>
+      <path d="M487.1 361.9 L439.7 322" stroke-width="9"/>
+      <path d="M500.7 360.3 L494 329" stroke-width="5"/>
+      <path d="M512.8 358 L534.7 313.1" stroke-width="8"/>
+      <path d="M519.9 367.5 L555.2 348.8" stroke-width="6.5"/>
+      <path d="M523.2 317 A62 62 0 0 1 536.9 428.6 M497.5 437.7 A62 62 0 0 1 465.8 327.1 M491.1 315.4 A62 62 0 0 1 531.2 320.3" stroke-width="4"/>
+      <path d="M583.7 415 L591.7 408.6 L598.9 417.4 L590.1 423 Z" fill="#B7EF3F" stroke="none"/>
+      <path d="M414.3 335.7 L421.3 330.1 L427.6 337.8 L419.9 342.7 Z" fill="#B7EF3F" stroke="none"/>
+    </g>
+    <g transform="translate(2400,0)">
+      <path d="M527.9 377.7 L621.7 384.2" stroke-width="11"/>
+      <path d="M521 386.6 L566.8 415.2" stroke-width="6"/>
+      <path d="M517 398.5 L567 485.1" stroke-width="12"/>
+      <path d="M504.7 395 L506.4 444" stroke-width="5.5"/>
+      <path d="M491.5 397.7 L452 466.1" stroke-width="10"/>
+      <path d="M484.6 386.3 L431.6 414.5" stroke-width="7.5"/>
+      <path d="M478.1 373.3 L382.7 363.2" stroke-width="11"/>
+      <path d="M487.4 364.8 L446 336.9" stroke-width="6"/>
+      <path d="M493.5 354.4 L455.8 277.1" stroke-width="10"/>
+      <path d="M504.6 358 L506.3 310" stroke-width="5"/>
+      <path d="M518 355.3 L568.9 279.8" stroke-width="11"/>
+      <path d="M523.5 368.1 L576.3 346.8" stroke-width="7"/>
+      <path d="M533.7 284.7 A96 96 0 0 1 554.9 457.4 M494 471.5 A96 96 0 0 1 444.9 300.4 M484 282.1 A96 96 0 0 1 546.1 289.7" stroke-width="5"/>
+      <path d="M626.7 414 L636.7 406 L645.7 417 L634.7 424 Z" fill="#B7EF3F" stroke="none"/>
+      <path d="M482.2 507.3 L490.2 500.9 L497.4 509.7 L488.6 515.3 Z" fill="#B7EF3F" stroke="none"/>
+      <path d="M359.9 332.1 L368.9 324.9 L377 334.8 L367.1 341.1 Z" fill="#B7EF3F" stroke="none"/>
+      <path d="M535.6 254.3 L543.6 247.9 L550.8 256.7 L542 262.3 Z" fill="#B7EF3F" stroke="none"/>
+    </g>
+    </g>
+    </g>
+  </svg>
+
+  <!-- ══ paper tooth ══════════════════════════════════════════════════ -->
+  <svg class="grain" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="grain" x="0" y="0" width="100%" height="100%"
+              color-interpolation-filters="sRGB">
+        <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="4"
+                      stitchTiles="stitch" result="t"/>
+        <feColorMatrix in="t" type="saturate" values="0" result="g"/>
+        <feComponentTransfer in="g">
+          <feFuncA type="linear" slope="0.55" intercept="-0.14"/>
+        </feComponentTransfer>
+      </filter>
+    </defs>
+    <rect width="100%" height="100%" filter="url(#grain)"/>
+  </svg>
+
+  <!-- ══ the readable layer ══════════════════════════════════════════ -->
+  <main class="content">
+
+    <h1 class="mark">It Stings<span aria-hidden="true">It Stings</span></h1>
+
+    <form class="hero" action="#" role="search" aria-label="Find a song">
+      <div class="bar">
+        <div class="bar__plate" aria-hidden="true"></div>
+        <div class="bar__focus" aria-hidden="true"></div>
+
+        <div class="bar__slab">
+          <!-- the puncture mark. this is where the stinger lands. -->
+          <svg class="bar__wound" width="18" height="22" viewBox="0 0 18 22"
+               aria-hidden="true" focusable="false">
+            <path d="M9 1 L12.6 8.4 L17 11.5 L11.8 13.4 L9.6 21 L6.4 13.8 L1 11.2 L6.2 8.8 Z"
+                  fill="#FF3D6E"/>
+          </svg>
+
+          <input id="seed" name="seed" type="search" autofocus autocomplete="off"
+                 spellcheck="false"
+                 aria-label="Song title and artist"
+                 placeholder="name a song that got you — title, artist">
+
+          <button class="enter" type="submit">Find</button>
+        </div>
+
+        <!-- key line: hand-wobbled path, stretched with preserveAspectRatio
+             none, stroke held at 2px by non-scaling-stroke. Roughened.
+             No text lives inside this element. -->
+        <svg class="bar__key" viewBox="0 0 400 100" preserveAspectRatio="none"
+             aria-hidden="true" focusable="false">
+          <g filter="url(#rough-key)">
+            <path d="M4.6 7.2 L118 3.1 L266 6.4 L396.2 4.4 L394.1 48
+                     L397 95.4 L242 98.2 L96 94.6 L3.2 97.8 Z"
+                  fill="none" stroke="#EFE6D4" stroke-width="2.5"
+                  vector-effect="non-scaling-stroke"/>
+            <!-- heavier pass along the bottom only: pressure, not uniformity -->
+            <path d="M3.2 97.8 L96 94.6 L242 98.2 L397 95.4"
+                  fill="none" stroke="#EFE6D4" stroke-width="5"
+                  vector-effect="non-scaling-stroke"/>
+          </g>
+        </svg>
+      </div>
+
+      <p class="sub">Somewhere there's another one that does the same thing to you.
+        <b>Name the song.</b> Not the genre, not the band — the one track.</p>
+    </form>
+
+    <p class="foot">
+      <span><i>typeahead</i> iTunes Search</span>
+      <span><i>preview</i> Deezer 30s</span>
+      <span><i>tags</i> Last.fm</span>
+      <span><i>ids</i> MusicBrainz</span>
+      <span><i>tempo</i> Deezer bpm, GetSongBPM</span>
+      <span>no account, no history, nothing leaves this machine</span>
+    </p>
+
+  </main>
+</div>
+
+</body>
+</html>

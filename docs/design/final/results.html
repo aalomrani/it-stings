@@ -1,0 +1,1560 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>It Stings — The Lovecats</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+<style>
+/* ==================================================================
+   IT STINGS — PHOTOCOPIED ZINE (final) — results state
+   After the search the boldness drops. Ink outlines, flat fills, grain
+   in the frame only. The mess is in the frame, never in the content.
+   ================================================================== */
+:root{
+  --ground:#141210;
+  --card:#1D1A16;
+  --raised:#241F1A;
+  --bone:#EDE9DD;
+  --dust:#A8A296;
+  --acid:#D9F227;
+  --blood:#E33127;
+  --blood-t:#F04438;
+  --mint:#6FBFB1;
+  --ochre:#D89B2A;
+  --ink:#17140F;
+  --ink-t:#5E574B;
+
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --display:"Bricolage Grotesque","Haettenschweiler","Arial Narrow",
+            "Helvetica Neue Condensed Bold","Franklin Gothic Medium Cond",Impact,sans-serif;
+
+  /* ---- NINE-SLICE DRAWN EDGES -----------------------------------------
+     One 100×100 (frames) or 60×60 (chips) source, sliced 10 / 6. Corners
+     are drawn 1:1 and never distort; only the straight runs tile, and they
+     tile ROUND along their own axis only, so a 900px-tall card cannot
+     amplify a wobble the way preserveAspectRatio="none" did (9× on tall
+     boxes). The run endpoints share a y (or x), so the tiling is seamless. */
+  --e-fa-bone:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M 10 3.9 C 18 5.6 26 2.6 34 4.4 C 42 6.1 50 3 58 4.6 C 66 6.2 74 3.1 82 4.7 C 85 5.4 88 3.2 90 3.9 C 93 3.4 96.6 6 96.1 10 C 94.4 18 97.4 26 95.7 34 C 94 42 97.1 50 95.5 58 C 93.9 66 97 74 95.4 82 C 94.8 85 97 88 96.1 90 C 96.6 94 93.2 96.6 90 96.1 C 82 94.4 74 97.4 66 95.7 C 58 94 50 97.1 42 95.5 C 34 93.9 26 97 18 95.4 C 15 94.8 12 97 10 96.1 C 6.8 96.6 3.4 94.2 3.9 90 C 5.6 82 2.6 74 4.4 66 C 6.1 58 3 50 4.6 42 C 6.2 34 3.1 26 4.7 18 C 5.4 15 3.2 12 3.9 10 C 3.4 6.6 6.6 3.4 10 3.9 Z' fill='none' stroke='%23EDE9DD' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --e-fb-bone:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M 10 4.6 C 18 2.9 26 5.8 34 4.1 C 42 2.4 50 5.5 58 3.8 C 66 2.2 74 5.4 82 3.7 C 85 3 88 5.2 90 4.6 C 93.4 5.2 96.8 7 95.4 10 C 93.7 18 96.8 26 95.1 34 C 93.4 42 96.6 50 94.9 58 C 93.3 66 96.4 74 94.8 82 C 94.2 85 96.4 88 95.4 90 C 96 94.6 92.6 97.2 90 95.4 C 82 97.1 74 94.2 66 95.9 C 58 97.6 50 94.5 42 96.2 C 34 97.8 26 94.6 18 96.3 C 15 97 12 94.8 10 95.4 C 6.2 95 3 96.8 4.6 90 C 6.3 82 3.2 74 4.9 66 C 6.6 58 3.4 50 5.1 42 C 6.7 34 3.6 26 5.2 18 C 5.8 15 3.6 12 4.6 10 C 3.8 7.2 7 3.8 10 4.6 Z' fill='none' stroke='%23EDE9DD' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --e-fa-acid:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M 10 3.9 C 18 5.6 26 2.6 34 4.4 C 42 6.1 50 3 58 4.6 C 66 6.2 74 3.1 82 4.7 C 85 5.4 88 3.2 90 3.9 C 93 3.4 96.6 6 96.1 10 C 94.4 18 97.4 26 95.7 34 C 94 42 97.1 50 95.5 58 C 93.9 66 97 74 95.4 82 C 94.8 85 97 88 96.1 90 C 96.6 94 93.2 96.6 90 96.1 C 82 94.4 74 97.4 66 95.7 C 58 94 50 97.1 42 95.5 C 34 93.9 26 97 18 95.4 C 15 94.8 12 97 10 96.1 C 6.8 96.6 3.4 94.2 3.9 90 C 5.6 82 2.6 74 4.4 66 C 6.1 58 3 50 4.6 42 C 6.2 34 3.1 26 4.7 18 C 5.4 15 3.2 12 3.9 10 C 3.4 6.6 6.6 3.4 10 3.9 Z' fill='none' stroke='%23D9F227' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --e-fb-dust:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M 10 4.6 C 18 2.9 26 5.8 34 4.1 C 42 2.4 50 5.5 58 3.8 C 66 2.2 74 5.4 82 3.7 C 85 3 88 5.2 90 4.6 C 93.4 5.2 96.8 7 95.4 10 C 93.7 18 96.8 26 95.1 34 C 93.4 42 96.6 50 94.9 58 C 93.3 66 96.4 74 94.8 82 C 94.2 85 96.4 88 95.4 90 C 96 94.6 92.6 97.2 90 95.4 C 82 97.1 74 94.2 66 95.9 C 58 97.6 50 94.5 42 96.2 C 34 97.8 26 94.6 18 96.3 C 15 97 12 94.8 10 95.4 C 6.2 95 3 96.8 4.6 90 C 6.3 82 3.2 74 4.9 66 C 6.6 58 3.4 50 5.1 42 C 6.7 34 3.6 26 5.2 18 C 5.8 15 3.6 12 4.6 10 C 3.8 7.2 7 3.8 10 4.6 Z' fill='none' stroke='%23A8A296' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --e-fa-blood:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M 10 3.9 C 18 5.6 26 2.6 34 4.4 C 42 6.1 50 3 58 4.6 C 66 6.2 74 3.1 82 4.7 C 85 5.4 88 3.2 90 3.9 C 93 3.4 96.6 6 96.1 10 C 94.4 18 97.4 26 95.7 34 C 94 42 97.1 50 95.5 58 C 93.9 66 97 74 95.4 82 C 94.8 85 97 88 96.1 90 C 96.6 94 93.2 96.6 90 96.1 C 82 94.4 74 97.4 66 95.7 C 58 94 50 97.1 42 95.5 C 34 93.9 26 97 18 95.4 C 15 94.8 12 97 10 96.1 C 6.8 96.6 3.4 94.2 3.9 90 C 5.6 82 2.6 74 4.4 66 C 6.1 58 3 50 4.6 42 C 6.2 34 3.1 26 4.7 18 C 5.4 15 3.2 12 3.9 10 C 3.4 6.6 6.6 3.4 10 3.9 Z' fill='none' stroke='%23E33127' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --e-ch-dust:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M 6 2.4 C 14 3.9 22 1.3 30 2.8 C 38 4.3 46 1.5 54 2.4 C 56.4 2.1 58.2 3.8 57.6 6 C 56.2 14 58.6 22 57.1 30 C 55.6 38 58.4 46 57.6 54 C 57.9 56.4 56.2 58.2 54 57.6 C 46 56.2 38 58.6 30 57.1 C 22 55.6 14 58.4 6 57.6 C 3.6 57.9 1.8 56.2 2.4 54 C 3.8 46 1.4 38 2.9 30 C 4.4 22 1.6 14 2.4 6 C 2.1 3.6 3.8 1.8 6 2.4 Z' fill='none' stroke='%23A8A296' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --e-ch-acid:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M 6 2.4 C 14 3.9 22 1.3 30 2.8 C 38 4.3 46 1.5 54 2.4 C 56.4 2.1 58.2 3.8 57.6 6 C 56.2 14 58.6 22 57.1 30 C 55.6 38 58.4 46 57.6 54 C 57.9 56.4 56.2 58.2 54 57.6 C 46 56.2 38 58.6 30 57.1 C 22 55.6 14 58.4 6 57.6 C 3.6 57.9 1.8 56.2 2.4 54 C 3.8 46 1.4 38 2.9 30 C 4.4 22 1.6 14 2.4 6 C 2.1 3.6 3.8 1.8 6 2.4 Z' fill='none' stroke='%23D9F227' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --e-ch-bone:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M 6 2.4 C 14 3.9 22 1.3 30 2.8 C 38 4.3 46 1.5 54 2.4 C 56.4 2.1 58.2 3.8 57.6 6 C 56.2 14 58.6 22 57.1 30 C 55.6 38 58.4 46 57.6 54 C 57.9 56.4 56.2 58.2 54 57.6 C 46 56.2 38 58.6 30 57.1 C 22 55.6 14 58.4 6 57.6 C 3.6 57.9 1.8 56.2 2.4 54 C 3.8 46 1.4 38 2.9 30 C 4.4 22 1.6 14 2.4 6 C 2.1 3.6 3.8 1.8 6 2.4 Z' fill='none' stroke='%23EDE9DD' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background-color:var(--ground);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Ccircle cx='2.5' cy='3' r='0.9' fill='%23EDE9DD' fill-opacity='0.055'/%3E%3Ccircle cx='9.5' cy='8.5' r='0.7' fill='%23EDE9DD' fill-opacity='0.045'/%3E%3Ccircle cx='6' cy='12' r='0.5' fill='%23EDE9DD' fill-opacity='0.035'/%3E%3C/svg%3E");
+  color:var(--bone);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.5;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+a{color:var(--bone)}
+
+/* ---------- THE FOCUS SYSTEM ------------------------------------------
+   3px acid, offset, on every interactive element. Nothing in this file
+   sets outline:0 without a drawn replacement on the same element. ---- */
+.play:focus-visible,
+.btn:focus-visible,
+.strike:focus-visible,
+.bar-clear:focus-visible,
+.evi a:focus-visible,
+.nop-note a:focus-visible,
+.prov a:focus-visible,
+summary:focus-visible,
+.toggle input:focus-visible + .box{
+  outline:3px solid var(--acid);
+  outline-offset:3px;
+}
+/* the hero field: the ring is pushed clear of the bone paper onto the
+   black ground, where acid reads at 14.84:1 */
+.bar input:focus-visible{outline:3px solid var(--acid);outline-offset:6px}
+
+/* ---------------- shell ---------------- */
+.sheet{width:min(940px,92vw);margin:0 auto;padding:clamp(16px,3vw,34px) 0 96px;position:relative}
+
+.spine{
+  position:fixed;left:10px;top:50%;
+  transform:translateY(-50%) rotate(180deg);
+  writing-mode:vertical-rl;
+  font-family:var(--display);
+  font-variation-settings:"opsz" 24,"wdth" 78,"wght" 800;
+  font-size:22px;letter-spacing:.01em;
+  color:var(--acid);
+  opacity:.9;pointer-events:none;display:none;
+}
+.spine::before{content:"It Stings";position:absolute;left:3px;top:-4px;color:var(--blood);z-index:-1}
+@media (min-width:1180px){.spine{display:block;isolation:isolate}}
+
+/* ---------------- search bar — still the hero, nothing above it ------- */
+.bar{position:relative;height:clamp(58px,8vw,80px);display:flex;align-items:stretch;
+     margin:0 0 clamp(18px,2.4vw,26px)}
+.bar-bg{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+.bar input{
+  position:relative;z-index:2;flex:1 1 auto;min-width:0;
+  appearance:none;background:transparent;border:0;outline:0;margin:0;
+  padding:0 84px 0 4%;
+  font-family:var(--sans);font-size:clamp(1rem,1.9vw,1.42rem);font-weight:500;
+  letter-spacing:-.01em;color:var(--ink);caret-color:var(--blood);
+}
+.bar input::placeholder{color:var(--ink-t);opacity:1}
+.bar input::-webkit-search-decoration,
+.bar input::-webkit-search-cancel-button,
+.bar input::-webkit-search-results-button{-webkit-appearance:none;appearance:none}
+/* the drawn focus mark inside the paper, in blood — acid would vanish on bone */
+.bar-rule{position:absolute;z-index:2;left:4%;right:84px;bottom:19%;height:3px;
+          background:var(--blood);opacity:0;pointer-events:none}
+.bar:focus-within .bar-rule{opacity:1}
+.bar-clear{
+  position:absolute;z-index:3;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:0;padding:5px 7px;cursor:pointer;
+  font-family:var(--mono);font-size:12px;color:var(--ink-t);
+}
+.bar-clear:hover{color:var(--blood)}
+
+/* ---------------- stage indicator — a receipt, not a progress bar ----- */
+.stages{position:relative;isolation:isolate;padding:20px 22px 18px;margin:0 0 16px}
+.stages::before{
+  content:"";position:absolute;inset:0;z-index:-1;background:var(--card);
+  transform:rotate(-.5deg);
+  border:10px solid transparent;border-image:var(--e-fb-dust) 10 / 10px / 0 round;
+}
+.steps{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:0 0 10px;padding:0;list-style:none}
+.steps li{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;color:var(--dust)}
+.steps li.done{color:var(--bone)}
+.steps li.now{color:var(--acid)}
+.steps li.todo{color:var(--dust);opacity:.6}
+.tick{width:15px;height:15px;flex:none;display:block}
+.blot{width:17px;height:17px;flex:none;display:block}
+.chan{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;
+      font-family:var(--mono);font-size:12px;color:var(--dust);margin:0 0 6px}
+.chan b{font-weight:500;color:var(--bone)}
+.chan .skip{color:var(--blood-t)}
+.chan .sep{opacity:.45}
+.drops{font-family:var(--mono);font-size:11.5px;color:var(--dust);margin:0;line-height:1.65}
+.drops b{color:var(--bone);font-weight:500}
+.drops .warn{color:var(--ochre)}
+
+/* ---------------- degraded notice ------------------------------------
+   The BAND is rotated. The sentence is not. ------------------------- */
+.notice{position:relative;isolation:isolate;padding:18px 20px 18px 24px;margin:0 0 26px}
+.notice::before{
+  content:"";position:absolute;inset:0;z-index:-1;background:var(--card);
+  transform:rotate(.9deg);
+  border:10px solid transparent;border-image:var(--e-fa-blood) 10 / 10px / 0 round;
+}
+/* the spine shares ::before's box and origin, so it rotates WITH the band
+   instead of drifting away from it */
+.notice::after{
+  content:"";position:absolute;inset:0;z-index:-1;
+  border-left:6px solid var(--blood);
+  transform:rotate(.9deg);
+}
+.notice p{margin:0;font-size:14px;line-height:1.55;color:var(--bone);max-width:64ch}
+.notice .lbl{display:block;font-family:var(--mono);font-size:11px;color:var(--blood-t);margin:0 0 4px}
+.notice code{font-family:var(--mono);font-size:13px;color:var(--acid)}
+
+/* ---------------- cards ---------------- */
+.card{position:relative;background:var(--card);padding:10px 12px 14px;margin:0 0 16px;
+      border:10px solid transparent;border-image:var(--e-fa-bone) 10 / 10px / 0 round}
+.card:nth-of-type(even){border-image:var(--e-fb-bone) 10 / 10px / 0 round}
+.card.seed{border-image:var(--e-fa-acid) 10 / 10px / 0 round;padding:14px 14px 6px;margin-bottom:24px}
+.head{display:grid;grid-template-columns:64px 1fr;gap:14px;align-items:start}
+@media (min-width:640px){.head{grid-template-columns:88px 1fr;gap:18px}}
+.artwrap{position:relative}
+.art{position:relative;width:100%;aspect-ratio:1/1;display:block;transform:rotate(-1.4deg)}
+.card:nth-of-type(even) .art{transform:rotate(1.1deg)}
+.rank{position:absolute;left:-9px;top:-11px;z-index:3;isolation:isolate;
+      color:var(--ink);font-family:var(--mono);font-weight:500;font-size:12px;
+      line-height:1;padding:5px 7px 6px}
+.rank::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--acid);
+              transform:rotate(-4deg)}
+.kick{font-family:var(--mono);font-size:11px;letter-spacing:.02em;color:var(--dust);margin:0 0 5px}
+h2.title{font-family:var(--display);font-variation-settings:"opsz" 40,"wdth" 84,"wght" 800;
+         font-size:clamp(1.7rem,3.8vw,2.5rem);line-height:1.02;margin:0 0 5px;color:var(--bone);
+         letter-spacing:-.015em}
+h3.title{font-family:var(--sans);font-weight:600;font-size:clamp(1.06rem,2.1vw,1.3rem);
+         line-height:1.2;margin:0 0 2px;color:var(--bone);letter-spacing:-.01em}
+.byline{font-family:var(--mono);font-size:12.5px;color:var(--dust);margin:0 0 10px}
+.byline .yr{color:var(--bone)}
+
+/* ---- the `why`: the most important text on the page ------------------ */
+.why{
+  position:relative;
+  margin:12px 0 15px;
+  padding-left:14px;
+  font-size:16.5px;
+  line-height:1.62;
+  max-width:52ch;
+  color:var(--bone);
+}
+.why::before{content:"";position:absolute;left:0;top:.2em;bottom:.2em;width:3px;
+             background:var(--acid)}
+
+/* transport row */
+.tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.play{position:relative;width:46px;height:46px;flex:none;background:none;border:0;padding:0;
+      cursor:pointer;display:block}
+.play svg{display:block;width:46px;height:46px}
+.play:disabled{cursor:not-allowed}
+.btn{position:relative;background:none;padding:8px 13px 9px;cursor:pointer;
+     font-family:var(--mono);font-size:12px;color:var(--bone);letter-spacing:.01em;
+     border:6px solid transparent;border-image:var(--e-ch-dust) 6 / 6px / 0 round}
+.btn:hover{color:var(--acid)}
+.btn.saved{color:var(--acid);border-image:var(--e-ch-acid) 6 / 6px / 0 round}
+.btn.bare{border-image:none;border:0;padding:8px 6px 9px}
+.time{font-family:var(--mono);font-size:12px;color:var(--acid)}
+.time .tot{color:var(--dust)}
+.meta{font-family:var(--mono);font-size:11.5px;color:var(--dust);margin-left:auto;
+      display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.meta .sc{color:var(--bone)}
+.chn{display:inline-flex;gap:3px}
+.chn i{font-style:normal;width:16px;height:16px;line-height:16px;text-align:center;
+       font-family:var(--mono);font-size:10px;color:var(--ink);background:var(--dust)}
+.chn i.a{background:var(--acid)}
+.chn i.c{background:var(--mint)}
+.chn i.off{background:none;color:var(--dust);border:1px dashed currentColor;line-height:14px}
+
+/* no-preview */
+.nop{position:relative;isolation:isolate;padding:6px 10px 7px;font-family:var(--mono);
+     font-size:11.5px;color:var(--ochre)}
+.nop::before{content:"";position:absolute;inset:0;z-index:-1;transform:rotate(-1.6deg);
+             border:6px solid transparent;border-image:var(--e-ch-dust) 6 / 6px / 0 round}
+.nop-note{font-family:var(--mono);font-size:11.5px;color:var(--dust);margin:10px 0 0;line-height:1.65;
+          max-width:60ch}
+.nop-note a{color:var(--bone);text-decoration-color:rgba(237,233,221,.45);text-underline-offset:3px}
+.nop-note a:hover{text-decoration-color:var(--bone)}
+
+/* ---------------- fingerprint ---------------- */
+.fp{margin:20px 0 0;position:relative}
+.fp-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+.fp-h h4{font-family:var(--display);font-variation-settings:"opsz" 24,"wdth" 82,"wght" 700;
+         font-size:1.42rem;margin:0;color:var(--acid);letter-spacing:-.01em}
+.fp-h span{font-family:var(--mono);font-size:11px;color:var(--dust)}
+.fp-list{margin:0}
+.fprow{display:grid;grid-template-columns:1fr;gap:0;
+       border-bottom:1px solid rgba(237,233,221,.10)}
+@media (min-width:760px){
+  .fprow{grid-template-columns:172px minmax(0,1fr)}
+  .fprow--pair{grid-template-columns:172px minmax(0,1fr) 128px minmax(0,1fr)}
+}
+.fprow dt{font-family:var(--mono);font-size:11.5px;color:var(--dust);padding:11px 0 0;
+          overflow-wrap:anywhere}
+.fprow dd{margin:0;padding:2px 0 11px}
+@media (min-width:760px){.fprow dt{padding:12px 12px 12px 0}.fprow dd{padding:12px 16px 12px 0}}
+.v{font-size:14.5px;line-height:1.5;color:var(--bone)}
+.v.none{color:var(--dust);font-family:var(--mono);font-size:13.5px}
+.src{display:block;font-family:var(--mono);font-size:11px;color:var(--dust);margin-top:5px;
+     line-height:1.6}
+.strike{background:none;border:0;padding:0 0 0 8px;cursor:pointer;
+        font-family:var(--mono);font-size:11px;color:var(--dust);white-space:nowrap}
+.strike:hover{color:var(--blood-t)}
+
+.chip{position:relative;isolation:isolate;display:inline-block;font-family:var(--mono);
+      font-size:10.5px;line-height:1;padding:5px 7px 6px;margin-left:8px;vertical-align:2px;
+      white-space:nowrap;color:var(--ink)}
+.chip::before{content:"";position:absolute;inset:0;z-index:-1;transform:rotate(-1.2deg)}
+.chip.hi::before{background:var(--acid)}
+.chip.md::before{background:var(--mint)}
+.chip.lo::before{background:var(--ochre)}
+.chip.no{color:var(--dust)}
+.chip.no::before{border:1px solid currentColor}
+
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 0;padding:0;list-style:none}
+.tags li{font-family:var(--mono);font-size:11.5px;color:var(--bone);background:var(--raised);
+         padding:5px 8px 6px}
+.tags li.piv{background:var(--acid);color:var(--ink)}
+.tags li em{font-style:normal;color:var(--dust)}
+.tags li.piv em{color:var(--ink);opacity:.72}
+
+/* ---------------- same-artist toggle ---------------- */
+.controls{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;margin:0 0 22px}
+.toggle{position:relative;isolation:isolate;display:inline-flex;align-items:center;gap:10px;
+        cursor:pointer;padding:13px 16px 14px}
+.toggle::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--card);
+                transform:rotate(-.8deg);
+                border:6px solid transparent;border-image:var(--e-ch-dust) 6 / 6px / 0 round}
+.toggle input{position:absolute;opacity:0;width:1px;height:1px}
+.box{width:22px;height:22px;flex:none;display:block}
+.box .on{opacity:0}
+.toggle input:checked + .box .on{opacity:1}
+.toggle .lab{font-family:var(--mono);font-size:12.5px;color:var(--bone)}
+.toggle .st{font-family:var(--mono);font-size:11px;color:var(--dust)}
+.rule-note{font-family:var(--mono);font-size:11.5px;color:var(--dust);max-width:48ch;
+           line-height:1.7;margin:2px 0 0;flex:1 1 280px}
+
+/* ---------------- section headings ---------------- */
+/* headings sit at 0°; the crooked feel comes from the pasted tape beside
+   them, whose BAND rotates and whose word does not */
+.sec{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:32px 0 12px}
+.sec h3{font-family:var(--display);font-variation-settings:"opsz" 32,"wdth" 82,"wght" 800;
+        font-size:1.6rem;margin:0;color:var(--bone);letter-spacing:-.015em}
+.sec span{font-family:var(--mono);font-size:11.5px;color:var(--dust)}
+.tape,.sec span.tape{position:relative;isolation:isolate;font-family:var(--mono);font-size:10.5px;
+      line-height:1;color:var(--ink);padding:5px 8px 6px}
+.tape::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--acid);
+              transform:rotate(-2.2deg)}
+.tear{display:block;width:100%;height:9px;margin:0 0 14px}
+
+/* ---------------- disclosure — native details/summary, no JS ---------- */
+details{margin:14px 0 0}
+summary{
+  display:inline-flex;align-items:center;gap:8px;cursor:pointer;list-style:none;
+  font-family:var(--mono);font-size:12px;color:var(--bone);
+  padding:8px 13px 9px;
+  border:6px solid transparent;border-image:var(--e-ch-dust) 6 / 6px / 0 round;
+}
+summary::-webkit-details-marker{display:none}
+summary::marker{content:""}
+summary:hover{color:var(--acid)}
+details[open] summary{color:var(--acid);border-image:var(--e-ch-acid) 6 / 6px / 0 round}
+details[open] .caret{transform:rotate(90deg)}
+.caret{flex:none;display:block;width:12px;height:12px;transform-origin:50% 50%}
+.lbl-open{display:none}
+details[open] .lbl-open{display:inline}
+details[open] .lbl-shut{display:none}
+
+/* ---------------- expandable panel ---------------- */
+.expand{position:relative;margin:14px 0 4px;background:var(--raised);padding:12px 14px 14px;
+        border:10px solid transparent;border-image:var(--e-fb-dust) 10 / 10px / 0 round}
+.expand h5{font-family:var(--mono);font-weight:500;font-size:11.5px;color:var(--dust);
+           margin:0 0 12px;letter-spacing:.02em;line-height:1.6}
+.dims{margin:0 0 4px;padding:0;list-style:none}
+.dims li{display:grid;grid-template-columns:1fr 44px;grid-template-areas:"k v" "b b";
+         gap:3px 10px;align-items:center;padding:5px 0}
+@media (min-width:620px){
+  .dims li{grid-template-columns:172px minmax(0,1fr) 44px;
+           grid-template-areas:"k b v";gap:12px}
+}
+.dn{grid-area:k;font-family:var(--mono);font-size:11.5px;color:var(--dust);overflow-wrap:anywhere}
+.dn .w{color:var(--bone)}
+.dv{grid-area:v;font-family:var(--mono);font-size:12px;color:var(--bone);text-align:right}
+.mbar{grid-area:b;display:block;width:100%;height:12px}
+.dimnote{font-family:var(--mono);font-size:11.5px;color:var(--dust);line-height:1.75;
+         margin:14px 0 4px;max-width:64ch}
+.dimnote b{color:var(--bone);font-weight:500}
+.dimnote .fin{color:var(--acid)}
+.evi{margin:0;padding:0;list-style:none}
+.evi li{padding:11px 0;border-top:1px solid rgba(237,233,221,.10)}
+.et{font-family:var(--mono);font-size:11px;color:var(--dust);margin:0 0 5px;
+    display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.q{font-size:14px;line-height:1.55;color:var(--bone);margin:0 0 6px;max-width:60ch}
+.evi a{font-family:var(--mono);font-size:11.5px;color:var(--acid);word-break:break-all;
+       text-decoration:underline;text-decoration-color:rgba(217,242,39,.45);
+       text-underline-offset:3px}
+.evi a:hover{text-decoration-color:var(--acid)}
+.stamp{font-family:var(--mono);font-size:10.5px;line-height:1;padding:4px 6px 5px;
+       display:inline-block;position:relative;isolation:isolate;color:var(--ink)}
+.stamp::before{content:"";position:absolute;inset:0;z-index:-1;transform:rotate(-1.4deg)}
+.stamp.live::before{background:var(--mint)}
+.stamp.cached::before{background:var(--ochre)}
+
+/* ---------------- playlist row ---------------- */
+.plrow{position:relative;display:grid;grid-template-columns:22px 44px minmax(0,1fr) auto;gap:12px;
+       align-items:center;background:var(--card);padding:8px 12px 9px;margin:0 0 8px;
+       border:6px solid transparent;border-image:var(--e-ch-dust) 6 / 6px / 0 round}
+.grip{width:16px;height:16px;color:var(--dust);cursor:grab;display:block}
+.plrow .pt{font-size:14.5px;font-weight:500;color:var(--bone);margin:0;line-height:1.3}
+.plrow .pb{font-family:var(--mono);font-size:11.5px;color:var(--dust);margin:0}
+.plrow .pa{width:44px;height:44px;display:block;transform:rotate(-1.6deg)}
+.plrow .acts{display:flex;gap:6px;align-items:center}
+
+/* ---------------- typeahead specimen ---------------- */
+.parts{position:relative;isolation:isolate;margin:36px 0 0;padding:26px 22px 22px}
+.parts::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--card);
+               transform:rotate(-.4deg);
+               border:10px solid transparent;border-image:var(--e-fb-dust) 10 / 10px / 0 round}
+.parts .tag{position:absolute;top:-11px;left:18px;isolation:isolate;color:var(--ink);
+            font-family:var(--mono);font-size:10.5px;line-height:1;padding:5px 8px 6px}
+.parts .tag::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--acid);
+                    transform:rotate(-2.2deg)}
+.ta{position:relative;max-width:460px;background:var(--bone);padding:0}
+.ta-in{font-family:var(--sans);font-size:15px;font-weight:500;color:var(--ink);
+       padding:12px 14px 11px;border-bottom:2px solid var(--ink);position:relative}
+.ta-in .car{display:inline-block;width:2px;height:1em;background:var(--blood);
+            vertical-align:-2px;margin-left:1px}
+.ta-in .ring{position:absolute;inset:-6px;border:3px solid var(--acid);pointer-events:none}
+.ta ul{margin:0;padding:0;list-style:none}
+.ta li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:11px;align-items:center;
+       padding:9px 12px 10px;color:var(--ink);position:relative}
+.ta li.on{background:var(--acid)}
+.ta li.hov{box-shadow:inset 3px 0 0 0 var(--blood)}
+.ta li.hov .tt{font-weight:600}
+.ta .tt{font-size:14px;font-weight:500;line-height:1.25;margin:0}
+.ta .tb{font-family:var(--mono);font-size:11px;color:var(--ink-t);margin:0}
+.ta li.on .tb{color:var(--ink);opacity:.72}
+.ta .ty{font-family:var(--mono);font-size:11px;color:var(--ink-t)}
+.ta li.on .ty{color:var(--ink)}
+.ta .th{width:34px;height:34px;display:block}
+.state{font-family:var(--mono);font-size:10.5px;color:var(--dust);margin:0 0 0 12px}
+.parts .cap{font-family:var(--mono);font-size:11px;color:var(--dust);margin:16px 0 0;
+            max-width:60ch;line-height:1.7}
+
+/* ---------------- provenance ---------------- */
+.prov{margin:36px 0 0;font-family:var(--mono);font-size:11.5px;color:var(--dust);line-height:1.7}
+.prov h4{font-family:var(--mono);font-weight:500;font-size:11.5px;color:var(--bone);
+         margin:0 0 10px;letter-spacing:.02em}
+.prov dl{display:grid;grid-template-columns:1fr;gap:0;margin:0}
+@media (min-width:640px){.prov dl{grid-template-columns:210px minmax(0,1fr)}}
+.prov dt{color:var(--bone);padding:5px 0 0}
+.prov dd{margin:0;padding:0 0 5px}
+.prov code{font-family:var(--mono);color:var(--acid)}
+@media (min-width:640px){.prov dt{padding:5px 12px 5px 0}.prov dd{padding:5px 0}}
+
+/* ---------------- 390 × 844 is a first-class breakpoint ---------------- */
+@media (max-width:520px){
+  .sheet{width:min(940px,94vw);padding-bottom:72px}
+  .bar input{padding:0 68px 0 5%;font-size:1rem}
+  .bar-rule{right:68px;left:5%}
+  .stages{padding:16px 15px 14px}
+  .notice{padding:15px 15px 15px 19px}
+  .card{padding:8px 9px 12px}
+  .card.seed{padding:10px 10px 4px}
+  .head{grid-template-columns:56px 1fr;gap:11px}
+  h2.title{font-size:1.62rem}
+  .why{font-size:15.5px;max-width:none}
+  .meta{margin-left:0;flex:1 1 100%}
+  .expand{padding:10px 11px 12px}
+  .plrow{grid-template-columns:18px 40px minmax(0,1fr);gap:9px;padding:8px 10px 9px}
+  .plrow .acts{grid-column:1 / -1;margin-top:2px}
+  .parts{padding:24px 15px 18px}
+  .ta li{grid-template-columns:30px minmax(0,1fr) auto;gap:9px}
+  .sec h3{font-size:1.42rem}
+  .prov{font-size:11px}
+}
+
+/* ================= THE ONE STEPPED-MOTION MOMENT ==================
+   The `scoring` marker: an ink blot spreading through three drawn
+   frames, 3 × 0.4s, cut not faded. Nothing else on this page moves —
+   the 30s ring is deliberately frozen at 0:11 in this mock.        */
+.fr{opacity:0}
+.f1{opacity:1}
+.blot .fr{animation-duration:1.2s;animation-timing-function:steps(1,end);
+          animation-iteration-count:infinite}
+.blot .f1{animation-name:b1}
+.blot .f2{animation-name:b2}
+.blot .f3{animation-name:b3}
+@keyframes b1{0%,33.32%{opacity:1} 33.33%,100%{opacity:0}}
+@keyframes b2{0%,33.32%{opacity:0} 33.33%,66.65%{opacity:1} 66.66%,100%{opacity:0}}
+@keyframes b3{0%,66.65%{opacity:0} 66.66%,100%{opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  .blot .fr{animation:none}
+  .f1,.f3{opacity:0}
+  .f2{opacity:1}
+}
+</style>
+</head>
+<body>
+
+<!-- shared defs: the two filters, the screens, the square tile edge -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <filter id="xerox" x="-6%" y="-6%" width="112%" height="112%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.026 0.033" numOctaves="3" seed="17" result="wob"></feTurbulence>
+      <feDisplacementMap in="SourceGraphic" in2="wob" scale="4" xChannelSelector="R" yChannelSelector="G"></feDisplacementMap>
+    </filter>
+    <pattern id="ht-acid" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(18)">
+      <circle cx="4.5" cy="4.5" r="2.05" fill="#D9F227"></circle>
+    </pattern>
+    <pattern id="ht-bone" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-24)">
+      <circle cx="3.5" cy="3.5" r="1.35" fill="#EDE9DD"></circle>
+    </pattern>
+    <!-- the unscored remainder of a match bar. Texture doing data work.
+         Nothing is ever set on top of it. -->
+    <pattern id="ht-rem" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-24)">
+      <circle cx="3" cy="3" r="1.5" fill="#A8A296" fill-opacity="0.40"></circle>
+    </pattern>
+    <!-- square artwork-tile edge. A <use>-stretched edge is legal ONLY on a
+         fixed-aspect box like this one; everywhere else the frame is the
+         nine-slice border-image. -->
+    <path id="tile-edge" vector-effect="non-scaling-stroke"
+      d="M1.6 2.2 C20 1.0 44 2.4 66 1.4 C80 0.8 92 1.9 98.5 1.8 C99.1 20 98.3 46 98.8 68 C99.1 82 98.0 94 98.3 98.0 C78 99.2 52 97.8 30 98.8 C16 99.4 6 98.2 1.5 98.4 C0.9 80 1.8 54 1.2 32 C0.9 18 2.0 6 1.6 2.2 Z"></path>
+    <!-- the hand-inked ring. pathLength="100" means elapsed is literally
+         stroke-dasharray:"{pct} {100-pct}" — no circumference maths, and
+         the ring is allowed to be wonky. -->
+    <path id="ring" pathLength="100"
+      d="M24 5.4 C32.2 5.1 42.1 12.6 42.6 23.2 C43.1 34.4 33.6 43.2 23.4 42.6 C13.2 42 5.1 33.8 5.5 23.4 C5.9 13.4 15.4 5.8 24 5.4 Z"></path>
+  </defs>
+</svg>
+
+<p class="spine" aria-hidden="true">It Stings</p>
+
+<div class="sheet">
+
+  <!-- =============== SEARCH BAR — nothing above it =============== -->
+  <form class="bar" action="#" role="search" autocomplete="off">
+    <svg class="bar-bg" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 16 L52 10 L104 18 L158 9 L214 19 L270 11 L326 20 L382 10 L440 17 L496 8 L552 19 L608 11 L664 18 L720 9 L776 20 L832 12 L888 17 L944 8 L1000 18 L1056 11 L1112 19 L1160 10 L1200 16 L1200 114 L1150 120 L1096 111 L1042 121 L986 112 L932 122 L878 113 L822 119 L768 110 L714 121 L658 112 L604 122 L548 113 L494 120 L438 111 L384 121 L328 112 L274 119 L218 110 L164 121 L108 112 L54 120 L0 112 Z"
+            fill="#E33127"></path>
+      <path d="M0 8 L52 2 L104 10 L158 1 L214 11 L270 3 L326 12 L382 2 L440 9 L496 0 L552 11 L608 3 L664 10 L720 1 L776 12 L832 4 L888 9 L944 0 L1000 10 L1056 3 L1112 11 L1160 2 L1200 8 L1200 106 L1150 112 L1096 103 L1042 113 L986 104 L932 114 L878 105 L822 111 L768 102 L714 113 L658 104 L604 114 L548 105 L494 112 L438 103 L384 113 L328 104 L274 111 L218 102 L164 113 L108 104 L54 112 L0 104 Z"
+            fill="#EDE9DD"></path>
+    </svg>
+    <label class="sr" for="q">Search for a song</label>
+    <input id="q" name="q" type="search" value="The Lovecats — The Cure" enterkeyhint="search">
+    <span class="bar-rule"></span>
+    <button class="bar-clear" type="button">clear</button>
+  </form>
+
+  <!-- =============== STAGE INDICATOR — a receipt =============== -->
+  <section class="stages" aria-label="Pipeline progress">
+    <ol class="steps">
+      <li class="done"><svg class="tick" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8.4 C4 10 5.4 12 6.6 14 C8.8 9 11 5 14.6 1.8" fill="none" stroke="#EDE9DD" stroke-width="2.2" stroke-linecap="round"></path></svg>resolve</li>
+      <li class="done"><svg class="tick" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8.4 C4 10 5.4 12 6.6 14 C8.8 9 11 5 14.6 1.8" fill="none" stroke="#EDE9DD" stroke-width="2.2" stroke-linecap="round"></path></svg>fingerprint</li>
+      <li class="done"><svg class="tick" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8.4 C4 10 5.4 12 6.6 14 C8.8 9 11 5 14.6 1.8" fill="none" stroke="#EDE9DD" stroke-width="2.2" stroke-linecap="round"></path></svg>channels</li>
+      <li class="done"><svg class="tick" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8.4 C4 10 5.4 12 6.6 14 C8.8 9 11 5 14.6 1.8" fill="none" stroke="#EDE9DD" stroke-width="2.2" stroke-linecap="round"></path></svg>verify</li>
+      <li class="now" aria-current="step">
+        <svg class="blot" viewBox="0 0 18 18" aria-hidden="true">
+          <g class="fr f1"><path d="M9 5.2 C11.1 5 12.6 6.5 12.4 8.4 C12.2 10.4 10.6 11.6 8.8 11.3 C7 11 5.8 9.6 6.1 7.9 C6.3 6.4 7.4 5.3 9 5.2 Z" fill="#D9F227"></path></g>
+          <g class="fr f2"><path d="M9 3.2 C12 2.8 14.6 5.2 14.3 8.3 C14 11.6 11.4 13.6 8.4 13.2 C5.5 12.8 3.6 10.4 4 7.6 C4.4 5 6.4 3.4 9 3.2 Z" fill="#D9F227"></path><circle cx="15.2" cy="4.4" r="1.1" fill="#D9F227"></circle></g>
+          <g class="fr f3"><path d="M8.7 1.6 C12.6 1.1 16.4 4 16 8.2 C15.6 12.6 12.2 15.6 8.2 15.1 C4.2 14.6 1.4 11.3 1.9 7.4 C2.4 3.8 5 1.9 8.7 1.6 Z" fill="#D9F227"></path><circle cx="2.3" cy="15.2" r="1.3" fill="#D9F227"></circle><circle cx="16.4" cy="14.2" r="0.9" fill="#D9F227"></circle></g>
+        </svg>scoring
+      </li>
+      <li class="todo"><svg class="tick" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.4" fill="none" stroke="#A8A296" stroke-width="1.6"></circle></svg>rank</li>
+      <li class="todo"><svg class="tick" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.4" fill="none" stroke="#A8A296" stroke-width="1.6"></circle></svg>done</li>
+    </ol>
+    <p class="chan">
+      <span>channel <b>A</b> last.fm <b>34</b> found <b>29</b> verified</span>
+      <span class="sep">·</span>
+      <span class="skip">channel <b>B</b> web search — skipped</span>
+      <span class="sep">·</span>
+      <span>channel <b>C</b> model prior <b>31</b> found <b>24</b> verified</span>
+      <span class="sep">·</span>
+      <span><b>42</b> unique after dedupe</span>
+      <span class="sep">·</span>
+      <span>scoring <b>5</b> of <b>42</b></span>
+    </p>
+    <p class="drops">dropped in verify — did not resolve to a real track:
+      A <b>5 of 34</b> (14.7%) ·
+      C <b>7 of 31</b> (<span class="warn">22.6% — over the 20% threshold, tighten the Channel C prompt</span>)</p>
+  </section>
+
+  <!-- =============== DEGRADED NOTICE =============== -->
+  <!-- the band under this text is rotated 0.9°; the sentence is at 0° -->
+  <div class="notice" role="status">
+    <p><span class="lbl">degraded</span>
+      <b>Channel B skipped: no <code>TAVILY_API_KEY</code>.</b>
+      No forum evidence was fetched in this run. Candidates below come from Last.fm and the
+      model prior only; anything showing a thread link is reading it out of the evidence cache,
+      and no cached mention earns the <code>+0.05</code> enthusiasm bonus today.</p>
+  </div>
+
+  <!-- =============== SEED CARD =============== -->
+  <article class="card seed">
+    <div class="head">
+      <svg class="art" role="img" viewBox="0 0 100 100" aria-label="Placeholder artwork: a drawn fish hook">
+        <path d="M2.6 2.4 L97.4 1.6 L98.4 97.8 L1.8 98.6 Z" fill="#241F1A"></path>
+        <rect x="2" y="2" width="96" height="96" fill="url(#ht-acid)" opacity="0.22"></rect>
+        <g filter="url(#xerox)">
+          <path d="M62 12 L62 44 C62 62 48 74 34 70 C22 66 18 52 26 44 C32 38 42 39 44 47"
+                fill="none" stroke="#EDE9DD" stroke-width="6.5" stroke-linecap="round"></path>
+          <path d="M54 10 L70 10" fill="none" stroke="#EDE9DD" stroke-width="6.5" stroke-linecap="round"></path>
+          <path d="M44 47 L52 40" fill="none" stroke="#E33127" stroke-width="5" stroke-linecap="round"></path>
+        </g>
+        <use href="#tile-edge" stroke="#EDE9DD" stroke-width="1.6" fill="none"></use>
+      </svg>
+
+      <div>
+        <p class="kick">seed · resolved from itunes + deezer + musicbrainz</p>
+        <h2 class="title">The Lovecats</h2>
+        <p class="byline">The Cure · <span class="yr">1983</span> · isrc GBAAM8300081</p>
+        <div class="tools">
+          <button class="play" type="button" aria-label="Play 30 second preview of The Lovecats">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <use href="#ring" fill="none" stroke="#EDE9DD" stroke-width="4" opacity="0.24"></use>
+              <path d="M19 15 L34 24 L19 33 Z" fill="#EDE9DD"></path>
+            </svg>
+          </button>
+          <button class="btn" type="button">save the seed</button>
+          <button class="btn" type="button">open on spotify</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- fingerprint panel: the schema keys, verbatim ---- -->
+    <section class="fp" aria-label="Seed fingerprint">
+      <div class="fp-h">
+        <h4>What it thinks this is</h4>
+        <span>model claude-opus-5 · grounded on 4 hard values · strike anything that is wrong</span>
+      </div>
+      <dl class="fp-list">
+
+        <!-- tempo_bpm and tempo_feel side by side: the honesty policy is
+             readable in one glance instead of two rows eight apart -->
+        <div class="fprow fprow--pair">
+          <dt>tempo_bpm</dt>
+          <dd>
+            <span class="v none">unknown</span><span class="chip no">no data</span>
+            <button class="strike" type="button" aria-label="Mark tempo_bpm as wrong">✕ wrong</button>
+            <span class="src">deezer bpm 0 · no GetSongBPM key · no AcousticBrainz match — not guessed</span>
+          </dd>
+          <dt>tempo_feel</dt>
+          <dd>
+            <span class="v">bouncing</span><span class="chip hi">high</span>
+            <button class="strike" type="button" aria-label="Mark tempo_feel as wrong">✕ wrong</button>
+            <span class="src">model interpretation · no measurement behind it</span>
+          </dd>
+        </div>
+
+        <div class="fprow">
+          <dt>rhythmic_character</dt>
+          <dd>
+            <span class="v">swung shuffle; upright bass walking in quarters; brushes on the snare, no ride</span><span class="chip hi">high</span>
+            <button class="strike" type="button" aria-label="Mark rhythmic_character as wrong">✕ wrong</button>
+          </dd>
+        </div>
+
+        <div class="fprow">
+          <dt>instrumentation</dt>
+          <dd>
+            <span class="v">upright bass · brushed kit · clean chorused guitar · piano · massed backing vocals</span><span class="chip md">medium</span>
+            <button class="strike" type="button" aria-label="Mark instrumentation as wrong">✕ wrong</button>
+          </dd>
+        </div>
+
+        <div class="fprow">
+          <dt>vocal_delivery</dt>
+          <dd>
+            <span class="v">playful and affected; slides out of words into scat and cat noises</span><span class="chip hi">high</span>
+            <button class="strike" type="button" aria-label="Mark vocal_delivery as wrong">✕ wrong</button>
+          </dd>
+        </div>
+
+        <div class="fprow">
+          <dt>harmonic_language</dt>
+          <dd>
+            <span class="v">minor-key jazz voicings over a chromatic descending bassline</span><span class="chip md">medium</span>
+            <button class="strike" type="button" aria-label="Mark harmonic_language as wrong">✕ wrong</button>
+          </dd>
+        </div>
+
+        <div class="fprow">
+          <dt>emotional_register</dt>
+          <dd>
+            <span class="v">arch, flirtatious, faintly sinister</span><span class="chip hi">high</span>
+            <button class="strike" type="button" aria-label="Mark emotional_register as wrong">✕ wrong</button>
+          </dd>
+        </div>
+
+        <div class="fprow">
+          <dt>production_texture</dt>
+          <dd>
+            <span class="v">roomy 1983 analogue, live-feeling, almost no reverb on the vocal</span><span class="chip md">medium</span>
+            <button class="strike" type="button" aria-label="Mark production_texture as wrong">✕ wrong</button>
+          </dd>
+        </div>
+
+        <div class="fprow">
+          <dt>era</dt>
+          <dd>
+            <span class="v">1983</span><span class="chip hi">high</span>
+            <button class="strike" type="button" aria-label="Mark era as wrong">✕ wrong</button>
+            <span class="src">itunes releaseDate 1983 · musicbrainz first release 1983 — copied, not inferred</span>
+          </dd>
+        </div>
+
+        <div class="fprow">
+          <dt>scene_context</dt>
+          <dd>
+            <span class="v">a post-punk band deliberately playing lounge jazz, in public, on a single</span><span class="chip hi">high</span>
+            <button class="strike" type="button" aria-label="Mark scene_context as wrong">✕ wrong</button>
+          </dd>
+        </div>
+
+        <div class="fprow">
+          <dt>signature_hook</dt>
+          <dd>
+            <span class="v">the meowing — the moment the singer stops using words and the band keeps swinging anyway</span><span class="chip hi">high</span>
+            <button class="strike" type="button" aria-label="Mark signature_hook as wrong">✕ wrong</button>
+          </dd>
+        </div>
+
+        <div class="fprow">
+          <dt>grounded_on</dt>
+          <dd>
+            <ul class="tags">
+              <li>post-punk <em>100</em></li>
+              <li>new wave <em>88</em></li>
+              <li>80s <em>74</em></li>
+              <li class="piv">jazz <em>41</em></li>
+              <li class="piv">swing <em>22</em></li>
+              <li class="piv">lounge <em>11</em></li>
+            </ul>
+            <span class="src">last.fm track.getTopTags, raw counts · the three highlighted are the
+              specific tags channel A pivoted on — not “rock”, not “80s”</span>
+          </dd>
+        </div>
+
+      </dl>
+    </section>
+  </article>
+
+  <!-- =============== SAME-ARTIST TOGGLE =============== -->
+  <div class="controls">
+    <label class="toggle">
+      <input type="checkbox" name="sameArtist">
+      <svg class="box" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M2.4 3.1 C8 2.2 16 3.4 21.4 2.4 C22.3 8 21.2 16 22 21.5 C16 22.4 8 21.1 2.6 22 C1.7 16 2.9 8 2.4 3.1 Z"
+              fill="none" stroke="#A8A296" stroke-width="1.8"></path>
+        <path class="on" d="M5 12 C7 13.6 8.6 16 9.6 18.4 C13 11.6 16.4 7 20 4.2"
+              fill="none" stroke="#D9F227" stroke-width="3" stroke-linecap="round"></path>
+      </svg>
+      <span class="lab">include tracks by The Cure</span>
+      <span class="st">off</span>
+    </label>
+    <p class="rule-note">off is the default. Switched on, a same-artist track has to clear 0.85
+      on its own and justify itself on musical grounds — decade and band name do not count.</p>
+  </div>
+
+  <!-- =============== RESULTS =============== -->
+  <div class="sec">
+    <h3>What it found</h3>
+    <span class="tape">5 of 42 scored</span>
+    <span>streaming as batches land · sorted by final score · one track per artist</span>
+  </div>
+  <svg class="tear" viewBox="0 0 1200 9" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0 4 L60 1 L120 7 L180 2 L240 8 L300 3 L360 7 L420 1 L480 6 L540 2 L600 8 L660 3 L720 7 L780 1 L840 6 L900 2 L960 8 L1020 3 L1080 7 L1140 2 L1200 5 L1200 9 L0 9 Z"
+          fill="#EDE9DD" opacity="0.28"></path>
+  </svg>
+
+  <!-- ---- 01 — EXPANDED ---- -->
+  <article class="card">
+    <div class="head">
+      <div class="artwrap">
+        <span class="rank">01</span>
+        <svg class="art" role="img" viewBox="0 0 100 100" aria-label="Placeholder artwork: a drawn flame">
+          <path d="M2.2 2.6 L97.6 2 L98.2 98 L2 97.4 Z" fill="#241F1A"></path>
+          <rect x="2" y="2" width="96" height="96" fill="url(#ht-acid)" opacity="0.2"></rect>
+          <g filter="url(#xerox)">
+            <path d="M50 12 C62 30 74 40 72 58 C70 76 60 86 48 86 C34 86 26 74 28 60 C30 48 40 44 44 34 C46 28 46 20 50 12 Z"
+                  fill="#E33127"></path>
+            <path d="M50 40 C56 50 60 56 58 66 C56 76 50 80 44 78 C38 76 36 68 40 60 C43 54 48 50 50 40 Z"
+                  fill="#D9F227"></path>
+          </g>
+          <use href="#tile-edge" stroke="#EDE9DD" stroke-width="1.6" fill="none"></use>
+        </svg>
+      </div>
+      <div>
+        <h3 class="title">Hell</h3>
+        <p class="byline">Squirrel Nut Zippers · <span class="yr">1996</span></p>
+        <p class="why">A rock band playing hot jazz completely straight-faced: the same brushed
+          shuffle over a walking upright bass, and a lead vocal that acts the lyric in character
+          instead of singing it — Whitlock slides into a leer the way Smith slides into meowing.</p>
+        <div class="tools">
+          <button class="play" type="button" aria-label="Play 30 second preview of Hell">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <use href="#ring" fill="none" stroke="#EDE9DD" stroke-width="4" opacity="0.24"></use>
+              <path d="M19 15 L34 24 L19 33 Z" fill="#EDE9DD"></path>
+            </svg>
+          </button>
+          <span class="time">0:00<span class="tot"> / 0:30</span></span>
+          <button class="btn" type="button">save</button>
+          <span class="meta">
+            <span class="chn" aria-label="Channels A and C"><i class="a">A</i><i class="c">C</i></span>
+            <span class="sc">0.94</span>
+          </span>
+        </div>
+
+        <details open>
+          <summary>
+            <svg class="caret" viewBox="0 0 12 12" aria-hidden="true">
+              <path d="M3.4 1.2 C5.6 3 7.8 4.8 9.6 6.2 C7.6 7.6 5.4 9.2 3.2 10.8" fill="none"
+                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            </svg>
+            <span class="lbl-shut">match &amp; evidence</span><span class="lbl-open">hide the working</span>
+          </summary>
+
+          <div class="expand">
+            <h5>per-dimension match against the seed fingerprint — model scores 0.00 to 1.00,
+              with the weight each one carries into the overall</h5>
+            <ul class="dims">
+              <li><span class="dn">rhythmic_character <span class="w">×3</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="94%" height="12" fill="#D9F227"></rect>
+                  <rect x="94%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.94</span></li>
+              <li><span class="dn">vocal_delivery <span class="w">×3</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="91%" height="12" fill="#D9F227"></rect>
+                  <rect x="91%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.91</span></li>
+              <li><span class="dn">emotional_register <span class="w">×2</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="86%" height="12" fill="#D9F227"></rect>
+                  <rect x="86%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.86</span></li>
+              <li><span class="dn">scene_context <span class="w">×2</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="83%" height="12" fill="#D9F227"></rect>
+                  <rect x="83%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.83</span></li>
+              <li><span class="dn">signature_hook <span class="w">×2</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="78%" height="12" fill="#D9F227"></rect>
+                  <rect x="78%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.78</span></li>
+              <li><span class="dn">instrumentation <span class="w">×1</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="73%" height="12" fill="#D9F227"></rect>
+                  <rect x="73%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.73</span></li>
+              <li><span class="dn">harmonic_language <span class="w">×1</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="68%" height="12" fill="#D9F227"></rect>
+                  <rect x="68%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.68</span></li>
+              <li><span class="dn">production_texture <span class="w">×1</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="40%" height="12" fill="#D89B2A"></rect>
+                  <rect x="40%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.40</span></li>
+              <li><span class="dn">era <span class="w">×0</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="13%" height="12" fill="#A8A296"></rect>
+                  <rect x="13%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.13</span></li>
+            </ul>
+            <p class="dimnote">weighted sum <b>12.30</b> over total weight <b>15</b> =
+              model score <b>0.82</b>. Final <span class="fin">0.94</span> =
+              <b>0.82</b> + <b>0.12</b> × (2 channels − 1) + <b>0.00</b> enthusiasm bonus —
+              the reddit mention below is high-enthusiasm but it came out of the cache, and
+              channel B did not run today, so it earns nothing. <b>era ×0</b>: 13 years of
+              distance counts toward spread, never against a match.</p>
+
+            <h5>evidence</h5>
+            <ul class="evi">
+              <li>
+                <p class="et"><span class="chn"><i class="a">A</i></span>
+                  <span class="stamp live">live</span>
+                  last.fm · track.getSimilar · match 0.42 · rank 9 of 100</p>
+                <p class="q">Returned as similar to the seed, and it shares the tags swing, jazz
+                  and quirky. Tag co-occurrence alone would not have been enough to keep it.</p>
+                <a href="https://www.last.fm/music/Squirrel+Nut+Zippers/_/Hell">https://www.last.fm/music/Squirrel+Nut+Zippers/_/Hell</a>
+              </li>
+              <li>
+                <p class="et"><span class="chn"><i class="off">B</i></span>
+                  <span class="stamp cached">cached 2026-08-12 · not refreshed this run</span>
+                  reddit · r/ifyoulikeblank · enthusiasm high</p>
+                <p class="q">“if you like the bass on The Lovecats go to the Zippers next — same
+                  walking line, same thing where the singer gives up on words and just makes noises.”</p>
+                <a href="https://www.reddit.com/r/ifyoulikeblank/comments/1c8p7qk/iil_the_lovecats_by_the_cure/">https://www.reddit.com/r/ifyoulikeblank/comments/1c8p7qk/iil_the_lovecats_by_the_cure/</a>
+              </li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </div>
+  </article>
+
+  <!-- ---- 02 — PLAYING ---- -->
+  <article class="card playing">
+    <div class="head">
+      <div class="artwrap">
+        <span class="rank">02</span>
+        <svg class="art" role="img" viewBox="0 0 100 100" aria-label="Placeholder artwork: a drawn trumpet bell">
+          <path d="M2.4 2 L97.2 2.8 L98 97.2 L1.8 98 Z" fill="#241F1A"></path>
+          <rect x="2" y="2" width="96" height="96" fill="url(#ht-bone)" opacity="0.16"></rect>
+          <g filter="url(#xerox)">
+            <path d="M20 50 L54 50 L84 22 C90 34 90 66 84 78 L54 52 L20 52 Z" fill="#EDE9DD"></path>
+            <circle cx="24" cy="51" r="9" fill="#D9F227"></circle>
+            <path d="M62 34 L70 30 M64 68 L72 72" stroke="#E33127" stroke-width="4" stroke-linecap="round" fill="none"></path>
+          </g>
+          <use href="#tile-edge" stroke="#EDE9DD" stroke-width="1.6" fill="none"></use>
+        </svg>
+      </div>
+      <div>
+        <h3 class="title">Jump, Jive an' Wail</h3>
+        <p class="byline">Louis Prima · <span class="yr">1956</span></p>
+        <p class="why">The record The Cure were quoting: the same swung upright-bass walk under
+          brushed drums, and a singer who abandons words outright for whoops and nonsense
+          syllables in the last third.</p>
+        <div class="tools">
+          <button class="play" type="button" aria-label="Pause preview of Jump, Jive an' Wail, 11 seconds of 30 elapsed">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <use href="#ring" fill="none" stroke="#EDE9DD" stroke-width="4" opacity="0.24"></use>
+              <use href="#ring" fill="none" stroke="#D9F227" stroke-width="4"
+                   stroke-dasharray="36.7 63.3" stroke-linecap="butt"></use>
+              <path d="M19.5 16 L19.5 32 M28.5 16 L28.5 32" stroke="#EDE9DD" stroke-width="4.5" stroke-linecap="round"></path>
+            </svg>
+          </button>
+          <span class="time">0:11<span class="tot"> / 0:30</span></span>
+          <button class="btn saved" type="button">saved</button>
+          <span class="meta">
+            <span class="chn" aria-label="Channels A and C"><i class="a">A</i><i class="c">C</i></span>
+            <span class="sc">0.91</span>
+          </span>
+        </div>
+
+        <details>
+          <summary>
+            <svg class="caret" viewBox="0 0 12 12" aria-hidden="true">
+              <path d="M3.4 1.2 C5.6 3 7.8 4.8 9.6 6.2 C7.6 7.6 5.4 9.2 3.2 10.8" fill="none"
+                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            </svg>
+            <span class="lbl-shut">match &amp; evidence</span><span class="lbl-open">hide the working</span>
+          </summary>
+          <div class="expand">
+            <h5>per-dimension match against the seed fingerprint — model scores 0.00 to 1.00,
+              with the weight each one carries into the overall</h5>
+            <ul class="dims">
+              <li><span class="dn">rhythmic_character <span class="w">×3</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="96%" height="12" fill="#D9F227"></rect>
+                  <rect x="96%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.96</span></li>
+              <li><span class="dn">vocal_delivery <span class="w">×3</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="89%" height="12" fill="#D9F227"></rect>
+                  <rect x="89%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.89</span></li>
+              <li><span class="dn">emotional_register <span class="w">×2</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="72%" height="12" fill="#D9F227"></rect>
+                  <rect x="72%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.72</span></li>
+              <li><span class="dn">scene_context <span class="w">×2</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="68%" height="12" fill="#D9F227"></rect>
+                  <rect x="68%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.68</span></li>
+              <li><span class="dn">signature_hook <span class="w">×2</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="84%" height="12" fill="#D9F227"></rect>
+                  <rect x="84%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.84</span></li>
+              <li><span class="dn">instrumentation <span class="w">×1</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="80%" height="12" fill="#D9F227"></rect>
+                  <rect x="80%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.80</span></li>
+              <li><span class="dn">harmonic_language <span class="w">×1</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="61%" height="12" fill="#D9F227"></rect>
+                  <rect x="61%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.61</span></li>
+              <li><span class="dn">production_texture <span class="w">×1</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="41%" height="12" fill="#D89B2A"></rect>
+                  <rect x="41%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.41</span></li>
+              <li><span class="dn">era <span class="w">×0</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="9%" height="12" fill="#A8A296"></rect>
+                  <rect x="9%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.09</span></li>
+            </ul>
+            <p class="dimnote">weighted sum <b>11.85</b> over total weight <b>15</b> =
+              model score <b>0.79</b>. Final <span class="fin">0.91</span> =
+              <b>0.79</b> + <b>0.12</b> × (2 channels − 1) + <b>0.00</b> enthusiasm bonus.</p>
+
+            <h5>evidence</h5>
+            <ul class="evi">
+              <li>
+                <p class="et"><span class="chn"><i class="a">A</i></span>
+                  <span class="stamp live">live</span>
+                  last.fm · tag.getTopTracks on “swing” · rank 6 of 50</p>
+                <p class="q">Reached through the tag pivot rather than track.getSimilar — the seed's
+                  swing tag has only 22 listeners behind it, which is exactly why it is specific.</p>
+                <a href="https://www.last.fm/music/Louis+Prima/_/Jump,+Jive+an%27+Wail">https://www.last.fm/music/Louis+Prima/_/Jump,+Jive+an%27+Wail</a>
+              </li>
+              <li>
+                <p class="et"><span class="chn"><i class="c">C</i></span>
+                  <span class="stamp live">live</span>
+                  model prior · seed title and artist withheld from this call</p>
+                <p class="q">Proposed from the fingerprint alone, on “swung shuffle, upright bass in
+                  quarters, vocal that dissolves into nonsense syllables”. No URL: a model prior is
+                  a claim, not a source, and it only survived because Deezer resolved the track.</p>
+              </li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </div>
+  </article>
+
+  <!-- ---- 03 — EXPANDED ---- -->
+  <article class="card">
+    <div class="head">
+      <div class="artwrap">
+        <span class="rank">03</span>
+        <svg class="art" role="img" viewBox="0 0 100 100" aria-label="Placeholder artwork: three drawn scratch marks">
+          <path d="M2.6 2 L97.8 2.4 L97.2 97.6 L2 98 Z" fill="#241F1A"></path>
+          <rect x="2" y="2" width="96" height="96" fill="url(#ht-bone)" opacity="0.14"></rect>
+          <g filter="url(#xerox)">
+            <path d="M22 18 C34 38 44 60 48 84" fill="none" stroke="#EDE9DD" stroke-width="7" stroke-linecap="round"></path>
+            <path d="M42 14 C54 34 64 56 68 80" fill="none" stroke="#D9F227" stroke-width="7" stroke-linecap="round"></path>
+            <path d="M62 20 C72 38 80 56 84 76" fill="none" stroke="#EDE9DD" stroke-width="6" stroke-linecap="round"></path>
+          </g>
+          <use href="#tile-edge" stroke="#EDE9DD" stroke-width="1.6" fill="none"></use>
+        </svg>
+      </div>
+      <div>
+        <h3 class="title">Lone Digger</h3>
+        <p class="byline">Caravan Palace · <span class="yr">2015</span></p>
+        <p class="why">It builds a club record on the identical swung upright-bass walk and keeps
+          an animal noise in the hook — the joke survives the transplant to 2015 with both its
+          rhythm and its punchline intact.</p>
+        <div class="tools">
+          <button class="play" type="button" aria-label="Play 30 second preview of Lone Digger">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <use href="#ring" fill="none" stroke="#EDE9DD" stroke-width="4" opacity="0.24"></use>
+              <path d="M19 15 L34 24 L19 33 Z" fill="#EDE9DD"></path>
+            </svg>
+          </button>
+          <span class="time">0:00<span class="tot"> / 0:30</span></span>
+          <button class="btn" type="button">save</button>
+          <span class="meta">
+            <span class="chn" aria-label="Channels A and C"><i class="a">A</i><i class="c">C</i></span>
+            <span class="sc">0.88</span>
+          </span>
+        </div>
+
+        <details open>
+          <summary>
+            <svg class="caret" viewBox="0 0 12 12" aria-hidden="true">
+              <path d="M3.4 1.2 C5.6 3 7.8 4.8 9.6 6.2 C7.6 7.6 5.4 9.2 3.2 10.8" fill="none"
+                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            </svg>
+            <span class="lbl-shut">match &amp; evidence</span><span class="lbl-open">hide the working</span>
+          </summary>
+
+          <div class="expand">
+            <h5>per-dimension match against the seed fingerprint — model scores 0.00 to 1.00,
+              with the weight each one carries into the overall</h5>
+            <ul class="dims">
+              <li><span class="dn">rhythmic_character <span class="w">×3</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="92%" height="12" fill="#D9F227"></rect>
+                  <rect x="92%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.92</span></li>
+              <li><span class="dn">vocal_delivery <span class="w">×3</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="61%" height="12" fill="#D9F227"></rect>
+                  <rect x="61%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.61</span></li>
+              <li><span class="dn">emotional_register <span class="w">×2</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="74%" height="12" fill="#D9F227"></rect>
+                  <rect x="74%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.74</span></li>
+              <li><span class="dn">scene_context <span class="w">×2</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="88%" height="12" fill="#D9F227"></rect>
+                  <rect x="88%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.88</span></li>
+              <li><span class="dn">signature_hook <span class="w">×2</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="85%" height="12" fill="#D9F227"></rect>
+                  <rect x="85%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.85</span></li>
+              <li><span class="dn">instrumentation <span class="w">×1</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="85%" height="12" fill="#D9F227"></rect>
+                  <rect x="85%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.85</span></li>
+              <li><span class="dn">harmonic_language <span class="w">×1</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="66%" height="12" fill="#D9F227"></rect>
+                  <rect x="66%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.66</span></li>
+              <li><span class="dn">production_texture <span class="w">×1</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="36%" height="12" fill="#D89B2A"></rect>
+                  <rect x="36%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.36</span></li>
+              <li><span class="dn">era <span class="w">×0</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="5%" height="12" fill="#A8A296"></rect>
+                  <rect x="5%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.05</span></li>
+            </ul>
+            <p class="dimnote">weighted sum <b>11.40</b> over total weight <b>15</b> =
+              model score <b>0.76</b>. Final <span class="fin">0.88</span> =
+              <b>0.76</b> + <b>0.12</b> × (2 channels − 1) + <b>0.00</b> enthusiasm bonus.
+              <b>vocal_delivery 0.61</b> is the honest weak spot: the voice here is sung, not
+              performed in character, and it costs the track the top slot.</p>
+
+            <h5>evidence</h5>
+            <ul class="evi">
+              <li>
+                <p class="et"><span class="chn"><i class="a">A</i></span>
+                  <span class="stamp live">live</span>
+                  last.fm · tag.getTopTracks on “lounge” · rank 4 of 50</p>
+                <p class="q">Surfaced by the lounge pivot, not by genre adjacency — nothing in the
+                  seed's top three tags would have reached electro-swing.</p>
+                <a href="https://www.last.fm/music/Caravan+Palace/_/Lone+Digger">https://www.last.fm/music/Caravan+Palace/_/Lone+Digger</a>
+              </li>
+              <li>
+                <p class="et"><span class="chn"><i class="c">C</i></span>
+                  <span class="stamp live">live</span>
+                  model prior · seed title and artist withheld from this call</p>
+                <p class="q">Proposed on “swung upright bass, an animal noise as the hook, arch
+                  delivery” before the model was told what the seed was.</p>
+              </li>
+              <li>
+                <p class="et"><span class="chn"><i class="off">B</i></span>
+                  <span class="stamp cached">cached 2026-07-29 · not refreshed this run</span>
+                  reddit · r/LetsTalkMusic · enthusiasm medium</p>
+                <p class="q">“Lone Digger is what you get if you let The Lovecats grow up in a
+                  French studio with a sampler. Same bass line, same cat.”</p>
+                <a href="https://www.reddit.com/r/LetsTalkMusic/comments/1e7q4mx/electro_swing_owes_more_to_the_cure_than_it_admits/">https://www.reddit.com/r/LetsTalkMusic/comments/1e7q4mx/electro_swing_owes_more_to_the_cure_than_it_admits/</a>
+              </li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </div>
+  </article>
+
+  <!-- ---- 04 — collapsed ---- -->
+  <article class="card">
+    <div class="head">
+      <div class="artwrap">
+        <span class="rank">04</span>
+        <svg class="art" role="img" viewBox="0 0 100 100" aria-label="Placeholder artwork: a drawn crescent">
+          <path d="M2 2.8 L97.6 2 L98 97.4 L2.6 98 Z" fill="#241F1A"></path>
+          <rect x="2" y="2" width="96" height="96" fill="url(#ht-acid)" opacity="0.16"></rect>
+          <g filter="url(#xerox)">
+            <path d="M64 14 C40 20 26 38 28 58 C30 78 48 90 68 86 C50 76 42 60 46 44 C49 32 55 22 64 14 Z"
+                  fill="#D89B2A"></path>
+            <circle cx="74" cy="34" r="6" fill="#EDE9DD"></circle>
+          </g>
+          <use href="#tile-edge" stroke="#EDE9DD" stroke-width="1.6" fill="none"></use>
+        </svg>
+      </div>
+      <div>
+        <h3 class="title">Golden Brown</h3>
+        <p class="byline">The Stranglers · <span class="yr">1981</span></p>
+        <p class="why">Another post-punk band playing music it has no business playing — a
+          waltzing harpsichord where the seed puts lounge jazz — under the same sly, unbothered
+          vocal that refuses to admit the joke.</p>
+        <div class="tools">
+          <button class="play" type="button" aria-label="Play 30 second preview of Golden Brown">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <use href="#ring" fill="none" stroke="#EDE9DD" stroke-width="4" opacity="0.24"></use>
+              <path d="M19 15 L34 24 L19 33 Z" fill="#EDE9DD"></path>
+            </svg>
+          </button>
+          <span class="time">0:00<span class="tot"> / 0:30</span></span>
+          <button class="btn" type="button">save</button>
+          <span class="meta">
+            <span class="chn" aria-label="Channel C only"><i class="c">C</i></span>
+            <span class="sc">0.85</span>
+          </span>
+        </div>
+        <details>
+          <summary>
+            <svg class="caret" viewBox="0 0 12 12" aria-hidden="true">
+              <path d="M3.4 1.2 C5.6 3 7.8 4.8 9.6 6.2 C7.6 7.6 5.4 9.2 3.2 10.8" fill="none"
+                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            </svg>
+            <span class="lbl-shut">match &amp; evidence</span><span class="lbl-open">hide the working</span>
+          </summary>
+          <div class="expand">
+            <h5>per-dimension match against the seed fingerprint — model scores 0.00 to 1.00,
+              with the weight each one carries into the overall</h5>
+            <ul class="dims">
+              <li><span class="dn">rhythmic_character <span class="w">×3</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="62%" height="12" fill="#D9F227"></rect>
+                  <rect x="62%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.62</span></li>
+              <li><span class="dn">vocal_delivery <span class="w">×3</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="93%" height="12" fill="#D9F227"></rect>
+                  <rect x="93%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.93</span></li>
+              <li><span class="dn">emotional_register <span class="w">×2</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="92%" height="12" fill="#D9F227"></rect>
+                  <rect x="92%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.92</span></li>
+              <li><span class="dn">scene_context <span class="w">×2</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="96%" height="12" fill="#D9F227"></rect>
+                  <rect x="96%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.96</span></li>
+              <li><span class="dn">signature_hook <span class="w">×2</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="88%" height="12" fill="#D9F227"></rect>
+                  <rect x="88%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.88</span></li>
+              <li><span class="dn">instrumentation <span class="w">×1</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="78%" height="12" fill="#D9F227"></rect>
+                  <rect x="78%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.78</span></li>
+              <li><span class="dn">harmonic_language <span class="w">×1</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="90%" height="12" fill="#D9F227"></rect>
+                  <rect x="90%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.90</span></li>
+              <li><span class="dn">production_texture <span class="w">×1</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="90%" height="12" fill="#D9F227"></rect>
+                  <rect x="90%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.90</span></li>
+              <li><span class="dn">era <span class="w">×0</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="78%" height="12" fill="#A8A296"></rect>
+                  <rect x="78%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.78</span></li>
+            </ul>
+            <p class="dimnote">weighted sum <b>12.75</b> over total weight <b>15</b> =
+              model score <b>0.85</b>. Final <span class="fin">0.85</span> = <b>0.85</b> +
+              <b>0.00</b> (single channel, no multi-channel bonus) + <b>0.00</b> enthusiasm
+              bonus. <b>rhythmic_character 0.62</b> is the cost of the waltz: a 3/4 harpsichord
+              figure is not a swung 4/4 shuffle, and the ×3 weight makes it hurt.</p>
+            <h5>evidence</h5>
+            <ul class="evi">
+              <li>
+                <p class="et"><span class="chn"><i class="c">C</i></span>
+                  <span class="stamp live">live</span>
+                  model prior · seed title and artist withheld from this call</p>
+                <p class="q">The only channel that found it. Last.fm never connects these two
+                  tracks: they share no tag more specific than “new wave”.</p>
+              </li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </div>
+  </article>
+
+  <!-- ---- 05 — NO PREVIEW ---- -->
+  <article class="card nopreview">
+    <div class="head">
+      <div class="artwrap">
+        <span class="rank">05</span>
+        <svg class="art" role="img" viewBox="0 0 100 100" aria-label="Placeholder artwork: a drawn curl of smoke">
+          <path d="M2 2.2 L98 2.6 L97.4 98 L2.4 97.4 Z" fill="#241F1A"></path>
+          <rect x="2" y="2" width="96" height="96" fill="url(#ht-acid)" opacity="0.18"></rect>
+          <g filter="url(#xerox)">
+            <path d="M32 88 C32 72 56 70 56 56 C56 44 34 44 34 32 C34 20 54 18 62 24"
+                  fill="none" stroke="#EDE9DD" stroke-width="7" stroke-linecap="round"></path>
+            <circle cx="66" cy="20" r="6" fill="#E33127"></circle>
+          </g>
+          <use href="#tile-edge" stroke="#EDE9DD" stroke-width="1.6" fill="none"></use>
+        </svg>
+      </div>
+      <div>
+        <h3 class="title">Parklife</h3>
+        <p class="byline">Blur · <span class="yr">1994</span></p>
+        <p class="why">The lead vocal is not sung at all but performed in character — a put-on
+          London accent doing the talking over a bouncing bassline — which is the meowing trick
+          exactly: the voice steps out of the song to play a part and the band keeps going.</p>
+        <div class="tools">
+          <button class="play" type="button" disabled aria-label="No preview available for Parklife">
+            <svg viewBox="0 0 48 48" aria-hidden="true">
+              <use href="#ring" fill="none" stroke="#A8A296" stroke-width="3"
+                   stroke-dasharray="5 6" opacity="0.6"></use>
+              <path d="M13 35 L35 13" stroke="#E33127" stroke-width="4" stroke-linecap="round"></path>
+            </svg>
+          </button>
+          <span class="nop">no preview</span>
+          <button class="btn" type="button">save</button>
+          <span class="meta">
+            <span class="chn" aria-label="Channel A only"><i class="a">A</i></span>
+            <span class="sc">0.81</span>
+          </span>
+        </div>
+        <p class="nop-note">deezer: no preview · itunes: no previewUrl · spotify embed refused to
+          load. The card stays — <a href="https://open.spotify.com/search/Blur%20Parklife">open it on spotify</a>
+          or <a href="https://music.apple.com/search?term=Blur%20Parklife">on apple music</a>.</p>
+        <details>
+          <summary>
+            <svg class="caret" viewBox="0 0 12 12" aria-hidden="true">
+              <path d="M3.4 1.2 C5.6 3 7.8 4.8 9.6 6.2 C7.6 7.6 5.4 9.2 3.2 10.8" fill="none"
+                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            </svg>
+            <span class="lbl-shut">match &amp; evidence</span><span class="lbl-open">hide the working</span>
+          </summary>
+          <div class="expand">
+            <h5>per-dimension match against the seed fingerprint — model scores 0.00 to 1.00,
+              with the weight each one carries into the overall</h5>
+            <ul class="dims">
+              <li><span class="dn">rhythmic_character <span class="w">×3</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="64%" height="12" fill="#D9F227"></rect>
+                  <rect x="64%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.64</span></li>
+              <li><span class="dn">vocal_delivery <span class="w">×3</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="93%" height="12" fill="#D9F227"></rect>
+                  <rect x="93%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.93</span></li>
+              <li><span class="dn">emotional_register <span class="w">×2</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="92%" height="12" fill="#D9F227"></rect>
+                  <rect x="92%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.92</span></li>
+              <li><span class="dn">scene_context <span class="w">×2</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="94%" height="12" fill="#D9F227"></rect>
+                  <rect x="94%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.94</span></li>
+              <li><span class="dn">signature_hook <span class="w">×2</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="90%" height="12" fill="#D9F227"></rect>
+                  <rect x="90%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.90</span></li>
+              <li><span class="dn">instrumentation <span class="w">×1</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="66%" height="12" fill="#D9F227"></rect>
+                  <rect x="66%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.66</span></li>
+              <li><span class="dn">harmonic_language <span class="w">×1</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="58%" height="12" fill="#D9F227"></rect>
+                  <rect x="58%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.58</span></li>
+              <li><span class="dn">production_texture <span class="w">×1</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="68%" height="12" fill="#D9F227"></rect>
+                  <rect x="68%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.68</span></li>
+              <li><span class="dn">era <span class="w">×0</span></span>
+                <svg class="mbar" aria-hidden="true" focusable="false">
+                  <rect width="100%" height="12" fill="url(#ht-rem)"></rect>
+                  <rect width="20%" height="12" fill="#A8A296"></rect>
+                  <rect x="20%" width="2" height="12" fill="#EDE9DD"></rect>
+                </svg>
+                <span class="dv">0.20</span></li>
+            </ul>
+            <p class="dimnote">weighted sum <b>12.15</b> over total weight <b>15</b> =
+              model score <b>0.81</b>. Final <span class="fin">0.81</span> = <b>0.81</b> +
+              <b>0.00</b> (single channel, no multi-channel bonus) + <b>0.00</b> enthusiasm
+              bonus. A track with no preview is scored exactly like one with a preview; the
+              missing audio is a delivery problem, not a match problem.</p>
+            <h5>evidence</h5>
+            <ul class="evi">
+              <li>
+                <p class="et"><span class="chn"><i class="a">A</i></span>
+                  <span class="stamp live">live</span>
+                  last.fm · track.getSimilar · match 0.31 · rank 41 of 100</p>
+                <p class="q">A weak statistical link on its own. It survived because the model
+                  could name the shared trait; a 0.31 match with no articulable trait is cut.</p>
+                <a href="https://www.last.fm/music/Blur/_/Parklife">https://www.last.fm/music/Blur/_/Parklife</a>
+              </li>
+            </ul>
+          </div>
+        </details>
+      </div>
+    </div>
+  </article>
+
+  <!-- =============== PLAYLIST =============== -->
+  <div class="sec">
+    <h3>Saved</h3>
+    <span class="tape">1 track</span>
+    <span>playlist “shuffle wounds” · stored locally · export as txt or json</span>
+  </div>
+  <div class="plrow">
+    <svg class="grip" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M2 4 C6 3.4 11 4.4 14 3.8 M2 8 C6 7.4 11 8.4 14 7.8 M2 12 C6 11.4 11 12.4 14 11.8"
+            fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+    </svg>
+    <svg class="pa" viewBox="0 0 100 100" aria-hidden="true">
+      <rect x="2" y="2" width="96" height="96" fill="#241F1A"></rect>
+      <rect x="2" y="2" width="96" height="96" fill="url(#ht-bone)" opacity="0.16"></rect>
+      <path d="M20 50 L54 50 L84 22 C90 34 90 66 84 78 L54 52 L20 52 Z" fill="#EDE9DD"></path>
+      <use href="#tile-edge" stroke="#EDE9DD" stroke-width="1.4" fill="none"></use>
+    </svg>
+    <div>
+      <p class="pt">Jump, Jive an' Wail</p>
+      <p class="pb">Louis Prima · 1956 · from the seed “The Lovecats”</p>
+    </div>
+    <div class="acts">
+      <button class="btn" type="button">play</button>
+      <button class="btn bare" type="button" aria-label="Remove Jump, Jive an' Wail from playlist">✕</button>
+    </div>
+  </div>
+
+  <!-- =============== TYPEAHEAD SPECIMEN =============== -->
+  <section class="parts">
+    <span class="tag">parts · typeahead, not wired here</span>
+    <div class="ta">
+      <div class="ta-in">the lovec<span class="car"></span><span class="ring" aria-hidden="true"></span></div>
+      <ul>
+        <li class="on">
+          <svg class="th" viewBox="0 0 100 100" aria-hidden="true">
+            <rect x="0" y="0" width="100" height="100" fill="#17140F"></rect>
+            <path d="M62 12 L62 44 C62 62 48 74 34 70 C22 66 18 52 26 44 C32 38 42 39 44 47"
+                  fill="none" stroke="#EDE9DD" stroke-width="8" stroke-linecap="round"></path>
+          </svg>
+          <div><p class="tt">The Lovecats</p><p class="tb">The Cure</p></div>
+          <span class="ty">1983</span>
+        </li>
+        <li class="hov">
+          <svg class="th" viewBox="0 0 100 100" aria-hidden="true">
+            <rect x="0" y="0" width="100" height="100" fill="#17140F"></rect>
+            <path d="M24 74 C24 46 50 40 50 26" fill="none" stroke="#EDE9DD" stroke-width="9" stroke-linecap="round"></path>
+          </svg>
+          <div><p class="tt">The Lovecats (live)</p><p class="tb">The Cure</p></div>
+          <span class="ty">1991</span>
+        </li>
+        <li>
+          <svg class="th" viewBox="0 0 100 100" aria-hidden="true">
+            <rect x="0" y="0" width="100" height="100" fill="#17140F"></rect>
+            <path d="M22 30 L78 30 M22 52 L64 52 M22 74 L72 74" fill="none" stroke="#EDE9DD" stroke-width="8" stroke-linecap="round"></path>
+          </svg>
+          <div><p class="tt">Lovecats</p><p class="tb">Tricky</p></div>
+          <span class="ty">2003</span>
+        </li>
+      </ul>
+    </div>
+    <p class="state">row 1 keyboard-highlighted (flat acid block, ink text) · row 2 pointer
+      (3px blood rule, title to 600) · row 3 default · the field itself focused (acid ring,
+      offset clear of the paper)</p>
+    <p class="cap">Debounced 200 ms against iTunes Search. The input keeps DOM focus and drives
+      the list with <code>aria-activedescendant</code>; arrow keys move, Enter selects, Escape
+      closes. The dropdown is the same sheet of paper grown downward — no shadow, no gap, no
+      floating panel. Artwork is the real iTunes thumbnail in the app; these are drawn stand-ins
+      because nothing here loads from the network.</p>
+  </section>
+
+  <!-- =============== PROVENANCE =============== -->
+  <section class="prov">
+    <h4>where every number on this page came from</h4>
+    <dl>
+      <dt>1983</dt>
+      <dd>itunes <code>releaseDate</code>, confirmed against musicbrainz first release. Copied, not inferred.</dd>
+      <dt>tempo_bpm</dt>
+      <dd>unknown. deezer <code>bpm</code> returned 0; <code>GETSONGBPM_API_KEY</code> is unset; no
+        acousticbrainz record for this mbid. No BPM is shown because none was measured.</dd>
+      <dt>tag counts 100 / 88 / 74 / 41 / 22 / 11</dt>
+      <dd>last.fm <code>track.getTopTags</code>, raw counts as returned.</dd>
+      <dt>34 → 29, 31 → 24</dt>
+      <dd>candidates found then verified per channel. Channel A dropped 5 of 34 = 14.7%; channel C
+        dropped 7 of 31 = 22.6%, which is over the 20% threshold — the run flags it and the
+        channel C prompt needs tightening.</dd>
+      <dt>42 unique</dt>
+      <dd>29 + 24 = 53 verified, minus 11 that both channels returned after artist/title normalisation.</dd>
+      <dt>per-dimension bars</dt>
+      <dd>model scores against the seed fingerprint, one per fingerprint field. Interpretation, not
+        measurement. The halftone remainder is the unscored part of the same bar.</dd>
+      <dt>weights ×3 / ×2 / ×1 / ×0</dt>
+      <dd>fixed in <code>engine/score.ts</code>, identical for every candidate: rhythmic_character
+        and vocal_delivery ×3, emotional_register / scene_context / signature_hook ×2,
+        instrumentation / harmonic_language / production_texture ×1, era ×0. Total weight 15.</dd>
+      <dt>0.94 / 0.91 / 0.88 / 0.85 / 0.81</dt>
+      <dd><code>finalScore = modelScore + 0.12 × (channels − 1) + 0.05 if a forum mention is
+        high-enthusiasm</code>, capped at 1.00. Model scores 0.82 / 0.79 / 0.76 / 0.85 / 0.81;
+        two of the five agree across channels A and C. No track earns the 0.05 today because
+        channel B did not run.</dd>
+      <dt>0:11 / 0:30</dt>
+      <dd>audio element position against the deezer preview length. The ring carries
+        <code>pathLength="100"</code>, so 11 ÷ 30 = 36.7% is drawn as
+        <code>stroke-dasharray: 36.7 63.3</code> — no circumference maths, and the ring is
+        allowed to be hand-drawn.</dd>
+      <dt>match 0.42 / 0.31</dt>
+      <dd>last.fm <code>track.getSimilar</code> match values for those pairs.</dd>
+      <dt>cached 2026-08-12, 2026-07-29</dt>
+      <dd>evidence rows fetched by channel B on earlier runs and read from the local cache.
+        Channel B did not run today, so it contributed no new candidates, no multi-channel bonus
+        and no enthusiasm bonus. Every evidence row on this page says which of those it is.</dd>
+    </dl>
+  </section>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,87 @@
+{
+  "data": [
+    {
+      "id": 3392254691,
+      "readable": true,
+      "title": "Lone Digger (Mixed)",
+      "title_short": "Lone Digger",
+      "title_version": "(Mixed)",
+      "isrc": "FR89R2500004",
+      "link": "https://www.deezer.com/track/3392254691",
+      "duration": 220,
+      "rank": 242103,
+      "explicit_lyrics": false,
+      "explicit_content_lyrics": 0,
+      "explicit_content_cover": 2,
+      "preview": "https://cdnt-preview.dzcdn.net/api/1/1/9/0/a/0/90a96cf5d7f20ef867ece8fad52ead70.mp3?hdnea=exp=1788701705~acl=/api/1/1/9/0/a/0/90a96cf5d7f20ef867ece8fad52ead70.mp3*~data=user_id=0,application_id=42~hmac=602fff6f96f3304398965296b0ebd31ece1e173f5b61ec11b3df204aeea35735",
+      "md5_image": "fe0e5a441f9b04ffec8d523abc50f37b",
+      "artist": {
+        "id": 259767,
+        "name": "Caravan Palace",
+        "link": "https://www.deezer.com/artist/259767",
+        "picture": "https://api.deezer.com/artist/259767/image",
+        "picture_small": "https://cdn-images.dzcdn.net/images/artist/c21b8be75fa4fbcdc63ce2664694c36c/56x56-000000-80-0-0.jpg",
+        "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c21b8be75fa4fbcdc63ce2664694c36c/250x250-000000-80-0-0.jpg",
+        "picture_big": "https://cdn-images.dzcdn.net/images/artist/c21b8be75fa4fbcdc63ce2664694c36c/500x500-000000-80-0-0.jpg",
+        "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c21b8be75fa4fbcdc63ce2664694c36c/1000x1000-000000-80-0-0.jpg",
+        "tracklist": "https://api.deezer.com/artist/259767/top?limit=50",
+        "type": "artist"
+      },
+      "album": {
+        "id": 765020091,
+        "title": "Dusty House Mix",
+        "cover": "https://api.deezer.com/album/765020091/image",
+        "cover_small": "https://cdn-images.dzcdn.net/images/cover/fe0e5a441f9b04ffec8d523abc50f37b/56x56-000000-80-0-0.jpg",
+        "cover_medium": "https://cdn-images.dzcdn.net/images/cover/fe0e5a441f9b04ffec8d523abc50f37b/250x250-000000-80-0-0.jpg",
+        "cover_big": "https://cdn-images.dzcdn.net/images/cover/fe0e5a441f9b04ffec8d523abc50f37b/500x500-000000-80-0-0.jpg",
+        "cover_xl": "https://cdn-images.dzcdn.net/images/cover/fe0e5a441f9b04ffec8d523abc50f37b/1000x1000-000000-80-0-0.jpg",
+        "md5_image": "fe0e5a441f9b04ffec8d523abc50f37b",
+        "tracklist": "https://api.deezer.com/album/765020091/tracks",
+        "type": "album"
+      },
+      "type": "track"
+    },
+    {
+      "id": 3594343412,
+      "readable": true,
+      "title": "Lone Digger (Also Ali's Lone Chiller Remix)",
+      "title_short": "Lone Digger",
+      "title_version": "(Also Ali's Lone Chiller Remix)",
+      "isrc": "FR89R2500007",
+      "link": "https://www.deezer.com/track/3594343412",
+      "duration": 189,
+      "rank": 20680,
+      "explicit_lyrics": false,
+      "explicit_content_lyrics": 0,
+      "explicit_content_cover": 2,
+      "preview": "https://cdnt-preview.dzcdn.net/api/1/1/e/c/8/0/ec8c0799a0e94e18f853e2fbed3e02c3.mp3?hdnea=exp=1788701705~acl=/api/1/1/e/c/8/0/ec8c0799a0e94e18f853e2fbed3e02c3.mp3*~data=user_id=0,application_id=42~hmac=acddc8812a2dcdac80fd6f2be1a450cba254fe9cfdb25eb16d804a95d29b72a3",
+      "md5_image": "6d43870a08ed54246de1e39ffb9a80d7",
+      "artist": {
+        "id": 259767,
+        "name": "Caravan Palace",
+        "link": "https://www.deezer.com/artist/259767",
+        "picture": "https://api.deezer.com/artist/259767/image",
+        "picture_small": "https://cdn-images.dzcdn.net/images/artist/c21b8be75fa4fbcdc63ce2664694c36c/56x56-000000-80-0-0.jpg",
+        "picture_medium": "https://cdn-images.dzcdn.net/images/artist/c21b8be75fa4fbcdc63ce2664694c36c/250x250-000000-80-0-0.jpg",
+        "picture_big": "https://cdn-images.dzcdn.net/images/artist/c21b8be75fa4fbcdc63ce2664694c36c/500x500-000000-80-0-0.jpg",
+        "picture_xl": "https://cdn-images.dzcdn.net/images/artist/c21b8be75fa4fbcdc63ce2664694c36c/1000x1000-000000-80-0-0.jpg",
+        "tracklist": "https://api.deezer.com/artist/259767/top?limit=50",
+        "type": "artist"
+      },
+      "album": {
+        "id": 835125442,
+        "title": "<I°_°I> - 10th Anniversary Edition",
+        "cover": "https://api.deezer.com/album/835125442/image",
+        "cover_small": "https://cdn-images.dzcdn.net/images/cover/6d43870a08ed54246de1e39ffb9a80d7/56x56-000000-80-0-0.jpg",
+        "cover_medium": "https://cdn-images.dzcdn.net/images/cover/6d43870a08ed54246de1e39ffb9a80d7/250x250-000000-80-0-0.jpg",
+        "cover_big": "https://cdn-images.dzcdn.net/images/cover/6d43870a08ed54246de1e39ffb9a80d7/500x500-000000-80-0-0.jpg",
+        "cover_xl": "https://cdn-images.dzcdn.net/images/cover/6d43870a08ed54246de1e39ffb9a80d7/1000x1000-000000-80-0-0.jpg",
+        "md5_image": "6d43870a08ed54246de1e39ffb9a80d7",
+        "tracklist": "https://api.deezer.com/album/835125442/tracks",
+        "type": "album"
+      },
+      "type": "track"
+    }
+  ],
+  "total": 2
+}

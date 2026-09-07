@@ -1,0 +1,69 @@
+# It Stings on Fly.io. Step-by-step instructions: docs/deploy.md.
+#
+# NOT DEPLOYED FROM THIS MACHINE: flyctl is not installed here, so this file has never
+# been fed to `fly deploy`. `fly launch --no-deploy` will offer to rewrite it; either
+# accept its version and re-add the [mounts], [checks] and [env] blocks below, or keep
+# this one and just change `app` and `primary_region`.
+#
+# One machine, one volume, one SQLite file. Do not scale this app past a single machine:
+# a Fly volume attaches to exactly one machine, and a second machine would silently run
+# on an empty database.
+
+app = "itstings"                 # change to the name `fly launch` gives you
+primary_region = "ams"           # or whatever `fly launch` picks — put it near yourself
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3000"
+  ITSTINGS_DB_PATH = "/data/itstings.sqlite"
+  # Cost caps for a shared link. Unset would mean unlimited; these are the deployed
+  # defaults from docs/tasks/phase7-ship.md §5. Raise or remove them once you know what
+  # the app actually costs you.
+  ITSTINGS_MAX_RUNS_PER_DAY = "60"
+  ITSTINGS_MAX_RUNS_PER_IP_PER_HOUR = "6"
+  # Secrets (ANTHROPIC_API_KEY, LASTFM_API_KEY, TAVILY_API_KEY, ITSTINGS_ACCESS_TOKEN, …)
+  # go in `fly secrets set`, never here — this file is committed.
+
+# The database and its WAL sidecars. `fly volumes create itstings_data --size 1` first.
+[mounts]
+  source = "itstings_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  # Sleep when nobody is using it and wake on the next request: this app is idle almost
+  # all the time and a cold start is a Node process, not a container build.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [http_service.concurrency]
+    # A recommendation run holds one SSE connection open for ~70 s, so connection count
+    # is the meaningful limit, not requests/sec.
+    type = "connections"
+    soft_limit = 20
+    hard_limit = 40
+
+# Fly's proxy streams responses through untouched; the SSE route also sends
+# `X-Accel-Buffering: no` and `Cache-Control: no-transform` (src/lib/sse.ts), so
+# /api/recommend arrives event by event rather than in one block at the end.
+
+[checks]
+  [checks.health]
+    type = "http"
+    port = 3000
+    method = "GET"
+    path = "/api/health"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "15s"
+    # /api/health is exempt from the invite gate, so this keeps working with
+    # ITSTINGS_ACCESS_TOKEN set.
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

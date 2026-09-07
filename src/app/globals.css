@@ -1,0 +1,681 @@
+/* ======================================================================
+   IT STINGS — PHOTOCOPIED ZINE (final)
+   Ported from docs/design/final/empty.html + results.html. Every hex,
+   size, filter value and path here is the one in those two files.
+
+   LAW: texture never falls under a glyph. Every text block carries its
+   own opaque patch (--card / --raised / --bone). The mess lives in the
+   frame, never in the content.
+   ====================================================================== */
+
+:root{
+  --ground:#141210;   /* toner black   — the paper                       */
+  --card:#1D1A16;     /* second pull   — pasted patch, 14.28:1 for bone  */
+  --raised:#241F1A;   /* third pull    — inset well, 13.45:1 for bone    */
+  --bone:#EDE9DD;     /* copier bone   — 15.40:1 on ground               */
+  --dust:#A8A296;     /* dust          —  7.36:1 on ground               */
+  --acid:#D9F227;     /* highlighter   — 14.84:1 on ground               */
+  --blood:#E33127;    /* blood         —  4.21:1 — marks only            */
+  --blood-t:#F04438;  /* blood thinned —  4.97:1 — the red that may read */
+  --mint:#6FBFB1;     /* dead mint     —  8.69:1                         */
+  --ochre:#D89B2A;    /* nicotine      —  7.69:1                         */
+  --ink:#17140F;      /* ink on bone   — 15.13:1 on bone                 */
+  --ink-t:#5E574B;    /* ink thinned   —  5.88:1 on bone                 */
+
+  /* next/font supplies the family name + its metric-matched fallback and
+     then the stacks from docs/design.md §3.2. */
+  --sans:var(--font-sans),-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:var(--font-mono),ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --display:var(--font-display),"Haettenschweiler","Arial Narrow",
+            "Helvetica Neue Condensed Bold","Franklin Gothic Medium Cond",Impact,sans-serif;
+
+  /* ---- NINE-SLICE DRAWN EDGES -----------------------------------------
+     One 100×100 (frames) or 60×60 (chips) source, sliced 10 / 6. Corners
+     are drawn 1:1 and never distort; only the straight runs tile, and they
+     tile ROUND along their own axis only, so a 900px-tall card cannot
+     amplify a wobble the way preserveAspectRatio="none" did (9× on tall
+     boxes). The run endpoints share a y (or x), so the tiling is seamless. */
+  --e-fa-bone:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M 10 3.9 C 18 5.6 26 2.6 34 4.4 C 42 6.1 50 3 58 4.6 C 66 6.2 74 3.1 82 4.7 C 85 5.4 88 3.2 90 3.9 C 93 3.4 96.6 6 96.1 10 C 94.4 18 97.4 26 95.7 34 C 94 42 97.1 50 95.5 58 C 93.9 66 97 74 95.4 82 C 94.8 85 97 88 96.1 90 C 96.6 94 93.2 96.6 90 96.1 C 82 94.4 74 97.4 66 95.7 C 58 94 50 97.1 42 95.5 C 34 93.9 26 97 18 95.4 C 15 94.8 12 97 10 96.1 C 6.8 96.6 3.4 94.2 3.9 90 C 5.6 82 2.6 74 4.4 66 C 6.1 58 3 50 4.6 42 C 6.2 34 3.1 26 4.7 18 C 5.4 15 3.2 12 3.9 10 C 3.4 6.6 6.6 3.4 10 3.9 Z' fill='none' stroke='%23EDE9DD' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --e-fb-bone:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M 10 4.6 C 18 2.9 26 5.8 34 4.1 C 42 2.4 50 5.5 58 3.8 C 66 2.2 74 5.4 82 3.7 C 85 3 88 5.2 90 4.6 C 93.4 5.2 96.8 7 95.4 10 C 93.7 18 96.8 26 95.1 34 C 93.4 42 96.6 50 94.9 58 C 93.3 66 96.4 74 94.8 82 C 94.2 85 96.4 88 95.4 90 C 96 94.6 92.6 97.2 90 95.4 C 82 97.1 74 94.2 66 95.9 C 58 97.6 50 94.5 42 96.2 C 34 97.8 26 94.6 18 96.3 C 15 97 12 94.8 10 95.4 C 6.2 95 3 96.8 4.6 90 C 6.3 82 3.2 74 4.9 66 C 6.6 58 3.4 50 5.1 42 C 6.7 34 3.6 26 5.2 18 C 5.8 15 3.6 12 4.6 10 C 3.8 7.2 7 3.8 10 4.6 Z' fill='none' stroke='%23EDE9DD' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --e-fa-acid:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M 10 3.9 C 18 5.6 26 2.6 34 4.4 C 42 6.1 50 3 58 4.6 C 66 6.2 74 3.1 82 4.7 C 85 5.4 88 3.2 90 3.9 C 93 3.4 96.6 6 96.1 10 C 94.4 18 97.4 26 95.7 34 C 94 42 97.1 50 95.5 58 C 93.9 66 97 74 95.4 82 C 94.8 85 97 88 96.1 90 C 96.6 94 93.2 96.6 90 96.1 C 82 94.4 74 97.4 66 95.7 C 58 94 50 97.1 42 95.5 C 34 93.9 26 97 18 95.4 C 15 94.8 12 97 10 96.1 C 6.8 96.6 3.4 94.2 3.9 90 C 5.6 82 2.6 74 4.4 66 C 6.1 58 3 50 4.6 42 C 6.2 34 3.1 26 4.7 18 C 5.4 15 3.2 12 3.9 10 C 3.4 6.6 6.6 3.4 10 3.9 Z' fill='none' stroke='%23D9F227' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --e-fb-dust:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M 10 4.6 C 18 2.9 26 5.8 34 4.1 C 42 2.4 50 5.5 58 3.8 C 66 2.2 74 5.4 82 3.7 C 85 3 88 5.2 90 4.6 C 93.4 5.2 96.8 7 95.4 10 C 93.7 18 96.8 26 95.1 34 C 93.4 42 96.6 50 94.9 58 C 93.3 66 96.4 74 94.8 82 C 94.2 85 96.4 88 95.4 90 C 96 94.6 92.6 97.2 90 95.4 C 82 97.1 74 94.2 66 95.9 C 58 97.6 50 94.5 42 96.2 C 34 97.8 26 94.6 18 96.3 C 15 97 12 94.8 10 95.4 C 6.2 95 3 96.8 4.6 90 C 6.3 82 3.2 74 4.9 66 C 6.6 58 3.4 50 5.1 42 C 6.7 34 3.6 26 5.2 18 C 5.8 15 3.6 12 4.6 10 C 3.8 7.2 7 3.8 10 4.6 Z' fill='none' stroke='%23A8A296' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --e-fa-blood:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath d='M 10 3.9 C 18 5.6 26 2.6 34 4.4 C 42 6.1 50 3 58 4.6 C 66 6.2 74 3.1 82 4.7 C 85 5.4 88 3.2 90 3.9 C 93 3.4 96.6 6 96.1 10 C 94.4 18 97.4 26 95.7 34 C 94 42 97.1 50 95.5 58 C 93.9 66 97 74 95.4 82 C 94.8 85 97 88 96.1 90 C 96.6 94 93.2 96.6 90 96.1 C 82 94.4 74 97.4 66 95.7 C 58 94 50 97.1 42 95.5 C 34 93.9 26 97 18 95.4 C 15 94.8 12 97 10 96.1 C 6.8 96.6 3.4 94.2 3.9 90 C 5.6 82 2.6 74 4.4 66 C 6.1 58 3 50 4.6 42 C 6.2 34 3.1 26 4.7 18 C 5.4 15 3.2 12 3.9 10 C 3.4 6.6 6.6 3.4 10 3.9 Z' fill='none' stroke='%23E33127' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --e-ch-dust:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M 6 2.4 C 14 3.9 22 1.3 30 2.8 C 38 4.3 46 1.5 54 2.4 C 56.4 2.1 58.2 3.8 57.6 6 C 56.2 14 58.6 22 57.1 30 C 55.6 38 58.4 46 57.6 54 C 57.9 56.4 56.2 58.2 54 57.6 C 46 56.2 38 58.6 30 57.1 C 22 55.6 14 58.4 6 57.6 C 3.6 57.9 1.8 56.2 2.4 54 C 3.8 46 1.4 38 2.9 30 C 4.4 22 1.6 14 2.4 6 C 2.1 3.6 3.8 1.8 6 2.4 Z' fill='none' stroke='%23A8A296' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --e-ch-acid:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M 6 2.4 C 14 3.9 22 1.3 30 2.8 C 38 4.3 46 1.5 54 2.4 C 56.4 2.1 58.2 3.8 57.6 6 C 56.2 14 58.6 22 57.1 30 C 55.6 38 58.4 46 57.6 54 C 57.9 56.4 56.2 58.2 54 57.6 C 46 56.2 38 58.6 30 57.1 C 22 55.6 14 58.4 6 57.6 C 3.6 57.9 1.8 56.2 2.4 54 C 3.8 46 1.4 38 2.9 30 C 4.4 22 1.6 14 2.4 6 C 2.1 3.6 3.8 1.8 6 2.4 Z' fill='none' stroke='%23D9F227' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --e-ch-bone:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M 6 2.4 C 14 3.9 22 1.3 30 2.8 C 38 4.3 46 1.5 54 2.4 C 56.4 2.1 58.2 3.8 57.6 6 C 56.2 14 58.6 22 57.1 30 C 55.6 38 58.4 46 57.6 54 C 57.9 56.4 56.2 58.2 54 57.6 C 46 56.2 38 58.6 30 57.1 C 22 55.6 14 58.4 6 57.6 C 3.6 57.9 1.8 56.2 2.4 54 C 3.8 46 1.4 38 2.9 30 C 4.4 22 1.6 14 2.4 6 C 2.1 3.6 3.8 1.8 6 2.4 Z' fill='none' stroke='%23EDE9DD' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+*{box-sizing:border-box}
+html{height:100%}
+body{
+  margin:0;
+  min-height:100%;
+  background-color:var(--ground);
+  /* paper tooth — a flat dot field, never a gradient. It only ever shows in
+     the gutters, because every text block sits on its own patch. */
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14'%3E%3Ccircle cx='2.5' cy='3' r='0.9' fill='%23EDE9DD' fill-opacity='0.055'/%3E%3Ccircle cx='9.5' cy='8.5' r='0.7' fill='%23EDE9DD' fill-opacity='0.045'/%3E%3Ccircle cx='6' cy='12' r='0.5' fill='%23EDE9DD' fill-opacity='0.035'/%3E%3C/svg%3E");
+  color:var(--bone);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.5;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--bone)}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+    clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+.defs{position:absolute;width:0;height:0;overflow:hidden}
+
+/* ---------- THE FOCUS SYSTEM ------------------------------------------
+   3px acid, offset, on every interactive element. Nothing in this file
+   sets outline:0 without a drawn replacement on the same element. ---- */
+.play:focus-visible,
+.btn:focus-visible,
+.strike:focus-visible,
+.bar-clear:focus-visible,
+.evi a:focus-visible,
+.nop-note a:focus-visible,
+.prov a:focus-visible,
+.links a:focus-visible,
+.card:focus-visible,
+.ta li:focus-visible,
+.pop input:focus-visible,
+summary:focus-visible,
+.toggle input:focus-visible + .box{
+  outline:3px solid var(--acid);
+  outline-offset:3px;
+}
+/* the hero field: the ring is pushed clear of the bone paper onto the
+   black ground, where acid reads at 14.84:1 */
+.bar input:focus-visible,
+.slot input:focus-visible{outline:3px solid var(--acid);outline-offset:6px}
+
+/* ======================================================================
+   EMPTY STATE — the plate: the drawing bleeds off every edge
+   ====================================================================== */
+.plate{position:relative;height:100vh;height:100dvh;overflow:hidden}
+
+.plate-art{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  display:block;
+  pointer-events:none;
+}
+.plate-art--tall{display:none}
+@media (max-width:680px){
+  .plate-art--wide{display:none}
+  .plate-art--tall{display:block}
+}
+
+/* ---------------- THE CUT: the search strip ---------------------------- */
+/* A strip of photocopy paper laid across the drawing and cut through it.
+   Raised to 44% so three acid bands and the blood band of the gaster
+   survive above the cut; the stinger is what the strip severs. */
+.slot{
+  position:absolute;
+  top:44%;
+  /* inset just enough that the 3px acid focus ring at offset 6px renders as a
+     complete rectangle on the black ground instead of two clipped bars */
+  left:2.6%;right:2.6%;
+  height:clamp(62px,11.4vh,112px);
+  display:flex;align-items:stretch;
+  margin:0;
+}
+.slot-bg{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+.slot input{
+  position:relative;z-index:2;
+  flex:1 1 auto;min-width:0;
+  appearance:none;background:transparent;border:0;outline:0;margin:0;
+  padding:0 clamp(52px,9%,120px) 0 clamp(20px,5%,72px);
+  font-family:var(--sans);
+  font-size:clamp(1.02rem,2.05vw,1.7rem);
+  font-weight:500;letter-spacing:-.01em;
+  color:var(--ink);
+  caret-color:var(--blood);
+}
+.slot input::placeholder{color:var(--ink-t);font-weight:400;opacity:1}
+.slot input::-webkit-search-decoration,
+.slot input::-webkit-search-cancel-button,
+.slot input::-webkit-search-results-button{-webkit-appearance:none;appearance:none}
+/* FOCUS — drawn, not glowed. Two marks: a blood cut-line inside the paper,
+   and the system 3px acid ring offset clear of the strip onto the black. */
+.rule{position:absolute;z-index:2;left:clamp(20px,5%,72px);right:clamp(52px,9%,120px);
+      bottom:20%;height:3px;background:var(--blood);opacity:0;pointer-events:none}
+.slot:focus-within .rule{opacity:1}
+.slot-mark{position:absolute;z-index:2;right:clamp(16px,3%,46px);top:50%;
+           transform:translateY(-50%);width:clamp(26px,3.4vw,44px);height:auto;
+           pointer-events:none}
+
+/* ---------------- hint — on its own opaque patch, never on texture ----- */
+.hint{
+  position:absolute;
+  top:calc(44% + clamp(62px,11.4vh,112px) + 14px);
+  left:clamp(14px,4vw,64px);
+  margin:0;
+  padding:8px 13px 9px;
+  isolation:isolate;
+  font-family:var(--mono);
+  font-size:clamp(11px,1.05vw,13px);
+  letter-spacing:.01em;
+  color:var(--dust);
+  max-width:min(78vw,42ch);
+}
+/* rotate the BAND, never the sentence */
+.hint::before{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:var(--card);
+  transform:rotate(-1.1deg);
+}
+.hint.searching{color:var(--bone)}
+
+/* ---------------- wordmark — below the bar, nothing above it ----------- */
+.wordmark{
+  position:absolute;
+  left:clamp(14px,4vw,64px);
+  bottom:clamp(76px,13vh,132px);
+  margin:0;
+  padding:10px 20px 14px;
+  isolation:isolate;
+  font-family:var(--display);
+  font-variation-settings:"opsz" 96,"wdth" 76,"wght" 800;
+  font-weight:800;
+  font-size:clamp(3.1rem,11.4vw,7.4rem);
+  line-height:.88;
+  letter-spacing:-.02em;
+  color:var(--acid);
+}
+/* the opaque patch the law demands — torn, and it is the thing that rotates */
+.wordmark::before{
+  content:"";position:absolute;inset:-4px -10px -6px -8px;z-index:-2;
+  background:var(--card);
+  transform:rotate(-2.2deg);
+  clip-path:polygon(0 7%,4% 0,29% 6%,55% 1%,81% 7%,100% 3%,98% 46%,100% 95%,
+                    76% 100%,50% 94%,24% 100%,3% 95%);
+}
+/* screen-print misregistration: a second pull in blood, flat, no blur */
+.wordmark .ghost{
+  position:absolute;left:20px;top:10px;z-index:-1;
+  color:var(--blood);
+  transform:translate(6px,-7px);
+  pointer-events:none;
+}
+
+/* ---------------- edge furniture --------------------------------------- */
+.credits{
+  position:absolute;
+  right:clamp(10px,2.2vw,26px);
+  bottom:clamp(14px,2.4vh,26px);
+  max-width:min(66vw,430px);
+  margin:0;
+  padding:10px 16px 11px;
+  isolation:isolate;
+  font-family:var(--mono);
+  font-size:11px;line-height:1.55;
+  color:var(--dust);
+}
+.credits::before{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:var(--card);
+  transform:rotate(1.4deg);
+  clip-path:polygon(0 6%,3% 0,26% 5%,52% 0,78% 6%,100% 2%,98% 42%,100% 96%,
+                    74% 100%,49% 94%,22% 100%,2% 95%);
+}
+.credits b{color:var(--bone);font-weight:500}
+/* the playlists link rides in the credits line: same size, no button padding */
+.credits .btn.bare{font-size:inherit;padding:0}
+.regmark{position:absolute;top:clamp(12px,2.4vh,26px);right:clamp(12px,2.4vw,28px);
+         width:34px;height:34px;opacity:.75}
+.tornedge{position:absolute;top:0;bottom:0;left:0;width:14px;display:block}
+
+@media (max-width:680px){
+  .slot{left:3.2%;right:3.2%;height:clamp(60px,9vh,84px)}
+  .hint{top:calc(44% + clamp(60px,9vh,84px) + 12px);max-width:min(58vw,28ch)}
+  .wordmark{bottom:clamp(84px,12vh,120px);font-size:clamp(2.9rem,15vw,4.4rem)}
+  .credits{font-size:10px;max-width:78vw}
+}
+
+/* ======================================================================
+   RESULTS — after the search the boldness drops
+   ====================================================================== */
+.sheet{width:min(940px,92vw);margin:0 auto;padding:clamp(16px,3vw,34px) 0 96px;position:relative}
+
+.spine{
+  position:fixed;left:10px;top:50%;
+  transform:translateY(-50%) rotate(180deg);
+  writing-mode:vertical-rl;
+  font-family:var(--display);
+  font-variation-settings:"opsz" 24,"wdth" 78,"wght" 800;
+  font-size:22px;letter-spacing:.01em;
+  color:var(--acid);
+  opacity:.9;pointer-events:none;display:none;
+}
+.spine::before{content:"It Stings";position:absolute;left:3px;top:-4px;color:var(--blood);z-index:-1}
+@media (min-width:1180px){.spine{display:block;isolation:isolate}}
+
+/* ---------------- search bar — still the hero, nothing above it ------- */
+.bar{position:relative;height:clamp(58px,8vw,80px);display:flex;align-items:stretch;
+     margin:0 0 clamp(18px,2.4vw,26px)}
+.bar-bg{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
+.bar input{
+  position:relative;z-index:2;flex:1 1 auto;min-width:0;
+  appearance:none;background:transparent;border:0;outline:0;margin:0;
+  padding:0 84px 0 4%;
+  font-family:var(--sans);font-size:clamp(1rem,1.9vw,1.42rem);font-weight:500;
+  letter-spacing:-.01em;color:var(--ink);caret-color:var(--blood);
+}
+.bar input::placeholder{color:var(--ink-t);opacity:1}
+.bar input::-webkit-search-decoration,
+.bar input::-webkit-search-cancel-button,
+.bar input::-webkit-search-results-button{-webkit-appearance:none;appearance:none}
+/* the drawn focus mark inside the paper, in blood — acid would vanish on bone */
+.bar-rule{position:absolute;z-index:2;left:4%;right:84px;bottom:19%;height:3px;
+          background:var(--blood);opacity:0;pointer-events:none}
+.bar:focus-within .bar-rule{opacity:1}
+.bar-clear{
+  position:absolute;z-index:3;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:0;padding:5px 7px;cursor:pointer;
+  font-family:var(--mono);font-size:12px;color:var(--ink-t);
+}
+.bar-clear:hover{color:var(--blood)}
+
+/* ---------------- stage indicator — a receipt, not a progress bar ----- */
+.stages{position:relative;isolation:isolate;padding:20px 22px 18px;margin:0 0 16px}
+.stages::before{
+  content:"";position:absolute;inset:0;z-index:-1;background:var(--card);
+  transform:rotate(-.5deg);
+  border:10px solid transparent;border-image:var(--e-fb-dust) 10 / 10px / 0 round;
+}
+.steps{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:0 0 10px;padding:0;list-style:none}
+.steps li{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;color:var(--dust)}
+.steps li.done{color:var(--bone)}
+.steps li.now{color:var(--acid)}
+.steps li.todo{color:var(--dust);opacity:.6}
+.steps li.err{color:var(--blood-t)}
+.tick{width:15px;height:15px;flex:none;display:block}
+.blot{width:17px;height:17px;flex:none;display:block}
+.chan{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;
+      font-family:var(--mono);font-size:12px;color:var(--dust);margin:0 0 6px}
+.chan b{font-weight:500;color:var(--bone)}
+.chan .skip{color:var(--blood-t)}
+.chan .sep{opacity:.45}
+.drops{font-family:var(--mono);font-size:11.5px;color:var(--dust);margin:0;line-height:1.65}
+.drops b{color:var(--bone);font-weight:500}
+.drops .warn{color:var(--ochre)}
+
+/* ---------------- degraded notice ------------------------------------
+   The BAND is rotated. The sentence is not. ------------------------- */
+.notice{position:relative;isolation:isolate;padding:18px 20px 18px 24px;margin:0 0 26px}
+.notice::before{
+  content:"";position:absolute;inset:0;z-index:-1;background:var(--card);
+  transform:rotate(.9deg);
+  border:10px solid transparent;border-image:var(--e-fa-blood) 10 / 10px / 0 round;
+}
+/* the spine shares ::before's box and origin, so it rotates WITH the band
+   instead of drifting away from it */
+.notice::after{
+  content:"";position:absolute;inset:0;z-index:-1;
+  border-left:6px solid var(--blood);
+  transform:rotate(.9deg);
+}
+.notice p{margin:0;font-size:14px;line-height:1.55;color:var(--bone);max-width:64ch}
+.notice p + p{margin-top:9px}
+.notice .lbl{display:block;font-family:var(--mono);font-size:11px;color:var(--blood-t);margin:0 0 4px}
+.notice code{font-family:var(--mono);font-size:13px;color:var(--acid)}
+.notice b{font-weight:600}
+
+/* ---------------- cards ---------------- */
+.card{position:relative;background:var(--card);padding:10px 12px 14px;margin:0 0 16px;
+      border:10px solid transparent;border-image:var(--e-fa-bone) 10 / 10px / 0 round}
+.card.alt{border-image:var(--e-fb-bone) 10 / 10px / 0 round}
+.card.seed{border-image:var(--e-fa-acid) 10 / 10px / 0 round;padding:14px 14px 6px;margin-bottom:24px}
+.head{display:grid;grid-template-columns:64px 1fr;gap:14px;align-items:start}
+@media (min-width:640px){.head{grid-template-columns:88px 1fr;gap:18px}}
+.artwrap{position:relative}
+.art{position:relative;width:100%;aspect-ratio:1/1;display:block;transform:rotate(-1.4deg)}
+.card.alt .art{transform:rotate(1.1deg)}
+.rank{position:absolute;left:-9px;top:-11px;z-index:3;isolation:isolate;
+      color:var(--ink);font-family:var(--mono);font-weight:500;font-size:12px;
+      line-height:1;padding:5px 7px 6px}
+.rank::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--acid);
+              transform:rotate(-4deg)}
+.kick{font-family:var(--mono);font-size:11px;letter-spacing:.02em;color:var(--dust);margin:0 0 5px}
+h2.title{font-family:var(--display);font-variation-settings:"opsz" 40,"wdth" 84,"wght" 800;
+         font-size:clamp(1.7rem,3.8vw,2.5rem);line-height:1.02;margin:0 0 5px;color:var(--bone);
+         letter-spacing:-.015em}
+h3.title{font-family:var(--sans);font-weight:600;font-size:clamp(1.06rem,2.1vw,1.3rem);
+         line-height:1.2;margin:0 0 2px;color:var(--bone);letter-spacing:-.01em}
+.byline{font-family:var(--mono);font-size:12.5px;color:var(--dust);margin:0 0 10px}
+.byline .yr{color:var(--bone)}
+.byline .unk{color:var(--dust)}
+
+/* ---- the `why`: the most important text on the page ------------------ */
+.why{
+  position:relative;
+  margin:12px 0 15px;
+  padding-left:14px;
+  font-size:16.5px;
+  line-height:1.62;
+  max-width:52ch;
+  color:var(--bone);
+}
+.why::before{content:"";position:absolute;left:0;top:.2em;bottom:.2em;width:3px;
+             background:var(--acid)}
+.why .rule{position:static;display:block;font-family:var(--mono);font-size:11px;
+           color:var(--dust);margin-top:6px;opacity:1;background:none;height:auto}
+
+/* transport row */
+.tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.play{position:relative;width:46px;height:46px;flex:none;background:none;border:0;padding:0;
+      cursor:pointer;display:block}
+.play svg{display:block;width:46px;height:46px}
+.play:disabled{cursor:not-allowed}
+.btn{position:relative;background:none;padding:8px 13px 9px;cursor:pointer;
+     font-family:var(--mono);font-size:12px;color:var(--bone);letter-spacing:.01em;
+     border:6px solid transparent;border-image:var(--e-ch-dust) 6 / 6px / 0 round}
+.btn:hover{color:var(--acid)}
+.btn.saved{color:var(--acid);border-image:var(--e-ch-acid) 6 / 6px / 0 round}
+.btn.bare{border-image:none;border:0;padding:8px 6px 9px}
+.btn:disabled{color:var(--dust);cursor:progress}
+.time{font-family:var(--mono);font-size:12px;color:var(--acid)}
+.time .tot{color:var(--dust)}
+.meta{font-family:var(--mono);font-size:11.5px;color:var(--dust);margin-left:auto;
+      display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.meta .sc{color:var(--bone)}
+.chn{display:inline-flex;gap:3px}
+.chn i{font-style:normal;width:16px;height:16px;line-height:16px;text-align:center;
+       font-family:var(--mono);font-size:10px;color:var(--ink);background:var(--dust)}
+.chn i.a{background:var(--acid)}
+.chn i.b{background:var(--bone)}
+.chn i.c{background:var(--mint)}
+.chn i.off{background:none;color:var(--dust);border:1px dashed currentColor;line-height:14px}
+.flag{font-family:var(--mono);font-size:10.5px;color:var(--ochre)}
+
+/* the deep links under the seed byline */
+.links{display:flex;flex-wrap:wrap;gap:4px 12px;font-family:var(--mono);font-size:11.5px;
+       color:var(--dust);margin:10px 0 0}
+.links a{color:var(--bone);text-decoration:underline;
+         text-decoration-color:rgba(237,233,221,.4);text-underline-offset:3px}
+.links a:hover{color:var(--acid);text-decoration-color:var(--acid)}
+
+/* no-preview */
+.nop{position:relative;isolation:isolate;padding:6px 10px 7px;font-family:var(--mono);
+     font-size:11.5px;color:var(--ochre)}
+.nop::before{content:"";position:absolute;inset:0;z-index:-1;transform:rotate(-1.6deg);
+             border:6px solid transparent;border-image:var(--e-ch-dust) 6 / 6px / 0 round}
+.nop-note{font-family:var(--mono);font-size:11.5px;color:var(--dust);margin:10px 0 0;line-height:1.65;
+          max-width:60ch}
+.nop-note a{color:var(--bone);text-decoration:underline;
+            text-decoration-color:rgba(237,233,221,.45);text-underline-offset:3px}
+.nop-note a:hover{text-decoration-color:var(--bone)}
+/* the Spotify embed replaces the ring, 80px tall, and is the last resort
+   before the no-preview state */
+.embed{display:block;width:100%;max-width:520px;height:80px;border:0;margin:8px 0 0;
+       flex:1 1 260px}
+
+/* ---------------- fingerprint ---------------- */
+.fp{margin:20px 0 0;position:relative}
+.fp-h{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+.fp-h h3{font-family:var(--display);font-variation-settings:"opsz" 24,"wdth" 82,"wght" 700;
+         font-size:1.42rem;margin:0;color:var(--acid);letter-spacing:-.01em}
+.fp-h span{font-family:var(--mono);font-size:11px;color:var(--dust)}
+.fp-list{margin:0}
+.fprow{display:grid;grid-template-columns:1fr;gap:0;
+       border-bottom:1px solid rgba(237,233,221,.10)}
+@media (min-width:760px){
+  .fprow{grid-template-columns:172px minmax(0,1fr)}
+  .fprow--pair{grid-template-columns:172px minmax(0,1fr) 128px minmax(0,1fr)}
+}
+.fprow dt{font-family:var(--mono);font-size:11.5px;color:var(--dust);padding:11px 0 0;
+          overflow-wrap:anywhere}
+.fprow dd{margin:0;padding:2px 0 11px}
+@media (min-width:760px){.fprow dt{padding:12px 12px 12px 0}.fprow dd{padding:12px 16px 12px 0}}
+.v{font-size:14.5px;line-height:1.5;color:var(--bone)}
+.v.none{color:var(--dust);font-family:var(--mono);font-size:13.5px}
+.struck .v{text-decoration:line-through;text-decoration-color:var(--blood);
+           text-decoration-thickness:2px;color:var(--dust)}
+.struck dt{color:var(--blood-t)}
+/* the tempo pair is one .fprow holding two dt/dd pairs, so only the struck HALF
+   may go blood — a backwards sibling selector does not exist, hence the class */
+.fprow dt.struck{color:var(--blood-t)}
+.src{display:block;font-family:var(--mono);font-size:11px;color:var(--dust);margin-top:5px;
+     line-height:1.6}
+.strike{background:none;border:0;padding:0 0 0 8px;cursor:pointer;
+        font-family:var(--mono);font-size:11px;color:var(--dust);white-space:nowrap}
+.strike:hover{color:var(--blood-t)}
+.strike[aria-pressed="true"]{color:var(--blood-t)}
+
+.chip{position:relative;isolation:isolate;display:inline-block;font-family:var(--mono);
+      font-size:10.5px;line-height:1;padding:5px 7px 6px;margin-left:8px;vertical-align:2px;
+      white-space:nowrap;color:var(--ink)}
+.chip::before{content:"";position:absolute;inset:0;z-index:-1;transform:rotate(-1.2deg)}
+.chip.hi::before{background:var(--acid)}
+.chip.md::before{background:var(--mint)}
+.chip.lo::before{background:var(--ochre)}
+.chip.no{color:var(--dust)}
+.chip.no::before{border:1px solid currentColor}
+/* a copied measurement is outside the confidence scale entirely: hollow bone,
+   never the ink-on-acid §9.7 reserves for `high` */
+.chip.meas{color:var(--bone)}
+.chip.meas::before{border:1px solid currentColor}
+
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 0;padding:0;list-style:none}
+.tags li{font-family:var(--mono);font-size:11.5px;color:var(--bone);background:var(--raised);
+         padding:5px 8px 6px}
+.tags li.piv{background:var(--acid);color:var(--ink)}
+.tags li em{font-style:normal;color:var(--dust)}
+.tags li.piv em{color:var(--ink);opacity:.72}
+
+/* ---------------- same-artist toggle ---------------- */
+.controls{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap;margin:0 0 22px}
+.toggle{position:relative;isolation:isolate;display:inline-flex;align-items:center;gap:10px;
+        cursor:pointer;padding:13px 16px 14px}
+.toggle::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--card);
+                transform:rotate(-.8deg);
+                border:6px solid transparent;border-image:var(--e-ch-dust) 6 / 6px / 0 round}
+.toggle input{position:absolute;opacity:0;width:1px;height:1px}
+.box{width:22px;height:22px;flex:none;display:block}
+.box .on{opacity:0}
+.toggle input:checked + .box .on{opacity:1}
+.toggle .lab{font-family:var(--mono);font-size:12.5px;color:var(--bone)}
+.toggle .st{font-family:var(--mono);font-size:11px;color:var(--dust)}
+.rule-note{font-family:var(--mono);font-size:11.5px;color:var(--dust);max-width:48ch;
+           line-height:1.7;margin:2px 0 0;flex:1 1 280px}
+
+/* ---------------- section headings ---------------- */
+/* headings sit at 0°; the crooked feel comes from the pasted tape beside
+   them, whose BAND rotates and whose word does not */
+.sec{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:32px 0 12px}
+.sec h2{font-family:var(--display);font-variation-settings:"opsz" 32,"wdth" 82,"wght" 800;
+        font-size:1.6rem;margin:0;color:var(--bone);letter-spacing:-.015em}
+.sec span{font-family:var(--mono);font-size:11.5px;color:var(--dust)}
+/* the tape lives INSIDE .sec, so it has to out-rank `.sec span` (0,1,1) or it
+   loses its ink and prints dust-on-acid at 2.02:1 — design.md §2 says 14.59 */
+.tape,.sec span.tape{position:relative;isolation:isolate;font-family:var(--mono);font-size:10.5px;
+      line-height:1;color:var(--ink);padding:5px 8px 6px}
+.tape::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--acid);
+              transform:rotate(-2.2deg)}
+.tear{display:block;width:100%;height:9px;margin:0 0 14px}
+
+/* ---------------- disclosure — native details/summary, no JS ---------- */
+details{margin:14px 0 0}
+summary{
+  display:inline-flex;align-items:center;gap:8px;cursor:pointer;list-style:none;
+  font-family:var(--mono);font-size:12px;color:var(--bone);
+  padding:8px 13px 9px;
+  border:6px solid transparent;border-image:var(--e-ch-dust) 6 / 6px / 0 round;
+}
+summary::-webkit-details-marker{display:none}
+summary::marker{content:""}
+summary:hover{color:var(--acid)}
+details[open] summary{color:var(--acid);border-image:var(--e-ch-acid) 6 / 6px / 0 round}
+details[open] .caret{transform:rotate(90deg)}
+.caret{flex:none;display:block;width:12px;height:12px;transform-origin:50% 50%}
+.lbl-open{display:none}
+details[open] .lbl-open{display:inline}
+details[open] .lbl-shut{display:none}
+
+/* ---------------- expandable panel ---------------- */
+.expand{position:relative;margin:14px 0 4px;background:var(--raised);padding:12px 14px 14px;
+        border:10px solid transparent;border-image:var(--e-fb-dust) 10 / 10px / 0 round}
+.expand h4{font-family:var(--mono);font-weight:500;font-size:11.5px;color:var(--dust);
+           margin:0 0 12px;letter-spacing:.02em;line-height:1.6}
+.dims{margin:0 0 4px;padding:0;list-style:none}
+.dims li{display:grid;grid-template-columns:1fr 44px;grid-template-areas:"k v" "b b";
+         gap:3px 10px;align-items:center;padding:5px 0}
+@media (min-width:620px){
+  .dims li{grid-template-columns:172px minmax(0,1fr) 44px;
+           grid-template-areas:"k b v";gap:12px}
+}
+.dn{grid-area:k;font-family:var(--mono);font-size:11.5px;color:var(--dust);overflow-wrap:anywhere}
+.dn .w{color:var(--bone)}
+.dv{grid-area:v;font-family:var(--mono);font-size:12px;color:var(--bone);text-align:right}
+.mbar{grid-area:b;display:block;width:100%;height:12px}
+.dimnote{font-family:var(--mono);font-size:11.5px;color:var(--dust);line-height:1.75;
+         margin:14px 0 4px;max-width:64ch}
+.dimnote b{color:var(--bone);font-weight:500}
+.dimnote .fin{color:var(--acid)}
+.evi{margin:0;padding:0;list-style:none}
+.evi li{padding:11px 0;border-top:1px solid rgba(237,233,221,.10)}
+.et{font-family:var(--mono);font-size:11px;color:var(--dust);margin:0 0 5px;
+    display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.q{font-size:14px;line-height:1.55;color:var(--bone);margin:0 0 6px;max-width:60ch}
+.evi a{font-family:var(--mono);font-size:11.5px;color:var(--acid);word-break:break-all;
+       text-decoration:underline;text-decoration-color:rgba(217,242,39,.45);
+       text-underline-offset:3px}
+.evi a:hover{text-decoration-color:var(--acid)}
+.evi .none{font-family:var(--mono);font-size:11.5px;color:var(--dust);line-height:1.7;
+           margin:0;max-width:64ch}
+.stamp{font-family:var(--mono);font-size:10.5px;line-height:1;padding:4px 6px 5px;
+       display:inline-block;position:relative;isolation:isolate;color:var(--ink)}
+.stamp::before{content:"";position:absolute;inset:0;z-index:-1;transform:rotate(-1.4deg)}
+.stamp.live::before{background:var(--mint)}
+.stamp.cached::before{background:var(--ochre)}
+
+/* ---------------- typeahead ----------------
+   The strip stays bone and grows downward: the dropdown is the same sheet
+   of paper, so there is no shadow and no gap. */
+.ta{position:absolute;z-index:6;left:0;right:0;top:100%;background:var(--bone);
+    border-top:2px solid var(--ink);max-height:min(56vh,430px);overflow-y:auto}
+/* the plate clips at the viewport, so the hero list is shorter than the results one */
+/* flush with the strip: a dropdown inset from the paper reads as a second
+   pasted rectangle, and §9.3's first rule is that there is no gap */
+.slot .ta{left:0;right:0;top:calc(100% - 8px);
+          max-height:min(40vh,360px)}
+.bar .ta{left:4%;right:14px;top:calc(100% - 6px)}
+.ta ul{margin:0;padding:0;list-style:none}
+.ta li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:11px;align-items:center;
+       padding:9px 12px 10px;color:var(--ink);position:relative;cursor:pointer}
+.ta li.on{background:var(--acid)}
+.ta li.hov{box-shadow:inset 3px 0 0 0 var(--blood)}
+.ta li.hov .tt{font-weight:600}
+.ta .tt{font-size:14px;font-weight:500;line-height:1.25;margin:0;overflow:hidden;
+        text-overflow:ellipsis;white-space:nowrap}
+.ta .tb{font-family:var(--mono);font-size:11px;color:var(--ink-t);margin:0;overflow:hidden;
+        text-overflow:ellipsis;white-space:nowrap}
+.ta li.on .tb{color:var(--ink);opacity:.72}
+.ta .ty{font-family:var(--mono);font-size:11px;color:var(--ink-t)}
+.ta li.on .ty{color:var(--ink)}
+.ta .th{width:34px;height:34px;display:block}
+.ta .msg{font-family:var(--mono);font-size:11.5px;color:var(--ink-t);padding:11px 12px 12px;
+         margin:0}
+@media (max-width:520px){.ta li{grid-template-columns:30px minmax(0,1fr) auto;gap:9px}}
+
+/* ---------------- save popover ---------------- */
+.popwrap{position:relative;display:inline-block}
+.pop{position:absolute;z-index:8;top:calc(100% + 6px);left:0;min-width:250px;
+     isolation:isolate;padding:12px 13px 13px}
+.pop::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--card);
+             border:10px solid transparent;border-image:var(--e-fb-dust) 10 / 10px / 0 round}
+.pop h6{font-family:var(--mono);font-weight:400;font-size:11px;color:var(--dust);margin:0 0 8px}
+.pop ul{margin:0 0 8px;padding:0;list-style:none;max-height:190px;overflow-y:auto}
+.pop li{margin:0 0 4px}
+.plpick{display:block;width:100%;text-align:left;background:none;border:0;cursor:pointer;
+        font-family:var(--mono);font-size:12px;color:var(--bone);padding:6px 7px}
+.plpick:hover,.plpick:focus-visible{color:var(--acid);outline:3px solid var(--acid);
+        outline-offset:-3px}
+.plpick .ct{color:var(--dust)}
+.pop form{display:flex;gap:6px;align-items:stretch}
+.pop input{flex:1 1 auto;min-width:0;background:var(--bone);border:0;color:var(--ink);
+           font-family:var(--mono);font-size:12px;padding:7px 8px;caret-color:var(--blood)}
+.pop input::placeholder{color:var(--ink-t);opacity:1}
+.pop .err{font-family:var(--mono);font-size:11px;color:var(--blood-t);margin:8px 0 0}
+
+/* ---------------- provenance ---------------- */
+.prov{margin:36px 0 0;font-family:var(--mono);font-size:11.5px;color:var(--dust);line-height:1.7}
+.prov h2{font-family:var(--mono);font-weight:500;font-size:11.5px;color:var(--bone);
+         margin:0 0 10px;letter-spacing:.02em}
+.prov dl{display:grid;grid-template-columns:1fr;gap:0;margin:0}
+@media (min-width:640px){.prov dl{grid-template-columns:210px minmax(0,1fr)}}
+.prov dt{color:var(--bone);padding:5px 0 0;overflow-wrap:anywhere}
+.prov dd{margin:0;padding:0 0 5px}
+.prov code{font-family:var(--mono);color:var(--acid)}
+.prov a{color:var(--acid);text-decoration:underline;
+        text-decoration-color:rgba(217,242,39,.45);text-underline-offset:3px}
+.prov a:hover{text-decoration-color:var(--acid)}
+@media (min-width:640px){.prov dt{padding:5px 12px 5px 0}.prov dd{padding:5px 0}}
+
+/* the keyboard hint under the result list */
+.keyhint{font-family:var(--mono);font-size:11px;color:var(--dust);margin:0 0 16px}
+
+/* ---------------- 390 × 844 is a first-class breakpoint ---------------- */
+@media (max-width:520px){
+  .sheet{width:min(940px,94vw);padding-bottom:72px}
+  .bar input{padding:0 68px 0 5%;font-size:1rem}
+  .bar-rule{right:68px;left:5%}
+  .bar .ta{left:5%;right:14px}
+  .stages{padding:16px 15px 14px}
+  .notice{padding:15px 15px 15px 19px}
+  .card{padding:8px 9px 12px}
+  .card.seed{padding:10px 10px 4px}
+  .head{grid-template-columns:56px 1fr;gap:11px}
+  h2.title{font-size:1.62rem}
+  .why{font-size:15.5px;max-width:none}
+  .meta{margin-left:0;flex:1 1 100%}
+  .expand{padding:10px 11px 12px}
+  .sec h2{font-size:1.42rem}
+  .prov{font-size:11px}
+  .pop{min-width:min(78vw,250px)}
+}
+
+/* ================= THE STEPPED-MOTION MOMENTS ==================
+   One per page. Frame-based, steps(1,end), hard cuts, never tweened.
+   empty: the sting (2.6s, three frames). results: the scoring ink blot
+   (1.2s, three frames). Nothing else on either page moves.        */
+.fr{opacity:0}
+.f1{opacity:1}
+.sting .fr{animation-duration:2.6s;animation-timing-function:steps(1,end);
+           animation-iteration-count:infinite}
+.sting .f1{animation-name:frame1}
+.sting .f2{animation-name:frame2}
+.sting .f3{animation-name:frame3}
+@keyframes frame1{0%,69.99%{opacity:1} 70%,100%{opacity:0}}
+@keyframes frame2{0%,69.99%{opacity:0} 70%,81.99%{opacity:1} 82%,100%{opacity:0}}
+@keyframes frame3{0%,81.99%{opacity:0} 82%,100%{opacity:1}}
+
+.blot .fr{animation-duration:1.2s;animation-timing-function:steps(1,end);
+          animation-iteration-count:infinite}
+.blot .f1{animation-name:b1}
+.blot .f2{animation-name:b2}
+.blot .f3{animation-name:b3}
+@keyframes b1{0%,33.32%{opacity:1} 33.33%,100%{opacity:0}}
+@keyframes b2{0%,33.32%{opacity:0} 33.33%,66.65%{opacity:1} 66.66%,100%{opacity:0}}
+@keyframes b3{0%,66.65%{opacity:0} 66.66%,100%{opacity:1}}
+
+@media (prefers-reduced-motion:reduce){
+  .sting .fr{animation:none}
+  .sting .f1,.sting .f2{opacity:0}
+  .sting .f3{opacity:1}          /* pinned on the punchline */
+  .blot .fr{animation:none}
+  .blot .f1,.blot .f3{opacity:0}
+  .blot .f2{opacity:1}
+}
+
+/* ---------------- share: "copy link" on the results header ------------
+   Sits at the end of .sec, pushed right on a wide header and wrapping
+   under it when there is no room. The button is the drawn .btn.bare; the
+   confirmation is mono, acid when it worked and blood when it did not. */
+.share{display:inline-flex;align-items:baseline;gap:8px;margin-left:auto}
+.share .btn{font-size:11.5px}
+.share-note,.sec span.share-note{font-family:var(--mono);font-size:11px;color:var(--acid)}
+.share-note code{font-family:var(--mono);color:var(--bone);word-break:break-all}
+.share-note:has(code),.sec span.share-note:has(code){color:var(--blood-t)}

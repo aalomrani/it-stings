@@ -1,0 +1,198 @@
+{
+  "highlevel": {
+    "danceability": {
+      "value": "not_danceable",
+      "probability": 1,
+      "all": {
+        "danceable": 3.00000096379e-14,
+        "not_danceable": 1
+      }
+    },
+    "gender": {
+      "value": "female",
+      "probability": 0.622126698494,
+      "all": {
+        "female": 0.622126698494,
+        "male": 0.377873301506
+      }
+    },
+    "genre_dortmund": {
+      "value": "electronic",
+      "probability": 0.989112555981,
+      "all": {
+        "alternative": 0.004563360475,
+        "blues": 0.000825158553198,
+        "electronic": 0.989112555981,
+        "folkcountry": 0.00178140366916,
+        "funksoulrnb": 0.000224746967433,
+        "jazz": 0.00201213383116,
+        "pop": 0.000370322872186,
+        "raphiphop": 0.000120467339002,
+        "rock": 0.000989848398603
+      }
+    },
+    "genre_electronic": {
+      "value": "house",
+      "probability": 0.392033398151,
+      "all": {
+        "ambient": 0.179854884744,
+        "dnb": 0.110304750502,
+        "house": 0.392033398151,
+        "techno": 0.160024568439,
+        "trance": 0.157782420516
+      }
+    },
+    "genre_rosamerica": {
+      "value": "rhy",
+      "probability": 0.52823984623,
+      "all": {
+        "cla": 0.000838599051349,
+        "dan": 0.0163795761764,
+        "hip": 0.374255537987,
+        "jaz": 0.00356189557351,
+        "pop": 0.0663325712085,
+        "rhy": 0.52823984623,
+        "roc": 0.00929081626236,
+        "spe": 0.00110117881559
+      }
+    },
+    "genre_tzanetakis": {
+      "value": "jaz",
+      "probability": 0.309046447277,
+      "all": {
+        "blu": 0.0617713928223,
+        "cla": 0.0343018434942,
+        "cou": 0.102904699743,
+        "dis": 0.0514719486237,
+        "hip": 0.154438391328,
+        "jaz": 0.309046447277,
+        "met": 0.0441263727844,
+        "pop": 0.0772129744291,
+        "reg": 0.0617708563805,
+        "roc": 0.102955065668
+      }
+    },
+    "ismir04_rhythm": {
+      "value": "ChaChaCha",
+      "probability": 0.767413794994,
+      "all": {
+        "ChaChaCha": 0.767413794994,
+        "Jive": 0.0840922817588,
+        "Quickstep": 0.00596857862547,
+        "Rumba-American": 0.0249745864421,
+        "Rumba-International": 0.0380955561996,
+        "Rumba-Misc": 0.00648276368156,
+        "Samba": 0.0297432970256,
+        "Tango": 0.0109915034845,
+        "VienneseWaltz": 0.0298808868974,
+        "Waltz": 0.00235677440651
+      }
+    },
+    "mood_acoustic": {
+      "value": "not_acoustic",
+      "probability": 0.904409646988,
+      "all": {
+        "acoustic": 0.0955903306603,
+        "not_acoustic": 0.904409646988
+      }
+    },
+    "mood_aggressive": {
+      "value": "not_aggressive",
+      "probability": 1,
+      "all": {
+        "aggressive": 3.00000096379e-14,
+        "not_aggressive": 1
+      }
+    },
+    "mood_electronic": {
+      "value": "electronic",
+      "probability": 0.979391694069,
+      "all": {
+        "electronic": 0.979391694069,
+        "not_electronic": 0.0206082761288
+      }
+    },
+    "mood_happy": {
+      "value": "not_happy",
+      "probability": 0.665442049503,
+      "all": {
+        "happy": 0.334557980299,
+        "not_happy": 0.665442049503
+      }
+    },
+    "mood_party": {
+      "value": "not_party",
+      "probability": 0.999984204769,
+      "all": {
+        "not_party": 0.999984204769,
+        "party": 0.0000157784197654
+      }
+    },
+    "mood_relaxed": {
+      "value": "relaxed",
+      "probability": 0.808817088604,
+      "all": {
+        "not_relaxed": 0.191182896495,
+        "relaxed": 0.808817088604
+      }
+    },
+    "mood_sad": {
+      "value": "not_sad",
+      "probability": 0.919857442379,
+      "all": {
+        "not_sad": 0.919857442379,
+        "sad": 0.0801425501704
+      }
+    },
+    "moods_mirex": {
+      "value": "Cluster5",
+      "probability": 0.619996249676,
+      "all": {
+        "Cluster1": 0.0772220864892,
+        "Cluster2": 0.0444036386907,
+        "Cluster3": 0.227745994925,
+        "Cluster4": 0.0306320060045,
+        "Cluster5": 0.619996249676
+      }
+    },
+    "timbre": {
+      "value": "dark",
+      "probability": 0.987617075443,
+      "all": {
+        "bright": 0.0123829431832,
+        "dark": 0.987617075443
+      }
+    },
+    "tonal_atonal": {
+      "value": "atonal",
+      "probability": 0.921241104603,
+      "all": {
+        "atonal": 0.921241104603,
+        "tonal": 0.0787588879466
+      }
+    },
+    "voice_instrumental": {
+      "value": "instrumental",
+      "probability": 0.7918446064,
+      "all": {
+        "instrumental": 0.7918446064,
+        "voice": 0.208155378699
+      }
+    }
+  },
+  "metadata": {
+    "audio_properties": {
+      "analysis_sample_rate": 44100,
+      "bit_rate": 192000,
+      "codec": "mp3",
+      "downmix": "mix",
+      "equal_loudness": 0,
+      "length": 219.715911865,
+      "lossless": 0,
+      "md5_encoded": "d2152d7c5d8d4d0257472550f5dbe2be",
+      "replay_gain": -4.48874282837,
+      "sample_rate": 44100
+    }
+  },
+  "_pruned": "highlevel.*.version dropped by record-fixtures.ts"
+}

@@ -1,0 +1,315 @@
+{
+  "proposals": [
+    {
+      "key": "zine",
+      "name": "Photocopied Zine",
+      "thesis": "The Deadline-magazine end of the British alt-comic lineage: heavy off-black paper, ink that reads light because this is a copy of a copy, one acid highlighter green and one blood red doing almost all the work, everything cut out and pasted down at a slight angle. It fits because the engine's whole claim is that it will find the specific thing in a song and say it out loud in one sentence, and a zine is the only format that never hedges \u2014 it gives a single line of copy the weight of a headline, and it makes \"here is where this number came from\" look like a scrawled margin note rather than a compliance footer.",
+      "palette": [
+        {
+          "name": "Toner Black",
+          "hex": "#141210",
+          "role": "The paper. Body ground for both states."
+        },
+        {
+          "name": "Second Pull",
+          "hex": "#1D1A16",
+          "role": "Pasted card and panel patch. Every text block sits on one of these so texture never falls under a glyph. Bone text 14.28:1."
+        },
+        {
+          "name": "Third Pull",
+          "hex": "#241F1A",
+          "role": "Inset well: expanded panel, match-bar troughs, artwork tiles. Bone 13.45:1."
+        },
+        {
+          "name": "Copier Bone",
+          "hex": "#EDE9DD",
+          "role": "Primary ink. All body text and all linework. 15.40:1 on ground."
+        },
+        {
+          "name": "Dust",
+          "hex": "#A8A296",
+          "role": "Secondary text: mono labels, source attributions, metadata. 7.36:1 on ground."
+        },
+        {
+          "name": "Highlighter Acid",
+          "hex": "#D9F227",
+          "role": "The loud colour. Wordmark, headings, wasp stripes, match bars, high-confidence chips, evidence links. 14.84:1 on ground; ink on acid 14.59:1."
+        },
+        {
+          "name": "Blood",
+          "hex": "#E33127",
+          "role": "Graphic marks only \u2014 cut lines, tape spine, wasp eye, the bead at the stinger, the caret. 4.21:1, so never small text."
+        },
+        {
+          "name": "Blood, thinned",
+          "hex": "#F04438",
+          "role": "The only red allowed to carry small text (degraded label, 'skipped'). 4.97:1 on ground, 4.61:1 on card, banned on Third Pull where it drops to 4.35."
+        },
+        {
+          "name": "Dead Mint",
+          "hex": "#6FBFB1",
+          "role": "Support tone: Channel C badge, medium-confidence chip. 8.69:1."
+        },
+        {
+          "name": "Nicotine",
+          "hex": "#D89B2A",
+          "role": "Support tone: stale/cached stamps, low confidence, the no-preview state. 7.69:1."
+        },
+        {
+          "name": "Ink",
+          "hex": "#17140F",
+          "role": "Text on light patches \u2014 inside the bone search strip and on acid/mint/ochre chips. 15.13:1 on bone."
+        },
+        {
+          "name": "Ink, thinned",
+          "hex": "#5E574B",
+          "role": "Placeholder text on the bone search strip. 5.88:1 on bone."
+        }
+      ],
+      "type_pairing": {
+        "display": "Permanent Marker 400 (Google Fonts) \u2014 the only weight it has",
+        "body": "IBM Plex Sans 400/500/600, with IBM Plex Mono 400/500 for numbers, sources and labels",
+        "rationale": "Permanent Marker is a scan of a chisel-tip marker: blunt stroke entries, wet corners, counters that half-close at speed, a baseline that visibly wanders. It is a bad typeface by every metric a text face is judged on, which is exactly why it makes the wordmark look lettered by a person in a hurry rather than set by a designer. It appears at three sizes and nowhere else, and its fallback stack degrades to another hand-lettered face rather than to Arial. IBM Plex Sans is a documentary grotesque drawn for technical manuals \u2014 open apertures, unfussy a and g, a genuinely good 12-14px range \u2014 so it reads as evidence rather than as brand, which is what the one-line why and the fingerprint values need. It is deliberately not Inter, because Inter is the house face of the SaaS dashboard the anti-brief forbids. Plex Mono is a third family and earns its place on the spec's traceability rule: giving every number, source name and cache timestamp a machine face makes 'this is a measurement, here is where it came from' a typographic distinction rather than a colour one."
+      },
+      "illustration_concept": "A wasp the size of the screen, three-quarter view, head upper-left and the striped gaster sweeping down to a stinger at bottom-right \u2014 drawn as a filled bone silhouette with details knocked back out in ground colour, because a fat brush pen leaves masses rather than hairlines. Acid stripes are clipped to the gaster path, one band near the tip is blood, the compound eye is a big blood comma with a bone glint, the wings are halftone-screened with hand-drawn veins, and the antennae taper by splitting one gesture into a 14px sub-path and an 8px sub-path ending in a club. The search bar is a strip of photocopy paper laid horizontally across the middle at 52.4% and it physically severs the wasp: thorax, wings and head above, striped tail and stinger below. The wordmark sits bottom-left in marker, overlapping the legs, with the sting to its right \u2014 so nothing sits above the search field. Every hand-drawn glyph elsewhere (hook, flame, trumpet bell, curl of smoke, scratch marks, crescent) is a small ink placeholder standing in for iTunes artwork, since nothing loads from the network.",
+      "texture_technique": "Four layers, each with an explicit permission boundary. (1) A photocopy-wobble filter \u2014 feTurbulence type=\"fractalNoise\" baseFrequency=\"0.026 0.033\" numOctaves=\"3\" seed=\"17\" feeding an feDisplacementMap at scale=\"4\" \u2014 applied to the wasp, the sting frames and the card artwork motifs, and forbidden on anything containing text. (2) Toner speckle \u2014 feTurbulence baseFrequency=\"0.74\" numOctaves=\"4\" through an feColorMatrix whose alpha row is \"1.6 0 0 0 -0.62\", so alpha = 1.6R \u2212 0.62 and only the top ~38% of the noise field survives as hard specks rather than grey haze \u2014 painted as one rect over the illustration at opacity 0.5 and nowhere else. A page-wide fixed grain overlay is explicitly banned because it would sit on top of every word. (3) Halftone screens as SVG patterns at two pitches, 9px/rotate(18deg) in acid and 7px/rotate(-24deg) in bone, allowed on wings, collage blocks and artwork tiles only. (4) Paper tooth as an inline SVG data-URI dot field on the body \u2014 a pattern, not a gradient \u2014 which only ever shows in margins and gutters because every text block carries its own opaque patch. Container edges can't take a filter (they surround text), so they are drawn instead: three wobbly rect paths in defs, stretched per instance with preserveAspectRatio=\"none\" and vector-effect=\"non-scaling-stroke\", so the same path changes shape on every card and no two boxes share an edge.",
+      "motion_moment": "The sting, on the empty state. Three hand-drawn frames of the stinger, swapped as hard cuts over 2.6s: frame 1 holds 0-70% (stinger held back, a short spike), frame 2 runs 70-82% (jab out to full length, one blood speed-tick), frame 3 runs 82-100% (jab out, a bead of blood at the tip, two drips, three bone shock-ticks). Implemented as three sibling groups with doubled keyframe stops and animation-timing-function: steps(1, end) as belt and braces, so no engine can tween the opacity; the slow hold makes it read as a drawing that occasionally moves rather than a spinner. prefers-reduced-motion kills the animation and pins frame 3, the punchline. The results page carries its own single moment \u2014 the scoring stage marker is an ink blot spreading through three frames at 1.2s, reduced-motion pinned to frame 2 \u2014 and the 30-second progress ring is deliberately frozen at 0:11 so each page has exactly one moving thing.",
+      "self_critique": "The weakest thing is the display face. Permanent Marker is the most-worn marker on Google Fonts; it signals \"zine\" in half a second and simultaneously signals \"reached for the obvious one.\" A drawn wordmark, or a less-exhausted face, would raise the ceiling a lot, and the wordmark is the single element that has to carry the name.\n\nSecond: I cannot see the wasp render. Every B\u00e9zier is a considered guess made in coordinates, and the parts most likely to disappoint are the wings (halftone fill over a 5-6px stroke may read thin and muddy at small sizes) and the legs (three near legs plus two far legs may crowd the thorax). The figure needs one round of eyes-on adjustment before it can be trusted at 1280x800, and the mobile crop \u2014 where the drawing bleeds to 138% and shrinks to ~385px tall \u2014 is the case most likely to look weak.\n\nThird, and structurally: this direction is loud exactly once. The results page is correct, legible and traceable, but stripped of the illustration it risks reading as a well-organised dark UI with a marker heading rather than as a zine. The gap between the two states may be too large, and in a side-by-side against a direction that sustains its personality through the working screens, the results page is where this loses.\n\nAlso honest: the xerox displacement filter is a real paint cost on a 1100x820 SVG and can look soft on low-DPI screens, and it can never touch anything containing text \u2014 which caps how far the degraded look can travel into the interface. The acid-on-black palette is high-contrast to the point of vibration over long sessions and there is no path to a light mode. The typeahead exists only as a static specimen in a parts sheet, which is a real gap for the component the spec names as the entry point. And the mock flatters the one-line why sentences by giving them headline treatment \u2014 if the real engine produces weaker sentences than the five I wrote, this layout will expose that mercilessly rather than hide it. That is arguably the right behaviour, but it means the design is making a bet on the engine."
+    },
+    {
+      "key": "inkwash",
+      "name": "Ink &amp; Lounge",
+      "thesis": "The acceptance-test song is a post-punk band playing lounge jazz on purpose, so the interface is a lounge drawn by someone who plays in a punk band: confident brush-and-ink linework with dramatic thick/thin, flat screen-printed colour on a heavy off-black, halftone screens instead of shading, and one snapped string. The boldness is spent entirely on the empty state \u2014 a large drawn double bass with the search bar cut clean through it as a gash \u2014 and after the search all of that noise retreats into the frames (crooked ink borders, misregistered second plates, halftone in the corners) while the content inside them sits perfectly straight, because the one-line `why` is the actual product.",
+      "palette": [
+        {
+          "name": "Cut Black",
+          "hex": "#080A09",
+          "role": "the void inside the gash and inside the search field \u2014 the colour of nothing behind this"
+        },
+        {
+          "name": "Pressroom Black",
+          "hex": "#0E1110",
+          "role": "page ground"
+        },
+        {
+          "name": "Second Pull",
+          "hex": "#161A18",
+          "role": "result-card interior and instrument body mass (opaque, so texture can never land on text)"
+        },
+        {
+          "name": "Third Pull",
+          "hex": "#1E2422",
+          "role": "seed-card interior and artwork-plate ground"
+        },
+        {
+          "name": "Bone",
+          "hex": "#EFE7D6",
+          "role": "body text, headings, primary ink line \u2014 15.43:1 on ground, 12.83:1 on the seed card"
+        },
+        {
+          "name": "Foxed Bone",
+          "hex": "#B6AE9E",
+          "role": "secondary text: artist, dimension notes, placeholder \u2014 8.62:1"
+        },
+        {
+          "name": "Ash",
+          "hex": "#9A9385",
+          "role": "mono source stamps, the small print that makes every number traceable \u2014 6.22:1 (5.18:1 worst case)"
+        },
+        {
+          "name": "Bar Teal",
+          "hex": "#3FB0A0",
+          "role": "links, evidence URLs, channel A, disclosure controls \u2014 7.17:1"
+        },
+        {
+          "name": "Deep Teal",
+          "hex": "#1E6E64",
+          "role": "FILL ONLY at 3.14:1 \u2014 the misregistered second plate, the drink in the glass, the rule beside the why"
+        },
+        {
+          "name": "Brass",
+          "hex": "#F0B23A",
+          "role": "the live thing: current stage, elapsed preview arc, score, caret, focus rule, channel C \u2014 10.06:1; ground-on-brass 10.06:1"
+        },
+        {
+          "name": "Ox-blood",
+          "hex": "#9E2A3C",
+          "role": "FILL ONLY at 2.58:1 \u2014 ink bead, spill, the skipped-channel tape band, misregistered wordmark ghost; bone ON it is 5.99:1"
+        },
+        {
+          "name": "Ox-blood Flare",
+          "hex": "#D8697A",
+          "role": "the only red-family tint allowed as text: unknown, no preview, skipped \u2014 5.62:1 (4.68:1 worst case)"
+        },
+        {
+          "name": "Cold Hairline",
+          "hex": "#6E8082",
+          "role": "NON-TEXT ONLY \u2014 rules, empty progress track, unfilled match ticks, ghosted stage borders"
+        },
+        {
+          "name": "Cold Hairline, up",
+          "hex": "#7A8C8E",
+          "role": "the dimmest thing permitted to be text, and only on the page ground: pending stage, footer source links \u2014 5.40:1"
+        }
+      ],
+      "type_pairing": {
+        "display": "Bricolage Grotesque (Google Fonts variable), weight 700\u2013800, width axis pinned to wdth 76 for the wordmark and wdth 80\u201384 for track titles and panel headings",
+        "body": "IBM Plex Sans 400/500/600 for everything functional, plus IBM Plex Mono 400/500 restricted to one job \u2014 the source stamps under every displayed number",
+        "rationale": "Bricolage Grotesque is literally built out of mismatched parts \u2014 its terminals, joins and counters do not agree with each other the way a well-mannered grotesque's do \u2014 and it carries wdth and opsz axes, so it can be squeezed to a poster condensation without switching to a better-behaved condensed face. At wdth 76 and 124px it reads as cut rather than typed: hand-narrowed, slightly lumpy, out of step with itself. The wordmark then runs through the #rough-hard displacement filter with a second ox-blood impression printed 5px off-register underneath, so the finished artefact is a screen print of a slightly wrong letterform. IBM Plex Sans is the boring half on purpose: drawn for technical documentation, open apertures, unambiguous 1/l/I, no personality tax at 14\u201317px, and deliberately NOT Inter, which is the SaaS-dashboard default the anti-brief forbids \u2014 Plex reads as a manual or a liner note, not an admin panel. Plex Mono exists only to make the traceability policy visible as a design decision: every number is followed by a mono line naming its source."
+      },
+      "illustration_concept": "\"The Cut\" \u2014 a huge hand-inked double bass seen head-on, cropped by the viewport at top and bottom, tilted 5\u00b0, drawn as a flat mass with a bone outline over a deep-teal plate printed 13px off-register and a mustard halftone spotlight disc behind it. A wavy-edged gash runs clean across the middle of the composition, through the instrument and out into open page on both sides: that gash is the search bar. Three of the four strings run straight down the page and are visibly severed by it; the fourth has already snapped above the cut and whips away to the right with a bead of ox-blood ink on its end, its lower stub curling free below the gash. Heavy tapered brush lips line the top and bottom of the cut, ox-blood bleeds off both ends where the blade went in, and the wordmark \"It Stings\" is stencilled across the lower bout BELOW the cut \u2014 which is how the page carries a wordmark while keeping literally nothing above the hero, per the spec. A tipped martini glass spills bottom-left and a halftoned ox-blood puddle sits bottom-right. The sting is a broken string; the joke is never explained. Authored twice: a 980\u00d7620 landscape composition and a recomposed 420\u00d7620 portrait one, swapped at a 680px breakpoint so the gash never becomes a letterbox slit on a phone.",
+      "texture_technique": "Three SVG dot patterns at different screen angles (dots-bone 7u at 21\u00b0, dots-mustard 8u at \u221214\u00b0, dots-teal 6u at 33\u00b0) so overlapping screens moir\u00e9 like real separations; tone is chosen per screen, never interpolated \u2014 there is no 50% grey in this system. Grain is one fixed full-viewport SVG rect through feTurbulence baseFrequency 0.86, numOctaves 4, stitchTiles stitch, desaturated by feColorMatrix, at opacity .05 with mix-blend-mode screen. Critically it sits at z-index 0 BEHIND all content, and every element that holds text carries an opaque background, so grain physically cannot land on a glyph. Screens are allowed inside illustration SVGs, on artwork plates, and in the seed card's top-right 104px corner (no text there at any breakpoint); they are forbidden above any text node, over the search field or the why, and anywhere inside the fingerprint list or expanded panel. Ceiling is one screen plus the global grain.",
+      "motion_moment": "One per page, both true filmstrips: frames drawn side by side inside a clipPath window, advanced by a single transform: translateX() with steps(). empty.html \u2014 the snapped bass string twangs through three drawn poses (just snapped whipping high with the ink bead thrown clear; overshoot whipping low; settled S-curve with the bead hanging). animation: twang .66s steps(3, jump-none) .45s 1 both on a strip translating 0 \u2192 \u2212660px inside a 330\u00d7252 window, so it holds exactly three positions at 220ms each and then rests on frame 3 forever \u2014 a flinch on arrival, not a loop, so nothing is still moving while you type. results.html \u2014 the live \"scoring\" stage chip carries a 24\u00d724 inked spark stepping through three drawn bursts (4-spoke cross \u2192 6-spoke star \u2192 3 spokes over a solid blot) at steps(3, jump-none) over 48px, infinite, because the work it represents is looping. Reduced motion: both animations are cancelled and the strip is pinned to a resting frame via transform, so the drawing is identical and no information is lost; the only two other transitions in the system are 120ms steps(2,end) state flips (search focus rule, switch knob) and both are disabled too. No easing curve exists anywhere in this direction.",
+      "self_critique": "The honest weak point is that I authored a complex figurative drawing blind. The double bass is ~30 hand-written bezier segments and I could not render a single pixel of it; the silhouette logic is sound (neck joint \u2192 upper bout \u2192 waist \u2192 lower bout, cropped top and bottom) but specific joins \u2014 especially the shoulder segment \u2014 may read as a lumpy vase rather than an instrument, and the f-holes are squiggles that will either land or look like accidents. Someone needs to open both files in a browser and push points around before this direction can be judged fairly.\n\nSecond: the Google Fonts URL for Bricolage Grotesque's variable axes (opsz,wdth,wght@12..96,75..100,200..800) is a bet I could not verify with a live request. If those ranges are wrong the request 400s and BOTH families fall back \u2014 the fallback stack (Archivo Black / Haettenschweiler) keeps the layout intact but loses the whole \"slightly wrong\" argument, which is a third of the type rationale. Worth a 10-second curl before anyone reviews the aesthetics.\n\nThird: shipping two hand-authored compositions for one empty state is a maintenance debt, and the portrait one got less care \u2014 its cocktail glass is a scaled-and-translated copy of the landscape one rather than a redrawn object, which is exactly the kind of shortcut this direction claims not to take. The two will drift.\n\nFourth: the mess-in-the-frame discipline may have gone too far on results.html. With the illustration off screen, the page is essentially well-typeset dark documentation with slightly crooked borders \u2014 defensible against \"everything after the empty state goes quieter and more functional\", but a reviewer could fairly say the underground-comic grammar evaporates on the screen where users spend all their time. There is no drawn element on results.html larger than 104px.\n\nFifth: ~40 filtered pseudo-elements per screen is an unmeasured paint cost, and the misregistration plates depend on .card never gaining a transform or opacity \u2014 the moment someone adds a hover transform, every second plate silently disappears. And the one-shot twang, chosen over a loop for restraint, may simply be missed; I could not A/B that judgment.\n\nFinally, three of the five result cards ship with collapsed panels containing placeholder copy, so the expanded pattern is demonstrated once rather than stress-tested at length, and the playlist row and typeahead dropdown are specified in words only \u2014 they are the two components most likely to break the \"content stays straight\" rule when someone actually builds them."
+    },
+    {
+      "key": "riso",
+      "name": "Screen-Print Misregistration",
+      "thesis": "Every screen is a riso print on black stock: an opaque bone key-line pass followed by two or three spot-colour passes, run through a press whose registration pins are worn \u2014 plates land 3\u20136px down-and-right of the lines they should fill, overlaps multiply into dirty third colours, and paper tooth dusts the ground. It fits because the engine's job is to find the answer that is one register off (a 1956 jump-blues record answering a 1983 post-punk single), and because a page that visibly arrives in separate passes makes a pipeline that streams in as channels finish read as intentional rather than broken.",
+      "palette": [
+        {
+          "name": "Press Black",
+          "hex": "#100C0A",
+          "role": "The stock. Page ground, and the knockout colour \u2014 any shape in this colour reads as a hole punched through the plates."
+        },
+        {
+          "name": "Plate Black",
+          "hex": "#1B1512",
+          "role": "Second black pass. Card interiors and panel fills, 1.08:1 off the ground so a card is felt rather than outlined twice."
+        },
+        {
+          "name": "Newsprint Bone",
+          "hex": "#EFE6D4",
+          "role": "The key line and ALL body text. 15.70:1 on ground, 14.57:1 on Plate Black \u2014 AAA."
+        },
+        {
+          "name": "Bone Dim",
+          "hex": "#B9AF9C",
+          "role": "Mono numerals, metadata, source attributions, fingerprint field keys. 8.97:1 / 8.32:1 \u2014 AAA."
+        },
+        {
+          "name": "Fluoro Sting",
+          "hex": "#FF3D6E",
+          "role": "Spot 1, fluorescent pink-red. The wound: seed accents, playing state, the skipped-channel notice, the wordmark's slipped plate. 5.69:1 / 5.29:1 \u2014 AA body."
+        },
+        {
+          "name": "Acid",
+          "hex": "#B7EF3F",
+          "role": "Spot 2, acid green. Completed stages, match-bar fills, the why-line rule, saved state. 14.30:1 / 13.27:1 \u2014 AAA."
+        },
+        {
+          "name": "Dirty Federal",
+          "hex": "#3D6FE0",
+          "role": "Spot 3, dirty blue. PLATES ONLY \u2014 4.22:1 as text and 3.72:1 under bone, both fail. Restricted by policy to shapes 24px+ with no text on or under them; exposed as --blue-plate so no color: rule can reach it."
+        },
+        {
+          "name": "Federal Tint",
+          "hex": "#7AA2F5",
+          "role": "The only blue allowed to be a word: evidence-trail URLs, channel-C tags. 7.71:1 / 7.15:1 \u2014 AAA."
+        },
+        {
+          "name": "Hairline",
+          "hex": "#3A322C",
+          "role": "The one utility neutral: section rules and the unelapsed arc of the preview ring. Never carries text, never sits under it."
+        }
+      ],
+      "type_pairing": {
+        "display": "Bricolage Grotesque (variable) \u2014 wordmark at opsz 96 / wdth 75 / wght 800; headings and card titles at opsz 16\u201332 / wdth 76\u201386 / wght 600\u2013800",
+        "body": "IBM Plex Sans 400/500/600/700 for all prose, with IBM Plex Mono 400/500 restricted to numbers that must be traceable, source URLs, and fingerprint schema keys",
+        "rationale": "Bricolage Grotesque is drawn wrong on purpose and the wrongness is in the typeface, not in a filter I bolted on: inconsistent joins, flat-sided bowls that disagree with each other, a g and an a from different decades, terminals cut at angles nothing else justifies. Condensed to wdth 78 it reads stencilled rather than drafted, and because it is variable the wordmark and a 24px card title are the same hand at two sizes instead of one file scaled. IBM Plex Sans is boring in exactly the right way \u2014 open apertures, an unambiguous I/l/1, a big x-height that survives 13px on a dark ground \u2014 with a faint engineering stiffness that suits a page full of provenance, and it is emphatically not the product-sans that would make this look like a dashboard. The three faces carry a rule that never varies: mono is a claim about data, Plex Sans is prose, Bricolage is a name."
+      },
+      "illustration_concept": "The Sting. A colossal barbed stinger \u2014 half hornet abdomen, half tonearm, banded in acid green and tapering through three hand-drawn barbs \u2014 descends diagonally from the top-left of the sheet and drives its point into the top edge of the search bar. Behind and below it a huge record disc bleeds off the bottom-right corner, six broken groove arcs radiating from a knocked-out label that has been reprinted off-register in fluoro pink. A dirty-blue sash cuts top-right to bottom-left behind everything and overprints the pink halftone wedge into plum where they cross. Three bone drips run out of the puncture and down through the bar's position, ending in solid ink blobs. Every colour plate is offset 5\u20136px down-and-right from its bone outline, and the stinger's outline is filled with nothing at all so the pink plate shows through displaced inside its own line \u2014 that gap is the whole direction. Composed against a 1000\u00d7900 viewBox sliced xMidYMid, with everything load-bearing inside the x 292\u2013708 / y 137\u2013763 intersection that survives both 1280\u00d7800 and 390\u00d7844; the rest is drawn to be cropped.",
+      "texture_technique": "Three separate mechanisms, each with a hard rule about where it may go. (1) Misregistration and roughness: two deliberately mismatched feTurbulence + feDisplacementMap filters \u2014 #rough-key at baseFrequency 0.018 0.026, seed 17, scale 4.5 for the line pass, and #rough-plate at 0.009 0.013, seed 41, scale 9 for the colour pass \u2014 so the two never track each other and read as two trips through a press rather than one shaky outline; both carry color-interpolation-filters=\"sRGB\", without which linearRGB muddies the spots and silently breaks the contrast ratios. No element containing text ever carries a displacement filter; UI frames instead get their wonk from hand-authored irregular paths stretched with preserveAspectRatio=\"none\" and held at constant weight by vector-effect=\"non-scaling-stroke\". (2) Halftone: one 7-unit ruling, three screens at 15\u00b0 / 45\u00b0 / 75\u00b0, patternUnits=\"userSpaceOnUse\" and never transformed with the shape they fill; never two screens within 30\u00b0 in a stack and never three overlapping \u2014 that is the moir\u00e9 discipline. (3) Grain: a single feTurbulence sheet at baseFrequency 0.85, desaturated, alpha-shaped by feComponentTransfer, at 0.09 opacity with mix-blend-mode screen. It is forbidden over body text and the ban is structural, not careful \u2014 the grain sheet sits at z-index 0 and every text-bearing element sits at z-index 2 on an opaque Plate Black slab, so grain physically cannot land on a word. Overprint is real multiply inside a group with isolation:isolate, so plates blend against each other and a transparent backdrop instead of against the black stock, which would annihilate them; the bone key pass stays above with normal blending because a tinted key line at 13px is a worse line.",
+      "motion_moment": "The puncture, on the empty state \u2014 the one moment on that screen. Where the stinger meets the search bar, an ink burst cycles through three drawn frames: frame 0 is six spikes 26\u201346 units long with one halftone chip (the needle has just broken the surface), frame 1 is ten spikes to 88 units with a broken ring at r 62 and two chips, frame 2 is twelve spikes to 126 units with a wider broken ring at r 96 and four chips flung out. Built as a filmstrip rather than three cross-fading layers, because a fade is eased motion smuggled in: the frames sit 1200 user units apart inside a 1000-unit viewBox so the SVG viewport itself clips the two off-stage, and `.burst-strip { animation: strip .72s steps(3) infinite; }` over `translateX(0 \u2192 -3600px)` emits exactly 0 / -1200 / -2400, each held 240ms, then a hard cut. No easing function is reachable anywhere in either stylesheet \u2014 verified. Reduced motion parks on frame 1, not frame 0, so the still image is the best drawing of the three rather than an arbitrary first cel. The results page spends its single moment on the only thing genuinely still happening \u2014 a three-bar grinder beside the `scoring` chip on the same steps(3) filmstrip at .66s, parking on frame 2 under reduced motion with the text label always present so state is never carried by motion alone. The 30-second preview ring is exempt as a readout, and stays inside the grammar by advancing in 60 discrete half-second jumps.",
+      "self_critique": "Weakest thing first: I cannot render these, so the drawing is argued rather than seen. The empty-state illustration is hand-authored path data whose proportions I reasoned about numerically \u2014 the stinger's taper, the barbs, the disc grooves \u2014 and a stinger built from five polygon vertices plus a displacement filter may read as a generic wedge rather than as an insect, in which case the page is a big blue sash and a record with an abstract diagonal through it and the concept collapses into decoration. The frame-by-frame burst is the part I trust; the stinger is the part someone should look at first.\n\nSecond, the registration between the drawn puncture and the search bar is composed, not computed. The bar has to be a real focusable input, so at 1280\u00d7800 I close the gap with a landscape-only translateY(86px) on the print and at 390\u00d7844 the untranslated slice happens to land it right \u2014 but at intermediate sizes (a 1100\u00d7900 window, a tablet) the wound will float somewhere near the bar rather than on it. The drips crossing the bar's position at every size are insurance, not a fix.\n\nThird, the direction is genuinely harder to extend than it looks. Every card frame is a hand-authored wobble path in a 200\u00d7100 box; three variants cycling is enough for five cards and will start visibly repeating at fifteen or twenty, which is the actual result-set size in the spec. And 56 inline SVGs on the results page is a lot of DOM for a page that also streams in new cards \u2014 the filters are confined to the header art, but this needs a real profile before it ships.\n\nFourth, an honest palette admission: Dirty Federal is the best colour in the set and it fails contrast in both directions (4.22:1 as text, 3.72:1 under bone). I fenced it off as a plates-only token rather than replacing it, which means the design leans on a colour it can never speak with \u2014 and the text-safe Federal Tint I substituted is noticeably more pastel, so evidence links are the least characterful thing on the page.\n\nTwo calls someone may want to overturn. The wordmark sits visually above the search bar, which strains the spec's \"nothing above it\"; I read that as nothing interactive or instructional and treated the wordmark as artwork, but that is my reading, not the spec's words. And I resolved the conflict between \"Channel B skipped\" and \"show two evidence links\" by stamping the reddit quote `cached 2026-08-14 \u00b7 not refreshed this run` \u2014 I think that is more honest than hiding cached evidence when its channel is down, but it does mean the mockup shows a state slightly more complicated than the one asked for."
+    }
+  ],
+  "verdicts": [
+    {
+      "judge": "art-director (Deadline / Tank Girl / 90s UK comics lineage) \u2014 judged from live headless-Chrome renders at 1280\u00d7800, 390\u00d7844 and full-page, not from the design docs",
+      "winner": "zine",
+      "scores": [
+        {
+          "key": "zine",
+          "grammar_fidelity": 8,
+          "legibility": 9,
+          "anti_saas": 9,
+          "originality": 7,
+          "feasibility": 9,
+          "product_fit": 9,
+          "total": 51,
+          "best_idea_to_steal": "The results page as a photocopied dossier: torn-paper search strip with dark ink on bone (the single most legible hero in the set), the pipeline shown as a mono RECEIPT line rather than a progress widget, and the closing 'where every number on this page came from' provenance list \u2014 that section is the best single answer to the spec's traceability rule anyone produced. Plus the honest tempo row that states WHY there is no number.",
+          "fatal_flaw": "The illustration does not bleed. The toner-speckle rect fills the whole 1100\u00d7820 viewBox at 0.5 opacity and paints a visible hard-edged grey rectangle from x231\u20131048, y82\u2013692 \u2014 the wasp reads as a drawing mounted on a grey card, not a page-sized image. Second, the wasp has two faces: the two knocked-out arcs on the thorax read unmistakably as a closed eye and a smiling mouth, so the creature is a cheerful cartoon bug, not a thing with a weapon. The near legs are stumps, the ghosted far legs at 0.45 are visual mud, ~90% of the striped gaster (the only wasp-defining feature) sits below the cut, and frame 3's shock ticks are drawn to y840 in an 820-high viewBox so the punchline of the one motion moment is clipped. At 390 the entire gaster, stinger and motion moment are cropped off-screen."
+        },
+        {
+          "key": "inkwash",
+          "grammar_fidelity": 7,
+          "legibility": 9,
+          "anti_saas": 6,
+          "originality": 8,
+          "feasibility": 8,
+          "product_fit": 9,
+          "total": 47,
+          "best_idea_to_steal": "Two things. (1) The `why` treatment \u2014 16.5px/1.62, max 52ch, indented behind a 3px flat deep-teal rule \u2014 it is visibly the largest and most cared-for block on the card, which is exactly what 'the why is the most important text on the page' should look like. (2) The fingerprint laid out so `tempo_bpm: unknown` and `tempo_feel: bouncing` sit SIDE BY SIDE in the two-column grid: the honesty policy becomes readable in one glance instead of two rows eight apart. Also the tapered filled-outline stroke technique (draw the spine, return at a varying offset, close) \u2014 the snapped string is the best single drawn gesture in all three proposals.",
+          "fatal_flaw": "It is the one most likely to fail the brief's own test. Strip the palette and results.html is a competent dark documentation UI: a row of bordered stage chips with \u2713 ticks, a mustard primary CTA beside the field, an outlined `playlist 3 saved` tab, a key/value definition list. Nothing drawn on that page is over 104px. The empty state compounds it \u2014 the bass is a lumpy dark mass with no neck, scroll, bridge or articulated shoulders (the f-holes are the only part that reads), and the whole scene floats centred in a black field with fat margins on all four sides and a centred footer paragraph under it. That is a slide, not a poster. The `#rough-hard` filter also does nothing visible on the 124px wordmark, so the 'slightly wrong letterform' argument \u2014 a third of the type rationale \u2014 does not cash out on screen; it renders as a nicely set condensed grotesque with a red drop shadow."
+        },
+        {
+          "key": "riso",
+          "grammar_fidelity": 8,
+          "legibility": 4,
+          "anti_saas": 8,
+          "originality": 6,
+          "feasibility": 6,
+          "product_fit": 7,
+          "total": 39,
+          "best_idea_to_steal": "Three things, all cheap to graft. (1) The unscored remainder of a match bar drawn as blue halftone instead of left empty \u2014 texture doing data work at zero legibility cost, the smartest texture idea in the set. (2) Every evidence row stamped `live` or `cached <date> \u00b7 not refreshed this run`, so a skipped channel and a visible evidence trail stop being a contradiction. (3) The counts line that surfaces the spec's own rule when it breaks: `C 8 of 31 (25.8% \u2014 over the 20% threshold, tighten the Channel C prompt)`. Also: it is the only one of the three that bleeds off all four edges and actually reads as a print rather than an image placed on a page.",
+          "fatal_flaw": "It breaks its own legibility law on screen, twice. The channel-skipped notice sets four lines of bone body copy directly on a fluoro-pink halftone screen \u2014 effectively unreadable in the render \u2014 and the empty state runs both the hero copy line and the footer stamp across the green record and blue sash at low contrast. The design.md claims this is 'enforced structurally rather than by care'; it is not. Then the concept collapses: the stinger reads as an abstract pink wedge with bone slashes \u2014 no taper to a needle, no visible acid bands, no barbs \u2014 so the page is a sash, a record and a shard. On top of that the wordmark sits above the hero, there is a plain dark `Find` submit button and a download-arrow-shaped Save glyph sitting on the hero (two stock-UI tells), the bar carries a stray green + blue + pink hairline stack that reads as a rendering glitch, and at 390 the search bar and its submit button run off the right edge with the copy line clipped mid-word."
+        }
+      ],
+      "synthesis_advice": "Base: **zine**. It wins on the screen users actually live on \u2014 results.html is the only page in the set that is simultaneously fully legible and unmistakably not a dashboard \u2014 and it is the cheapest system to extend (three stretched edge paths, three CSS vars, no JS, one filter confined to the art). Keep its whole discipline: the mess in the frame, never in the content; every text block on its own opaque patch; the receipt-style stage line; the provenance list; the torn-paper hero.\n\nFix first, in this order:\n1. **Make the drawing bleed.** Delete or re-scope the full-viewBox toner rect \u2014 mask the speckle to the wasp's own geometry, and let the art run past the viewport edges the way riso does. Steal riso's composition method wholesale: a defined viewBox with an explicit safe intersection that survives both 1280\u00d7800 and 390\u00d7844, everything outside it drawn to be cropped. This is the single highest-value change and it also fixes zine's 390 crop, which currently loses the gaster, the stinger and the entire motion moment.\n2. **Replace Permanent Marker with Bricolage Grotesque** (wdth 75\u201380 / wght 800), kept from inkwash/riso. It is genuinely mis-drawn rather than merely informal, it is not the most-reached-for zine webfont on Google, and it solves a defect you can see in the render: PM's lowercase draws as small caps, so every zine heading currently shouts and flirts with the all-caps ban. Keep zine's blood second-pull misregistration under it \u2014 that move works and is better than inkwash's static red offset.\n3. **Redraw the wasp.** Remove the two knocked-out thorax arcs (they read as a closed eye and a smile \u2014 the creature has two faces). Drop the ghosted far legs entirely instead of running them at 0.45. Raise the search strip from 52.4% to ~44% so at least two acid bands and the blood band of the gaster survive above the cut. Pull frame 3's shock ticks inside the 820 viewBox.\n4. **Graft inkwash's `why` treatment** onto the zine card \u2014 1.62 leading behind a 3px flat rule at the left edge. One pseudo-element, and it makes the product's most important sentence look like the product's most important sentence.\n5. **Graft inkwash's side-by-side tempo pairing** into the fingerprint grid, and inkwash's working inline disclosure script so expand/collapse is demonstrated rather than described.\n6. **Graft from riso:** `live` / `cached <date>` stamps on every evidence row (zine only stamps the stale one); the drop-rate line that names the 20% Channel-C threshold when breached; and the unscored bar remainder as halftone.\n7. Move zine's hint line (\"type it, then pick the exact track\") onto an opaque patch or inside the paper strip \u2014 right now it is dust-coloured text sitting on the toner texture, the one legibility lapse on an otherwise clean page.\n8. Fix the 390 overflow before anything ships. All three clip their hero row at 390; riso loses its submit button entirely. Test at 390 as a first-class breakpoint, not a fallback.\n\nDo not take: riso's `Find` button, its geometric circle/triangle/diamond sleeve marks, or any text over a halftone screen. Do not take inkwash's stage-chip row \u2014 that is the shape the anti-brief is warning about."
+    },
+    {
+      "judge": "Frontend lead (has to build the winner in Next.js/React with inline SVG + CSS)",
+      "winner": "zine",
+      "scores": [
+        {
+          "key": "zine",
+          "grammar_fidelity": 8,
+          "legibility": 6,
+          "anti_saas": 8,
+          "originality": 8,
+          "feasibility": 9,
+          "product_fit": 9,
+          "total": 48,
+          "best_idea_to_steal": "The structural texture law: every text block carries its own opaque patch (--card/--raised/--bone), which is what makes \"texture never under body text\" enforceable rather than aspirational \u2014 and it explicitly BANS the obvious full-page grain overlay because it would sit on every word. Paired with the page-foot provenance table that sources every number on the page and whose arithmetic actually reconstructs (final = model + 0.12 per extra channel: 0.82+0.12=0.94, 0.79+0.12=0.91, 0.88 single-channel, 0.73+0.12=0.85, 0.81 single-channel; funnel 29+26-12=43; drop rates 14.7%/16.1%).",
+          "fatal_flaw": "Two, both cheap to fix but one is shipping-blocking. (1) Permanent Marker is costume, not a drawn face \u2014 the brief asks for \"condensed, drawn, slightly wrong\" and this is none of those; it signals \"zine\" in half a second and simultaneously signals \"reached for the obvious one,\" and it is the one element carrying the product name. (2) results.html sets `.bar input{outline:0}` with no replacement: the hero search field has ZERO visible focus indicator on the page users spend all their time on (empty.html has `.slot:focus-within .rule`; results.html has no equivalent). Only the same-artist checkbox has a designed focus style on the whole page."
+        },
+        {
+          "key": "inkwash",
+          "grammar_fidelity": 9,
+          "legibility": 7,
+          "anti_saas": 7,
+          "originality": 9,
+          "feasibility": 6,
+          "product_fit": 6,
+          "total": 44,
+          "best_idea_to_steal": "`pathLength=\"100\"` on a hand-drawn irregular ring, so elapsed maps to `stroke-dasharray: {pct} {100-pct}` no matter how wonky the path is \u2014 this is the only one of the three whose progress ring can be hand-inked instead of a perfect `<circle>`, and it removes all circumference math from the component. Second: the correct answer to \"strokes with varying weight\" \u2014 SVG stroke-width is constant along a path, which is the opposite of a brush pen, so author every tapered stroke as a CLOSED FILLED OUTLINE (draw the spine, return along the other side at a varying offset, close). Neither competitor states this. Third: the `.why` gets a 3px rule of its own \u2014 the only element on the card given one.",
+          "fatal_flaw": "Filter budget blows out by ~2x its own stated ceiling and scales with card count. Counted on results.html: 19 SVG `filter=` refs plus 7 CSS `filter:url()` selectors expanding to 9 `.inked::before` + 9 `.inked::after` + 6 stage chips + 7 pills + 35 match ticks + wordmark + grain = ~87 separate offscreen turbulence buffers on a FIVE-card page, against the author's own 40 budget. The spec's real result set is 15-20 tracks, so shipping means ~250+. The 35 ticks are 11x13px elements each getting its own filter region at 190%. Secondary: `.inked::after{z-index:-1}` silently vanishes the moment anyone adds a hover transform to `.card`, which is the most likely first change anyone makes."
+        },
+        {
+          "key": "riso",
+          "grammar_fidelity": 7,
+          "legibility": 8,
+          "anti_saas": 9,
+          "originality": 6,
+          "feasibility": 7,
+          "product_fit": 7,
+          "total": 44,
+          "best_idea_to_steal": "Three things. (1) The focus system: eight explicit `:focus-visible` rules (3px acid, offset) covering the play blob, every button, `summary`, evidence links, the toggle, the dismiss X and the submit \u2014 plus `:focus-within` on the bar. Best keyboard story in the set by a distance, and it uses native `<details>/<summary>` so the expandable panel is keyboard-operable with zero JS. (2) The `live` / `cached 2026-08-14 \u00b7 not refreshed this run` stamp on every evidence row, which is the only honest resolution of \"Channel B is skipped\" coexisting with \"here are two evidence links.\" (3) Score arithmetic that reconstructs exactly: 94x3+91x3+88x2+76x2+68+41+12x0 = 992/12 = 83, +4 multi-channel = 87 \u2014 and it surfaces the spec's own 20%-drop-rate rule as a live warning (C: 8 of 31 = 25.8%, tighten the prompt). No competitor makes that callback.",
+          "fatal_flaw": "It misses the empty state's two most explicit instructions. The wordmark is a 58-132px `<h1>` in the grid row ABOVE the hero (\"nothing above it\" is not ambiguous, and the other two both solved it \u2014 zine puts it below the plate, inkwash stencils it into the drawing below the cut). And the bar is an opaque bone slab laid OVER a full-bleed background illustration, not \"cut into\" it \u2014 registration is composed, not computed, and snaps ~110px when you drag a window through 1:1 aspect. Compounding it, the load-bearing figure is a 5-vertex polygon with four crossbars: `M-46 46 L28 -58 L318 166 L504 376 L250 232 Z`. That will read as an abstract diagonal wedge, not a stinger, and the author says so. Also confirmed broken: `.stages{grid-template-columns:repeat(6,1fr)}` has no responsive override, so at 390px each stage gets ~53px for words like \"fingerprint\" and \"candidates\" set in a condensed display face at 15px."
+        }
+      ],
+      "synthesis_advice": "BASE: zine. It is the most complete product (the only one that mocks BOTH a typeahead specimen and a playlist row, and the only one with a page-foot provenance table), the cheapest and most predictable to build (~6 filtered surfaces on results vs inkwash's ~87), and its two weak spots are each a one-line fix. Its edge-path-as-a-reusable-`<use>` pattern is a single `<Edge variant=\"a|b|c\"/>` React component. Its illustration carries the most actual drawing effort (~30 shapes: head, compound eye, knocked-out thorax shading, clipped gaster bands, halftoned wings with hand veins, five legs, tapered antennae with clubs).\n\nGRAFT, in priority order:\n\n1. KILL PERMANENT MARKER. Replace with Bricolage Grotesque variable at wdth 75-78 / wght 800 (I curled all three font URLs \u2014 all return 200, so inkwash's and riso's unverified worry is dead). Keep zine's existing `::before` misregistered blood second pull under it. This fixes zine's weakest criterion for the cost of one `<link>`, and it is the element carrying the product name.\n\n2. PORT RISO'S FOCUS SYSTEM WHOLESALE. Eight `:focus-visible` rules at 3px acid with offset, on every interactive element, plus `:focus-within` on `.bar` in results.html. Zine currently ships the hero search field with `outline:0` and no replacement. Treat this as blocking.\n\n3. SWAP THE DISCLOSURE FOR NATIVE `<details>/<summary>`. Riso's approach: keyboard-operable, `details[open] .caret{transform:rotate(90deg)}` handles the affordance, and it deletes inkwash's `<script>` entirely. Zine's `why \u00b7 expand` button + `aria-expanded` needs JS it does not have.\n\n4. TAKE INKWASH'S `pathLength=\"100\"` RING. Zine's ring is a mathematically perfect `<circle r=\"19\">` \u2014 the one place it breaks its own \"no perfect circles\" rule. With pathLength=100 the ring can be a hand-inked wobble path and elapsed is just `{pct} {100-pct}`, no circumference math in the component. (All three ring calcs are correct as written \u2014 zine 43.77/75.61 on C=119.38, riso 87.55 offset on C=138.23, inkwash 36.7/63.3 \u2014 but only inkwash's survives an irregular path.)\n\n5. UPGRADE THE SCORE MODEL TO RISO'S. Zine's flat \"+0.12 per extra channel\" is traceable but crude; riso's weighted mean with per-dimension weights printed inline reconstructs exactly and is more defensible. Keep zine's provenance table as the container, and add riso's Channel-C-drop-rate-over-20% warning \u2014 a direct callback to spec \u00a7Stage 4 that nobody else makes. Also take inkwash's habit of using the schema keys verbatim (`rhythmic_character`, `signature_hook`) as the fingerprint row labels: it ties the UI to the JSON and is honest about being a data structure without being an all-caps eyebrow.\n\n6. GIVE THE `why` A RULE. Steal inkwash's 3px left rule (and its 1.62 line-height). Zine gives the `why` the most air of the three but no mark of its own; inkwash's treatment is the single best-designed element in the set.\n\nFIX BEFORE ANY OF THIS SHIPS:\n\nA. The stretched-edge bug, which zine and riso BOTH have. `preserveAspectRatio=\"none\"` on a 100- or 200-unit-tall wobble path stretched to a 900px seed card amplifies vertical deviation 9x \u2014 riso's 3.5-unit top-edge wobble becomes ~31px of bow, zine's ~13px. That is not \"hand-drawn,\" that is broken. Either nine-slice the frame (corners keep aspect, only straight runs stretch) or generate the path in real pixel coordinates from a seeded hash of the track id. Seeding also kills riso's admitted \"three variants repeat visibly at 15-20 cards.\"\n\nB. Zine's mobile empty state. At 390x844 the art renders ~385px tall in an 844px viewport and floats in black \u2014 the wasp stops being \"the size of the screen.\" Don't ship two hand-authored compositions (inkwash's approach, and it already drifted: its portrait cocktail glass is a scaled copy, not a redraw). Cheaper and better: under 680px switch the art to `preserveAspectRatio=\"xMidYMid slice\"` on a portrait crop so the wasp BLEEDS off both edges instead of shrinking. Riso proved the slice math works \u2014 its 390x844 crop lands the burst on the bar correctly.\n\nC. Keep zine's opaque-patch texture law as system-wide policy. It is the only mechanism among the three that makes the constraint enforceable, and it would have caught riso's one real contrast failure: `.notice__ht` puts a pink halftone at 0.55 opacity directly behind 13.5px `--bone-dim` body copy, giving 3.71:1 where a dot lands under a glyph (I computed the composite: #932741). That fails AA and breaks riso's own stated \"texture forbidden over any text, without exception\" \u2014 on the one component whose entire job is communicating a degraded state clearly.\n\nD. Rotate the band, not the text. Zine rotates the whole degraded notice 0.7\u00b0 including its sentence; riso counter-rotates the text back (which costs subpixel AA). Inkwash is the only one that gets it right: rotate the `::before` band, leave the text at 0\u00b0. Adopt that.\n\nDO NOT TAKE: inkwash's `#rough-nub` on 35 match ticks, and `.inked::after{z-index:-1}` for the misregistered plate. If you want the second plate, do it as a flat offset element with no filter \u2014 zine's blood pull under the search strip is already exactly that, done right and done cheap.\n\nLAST: three of five inkwash cards and four of five riso cards ship collapsed panels containing literal \"expanded view collapsed in this mockup\" filler. Zine's four collapsed cards are simply collapsed. Whichever you build, expand at least two so the pattern is stress-tested at length rather than demonstrated once \u2014 the per-dimension panel is where the \"how did it know that\" claim either lands or doesn't."
+    }
+  ]
+}

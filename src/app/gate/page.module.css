@@ -1,0 +1,104 @@
+/* ======================================================================
+   /gate — the invite wall. Two elements on the toner-black ground.
+
+   Every value here is copied from docs/design/final/empty.html: the
+   wordmark block (size, axis settings, the torn --card patch rotated
+   -2.2deg, the blood ghost at translate(6px,-7px)) and the .hint block
+   (mono, --dust, a patch rotated -1.1deg).
+
+   LAW (docs/design.md §4): texture never falls under a glyph. Both text
+   blocks carry their own opaque patch; the patch rotates, the sentence
+   never does. The body's paper tooth shows only in the gutters.
+
+   The font families are written out rather than taken from --display /
+   --mono so this page renders correctly on its own: next/font sets
+   --font-display / --font-mono on the root layout, and the literal
+   fallback stack after each var() is the one in docs/design.md §3.2.
+   ====================================================================== */
+
+.plate {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: clamp(26px, 4.6vh, 52px);
+  padding: clamp(28px, 6vw, 96px) clamp(20px, 5vw, 72px);
+  overflow-x: hidden;
+}
+
+/* ---------------- wordmark ------------------------------------------- */
+.wordmark {
+  position: relative;
+  margin: 0;
+  padding: 10px 20px 14px;
+  isolation: isolate;
+  font-family:
+    var(--font-display, 'Bricolage Grotesque'), 'Haettenschweiler', 'Arial Narrow',
+    'Helvetica Neue Condensed Bold', 'Franklin Gothic Medium Cond', Impact, sans-serif;
+  font-variation-settings: 'opsz' 96, 'wdth' 76, 'wght' 800;
+  font-weight: 800;
+  font-size: clamp(3.1rem, 11.4vw, 7.4rem);
+  line-height: 0.88;
+  letter-spacing: -0.02em;
+  color: var(--acid, #d9f227);
+}
+
+/* the opaque patch the law demands — torn, and it is the thing that rotates */
+.wordmark::before {
+  content: '';
+  position: absolute;
+  inset: -4px -10px -6px -8px;
+  z-index: -2;
+  background: var(--card, #1d1a16);
+  transform: rotate(-2.2deg);
+  clip-path: polygon(
+    0 7%, 4% 0, 29% 6%, 55% 1%, 81% 7%, 100% 3%,
+    98% 46%, 100% 95%, 76% 100%, 50% 94%, 24% 100%, 3% 95%
+  );
+}
+
+.ghost {
+  position: absolute;
+  left: 20px;
+  top: 10px;
+  z-index: -1;
+  color: var(--blood, #e33127);
+  transform: translate(6px, -7px);
+  pointer-events: none;
+}
+
+/* ---------------- the one line of copy -------------------------------- */
+.line {
+  position: relative;
+  margin: 0;
+  padding: 9px 14px 10px;
+  isolation: isolate;
+  font-family:
+    var(--font-mono, 'IBM Plex Mono'), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: clamp(12px, 1.15vw, 14px);
+  line-height: 1.55;
+  letter-spacing: 0.01em;
+  color: var(--dust, #a8a296);
+  max-width: min(82vw, 46ch);
+}
+
+.line::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--card, #1d1a16);
+  transform: rotate(-1.1deg);
+}
+
+@media (max-width: 680px) {
+  .wordmark {
+    font-size: clamp(2.9rem, 15vw, 4.4rem);
+  }
+  .line {
+    max-width: min(88vw, 34ch);
+  }
+}

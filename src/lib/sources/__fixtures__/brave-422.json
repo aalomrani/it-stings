@@ -1,0 +1,21 @@
+{
+  "error": {
+    "code": "VALIDATION",
+    "detail": "Unable to validate request parameter(s)",
+    "meta": {
+      "errors": [
+        {
+          "input": null,
+          "loc": [
+            "header",
+            "x-subscription-token"
+          ],
+          "msg": "Field required",
+          "type": "missing"
+        }
+      ]
+    },
+    "status": 422
+  },
+  "type": "ErrorResponse"
+}

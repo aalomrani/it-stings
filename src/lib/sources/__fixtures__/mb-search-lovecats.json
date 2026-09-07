@@ -1,0 +1,639 @@
+{
+  "created": "2026-09-06T13:20:15.941Z",
+  "count": 36,
+  "offset": 0,
+  "recordings": [
+    {
+      "id": "204103f1-2a5d-4489-87aa-15e8fc1b0caf",
+      "score": 100,
+      "artist-credit-id": "03d2a467-c9a5-306f-8c24-abf84da0778a",
+      "title": "The Lovecats",
+      "length": 40000,
+      "disambiguation": "part of “The Power of the LP” DJ-mix",
+      "video": null,
+      "artist-credit": [
+        {
+          "name": "The Cure",
+          "artist": {
+            "id": "69ee3720-a7cb-4402-b48d-a02c366f2bcf",
+            "name": "The Cure",
+            "sort-name": "Cure, The",
+            "aliases": [
+              {
+                "sort-name": "Cure",
+                "name": "Cure",
+                "locale": null,
+                "type": null,
+                "primary": null,
+                "begin-date": null,
+                "end-date": null
+              }
+            ]
+          }
+        }
+      ],
+      "first-release-date": "2005",
+      "releases": [
+        {
+          "id": "08705778-201f-453b-b686-0b91b8816551",
+          "status-id": "1156806e-d06a-38bd-83f0-cf2284a808b9",
+          "artist-credit-id": "949a7fd5-fe73-3e8f-922e-01ff4ca958f7",
+          "count": 1,
+          "title": "$mall ¢hange’s ‘The Power of the LP’ ¡WFMU Marathon ’05 beeyotch!",
+          "status": "Bootleg",
+          "artist-credit": [
+            {
+              "name": "Various Artists",
+              "artist": {
+                "id": "89ad4ac3-39f7-470e-963a-56509c546377",
+                "name": "Various Artists",
+                "sort-name": "Various Artists",
+                "disambiguation": "add compilations to this artist"
+              }
+            }
+          ],
+          "release-group": {
+            "id": "d9e5db85-1c89-34bb-8c4d-4f71ad090b54",
+            "type-id": "0c60f497-ff81-3818-befd-abfc84a4858b",
+            "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+            "title": "$mall ¢hange’s ‘The Power of the LP’ ¡WFMU Marathon ’05 beeyotch!",
+            "primary-type": "Album",
+            "secondary-types": [
+              "Remix"
+            ],
+            "secondary-type-ids": [
+              "0c60f497-ff81-3818-befd-abfc84a4858b"
+            ]
+          },
+          "date": "2005",
+          "country": "US",
+          "release-events": [
+            {
+              "date": "2005",
+              "area": {
+                "id": "489ce91b-6658-3307-9877-795b68554c98",
+                "name": "United States",
+                "sort-name": "United States",
+                "iso-3166-1-codes": [
+                  "US"
+                ]
+              }
+            }
+          ],
+          "track-count": 70,
+          "media": [
+            {
+              "id": "3cf32a55-371a-3e2d-adb8-961ea46259d9",
+              "position": 1,
+              "format": "CD",
+              "track": [
+                {
+                  "id": "78fa9744-28d4-301b-8912-e18ac39dcc8c",
+                  "number": "20",
+                  "title": "The Lovecats",
+                  "length": 40000
+                }
+              ],
+              "track-count": 70,
+              "track-offset": 19
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cca4b58b-265a-4c01-bd94-d9216d178b8f",
+      "score": 100,
+      "artist-credit-id": "03d2a467-c9a5-306f-8c24-abf84da0778a",
+      "title": "The Lovecats",
+      "length": 230053,
+      "disambiguation": "live, 2011-09-10: Robin Hill Country Park, Newport, UK",
+      "video": null,
+      "artist-credit": [
+        {
+          "name": "The Cure",
+          "artist": {
+            "id": "69ee3720-a7cb-4402-b48d-a02c366f2bcf",
+            "name": "The Cure",
+            "sort-name": "Cure, The",
+            "aliases": [
+              {
+                "sort-name": "Cure",
+                "name": "Cure",
+                "locale": null,
+                "type": null,
+                "primary": null,
+                "begin-date": null,
+                "end-date": null
+              }
+            ]
+          }
+        }
+      ],
+      "first-release-date": "2011-12-03",
+      "releases": [
+        {
+          "id": "8de2ca73-0367-490d-b1b2-f3dd02d4fa32",
+          "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+          "artist-credit-id": "03d2a467-c9a5-306f-8c24-abf84da0778a",
+          "count": 1,
+          "title": "Bestival Live 2011",
+          "status": "Official",
+          "artist-credit": [
+            {
+              "name": "The Cure",
+              "artist": {
+                "id": "69ee3720-a7cb-4402-b48d-a02c366f2bcf",
+                "name": "The Cure",
+                "sort-name": "Cure, The"
+              }
+            }
+          ],
+          "release-group": {
+            "id": "1b8e683c-6f6a-412f-b455-775278620416",
+            "type-id": "6fd474e2-6b58-3102-9d17-d6f7eb7da0a0",
+            "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+            "title": "Bestival Live 2011",
+            "primary-type": "Album",
+            "secondary-types": [
+              "Live"
+            ],
+            "secondary-type-ids": [
+              "6fd474e2-6b58-3102-9d17-d6f7eb7da0a0"
+            ]
+          },
+          "date": "2011-12-05",
+          "country": "XW",
+          "release-events": [
+            {
+              "date": "2011-12-05",
+              "area": {
+                "id": "525d4e18-3d00-31b9-a58b-a146a916de8f",
+                "name": "[Worldwide]",
+                "sort-name": "[Worldwide]",
+                "iso-3166-1-codes": [
+                  "XW"
+                ]
+              }
+            }
+          ],
+          "track-count": 32,
+          "media": [
+            {
+              "id": "22522035-4796-32fc-9acb-4e19eb99c789",
+              "position": 1,
+              "format": "Digital Media",
+              "track": [
+                {
+                  "id": "21f54bb8-269a-48aa-9047-a05658916fcc",
+                  "number": "22",
+                  "title": "The Lovecats",
+                  "length": 230000
+                }
+              ],
+              "track-count": 32,
+              "track-offset": 21
+            }
+          ]
+        },
+        {
+          "id": "6789678f-f9f0-42ce-8ae0-36ea641f3241",
+          "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+          "artist-credit-id": "03d2a467-c9a5-306f-8c24-abf84da0778a",
+          "count": 2,
+          "title": "Bestival Live 2011",
+          "status": "Official",
+          "artist-credit": [
+            {
+              "name": "The Cure",
+              "artist": {
+                "id": "69ee3720-a7cb-4402-b48d-a02c366f2bcf",
+                "name": "The Cure",
+                "sort-name": "Cure, The"
+              }
+            }
+          ],
+          "release-group": {
+            "id": "1b8e683c-6f6a-412f-b455-775278620416",
+            "type-id": "6fd474e2-6b58-3102-9d17-d6f7eb7da0a0",
+            "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+            "title": "Bestival Live 2011",
+            "primary-type": "Album",
+            "secondary-types": [
+              "Live"
+            ],
+            "secondary-type-ids": [
+              "6fd474e2-6b58-3102-9d17-d6f7eb7da0a0"
+            ]
+          },
+          "date": "2011-12-03",
+          "country": "JP",
+          "release-events": [
+            {
+              "date": "2011-12-03",
+              "area": {
+                "id": "2db42837-c832-3c27-b4a3-08198f75693c",
+                "name": "Japan",
+                "sort-name": "Japan",
+                "iso-3166-1-codes": [
+                  "JP"
+                ]
+              }
+            }
+          ],
+          "track-count": 32,
+          "media": [
+            {
+              "id": "404e3e9a-6a79-38e1-b00b-b197af64ef19",
+              "position": 2,
+              "format": "CD",
+              "track": [
+                {
+                  "id": "51f22c74-6b55-4cc0-b930-10170022bb4c",
+                  "number": "6",
+                  "title": "The Lovecats",
+                  "length": 230053
+                }
+              ],
+              "track-count": 16,
+              "track-offset": 5
+            }
+          ]
+        },
+        {
+          "id": "3276c099-b530-41dc-bcb6-9b1ebed03cb9",
+          "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+          "artist-credit-id": "03d2a467-c9a5-306f-8c24-abf84da0778a",
+          "count": 2,
+          "title": "Bestival Live 2011",
+          "status": "Official",
+          "artist-credit": [
+            {
+              "name": "The Cure",
+              "artist": {
+                "id": "69ee3720-a7cb-4402-b48d-a02c366f2bcf",
+                "name": "The Cure",
+                "sort-name": "Cure, The"
+              }
+            }
+          ],
+          "release-group": {
+            "id": "1b8e683c-6f6a-412f-b455-775278620416",
+            "type-id": "6fd474e2-6b58-3102-9d17-d6f7eb7da0a0",
+            "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+            "title": "Bestival Live 2011",
+            "primary-type": "Album",
+            "secondary-types": [
+              "Live"
+            ],
+            "secondary-type-ids": [
+              "6fd474e2-6b58-3102-9d17-d6f7eb7da0a0"
+            ]
+          },
+          "date": "2011-12-05",
+          "country": "GB",
+          "release-events": [
+            {
+              "date": "2011-12-05",
+              "area": {
+                "id": "8a754a16-0027-3a29-b6d7-2b40ea0481ed",
+                "name": "United Kingdom",
+                "sort-name": "United Kingdom",
+                "iso-3166-1-codes": [
+                  "GB"
+                ]
+              }
+            }
+          ],
+          "track-count": 32,
+          "media": [
+            {
+              "id": "1b146774-3c50-3c12-80f3-98afd5a773dd",
+              "position": 2,
+              "format": "CD",
+              "track": [
+                {
+                  "id": "9ca31063-d9e4-364b-a207-ef0892cc4e05",
+                  "number": "6",
+                  "title": "The Lovecats",
+                  "length": 230053
+                }
+              ],
+              "track-count": 16,
+              "track-offset": 5
+            }
+          ]
+        },
+        {
+          "id": "bf01ac13-6952-4d74-b2b3-d768a2715276",
+          "status-id": "4e304316-386d-3409-af2e-78857eec5cfe",
+          "artist-credit-id": "03d2a467-c9a5-306f-8c24-abf84da0778a",
+          "count": 2,
+          "title": "Bestival Live 2011",
+          "status": "Official",
+          "artist-credit": [
+            {
+              "name": "The Cure",
+              "artist": {
+                "id": "69ee3720-a7cb-4402-b48d-a02c366f2bcf",
+                "name": "The Cure",
+                "sort-name": "Cure, The"
+              }
+            }
+          ],
+          "release-group": {
+            "id": "1b8e683c-6f6a-412f-b455-775278620416",
+            "type-id": "6fd474e2-6b58-3102-9d17-d6f7eb7da0a0",
+            "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+            "title": "Bestival Live 2011",
+            "primary-type": "Album",
+            "secondary-types": [
+              "Live"
+            ],
+            "secondary-type-ids": [
+              "6fd474e2-6b58-3102-9d17-d6f7eb7da0a0"
+            ]
+          },
+          "date": "2011-12-06",
+          "country": "US",
+          "release-events": [
+            {
+              "date": "2011-12-06",
+              "area": {
+                "id": "489ce91b-6658-3307-9877-795b68554c98",
+                "name": "United States",
+                "sort-name": "United States",
+                "iso-3166-1-codes": [
+                  "US"
+                ]
+              }
+            }
+          ],
+          "track-count": 32,
+          "media": [
+            {
+              "id": "0caea39d-aaa6-3d27-a459-8669f57f5e4a",
+              "position": 2,
+              "format": "CD",
+              "track": [
+                {
+                  "id": "b0b2876d-3507-30ef-b029-6c718eb760cc",
+                  "number": "6",
+                  "title": "The Lovecats",
+                  "length": 230053
+                }
+              ],
+              "track-count": 16,
+              "track-offset": 5
+            }
+          ]
+        }
+      ],
+      "isrcs": [
+        "GBGNS1100881"
+      ]
+    },
+    {
+      "id": "54a5be2e-7685-4947-8cb6-aa5a7c916ab3",
+      "score": 100,
+      "artist-credit-id": "03d2a467-c9a5-306f-8c24-abf84da0778a",
+      "title": "The Lovecats",
+      "length": 227592,
+      "disambiguation": "live, 2016‐06‐19: Madison Square Garden, New York, NY, USA",
+      "video": null,
+      "artist-credit": [
+        {
+          "name": "The Cure",
+          "artist": {
+            "id": "69ee3720-a7cb-4402-b48d-a02c366f2bcf",
+            "name": "The Cure",
+            "sort-name": "Cure, The",
+            "aliases": [
+              {
+                "sort-name": "Cure",
+                "name": "Cure",
+                "locale": null,
+                "type": null,
+                "primary": null,
+                "begin-date": null,
+                "end-date": null
+              }
+            ]
+          }
+        }
+      ],
+      "releases": [
+        {
+          "id": "452804ca-3ba3-4822-9408-ac2d502afdc0",
+          "status-id": "1156806e-d06a-38bd-83f0-cf2284a808b9",
+          "artist-credit-id": "03d2a467-c9a5-306f-8c24-abf84da0778a",
+          "count": 1,
+          "title": "2016‐06‐19: Madison Square Garden, New York, NY, USA",
+          "status": "Bootleg",
+          "artist-credit": [
+            {
+              "name": "The Cure",
+              "artist": {
+                "id": "69ee3720-a7cb-4402-b48d-a02c366f2bcf",
+                "name": "The Cure",
+                "sort-name": "Cure, The"
+              }
+            }
+          ],
+          "release-group": {
+            "id": "e33ed1ad-9385-4c53-8972-d502d8f0507d",
+            "type-id": "6fd474e2-6b58-3102-9d17-d6f7eb7da0a0",
+            "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+            "title": "2016‐06‐19: Madison Square Garden, New York, NY, USA",
+            "primary-type": "Album",
+            "secondary-types": [
+              "Live"
+            ],
+            "secondary-type-ids": [
+              "6fd474e2-6b58-3102-9d17-d6f7eb7da0a0"
+            ]
+          },
+          "track-count": 32,
+          "media": [
+            {
+              "id": "6983db47-efe8-32a5-a69f-1d1f1c137859",
+              "position": 1,
+              "format": "Digital Media",
+              "track": [
+                {
+                  "id": "eb69df57-2c81-488d-9e6b-231a7053e03c",
+                  "number": "28",
+                  "title": "The Lovecats",
+                  "length": 227592
+                }
+              ],
+              "track-count": 32,
+              "track-offset": 27
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "5389b75f-0402-4637-8241-e2e4f0329b15",
+      "score": 100,
+      "artist-credit-id": "03d2a467-c9a5-306f-8c24-abf84da0778a",
+      "title": "The Lovecats",
+      "length": 243382,
+      "disambiguation": "live, 1987‐12‐09: Wembley Arena, London, UK",
+      "video": null,
+      "artist-credit": [
+        {
+          "name": "The Cure",
+          "artist": {
+            "id": "69ee3720-a7cb-4402-b48d-a02c366f2bcf",
+            "name": "The Cure",
+            "sort-name": "Cure, The",
+            "aliases": [
+              {
+                "sort-name": "Cure",
+                "name": "Cure",
+                "locale": null,
+                "type": null,
+                "primary": null,
+                "begin-date": null,
+                "end-date": null
+              }
+            ]
+          }
+        }
+      ],
+      "releases": [
+        {
+          "id": "2ff93715-125b-456f-b457-ab777b11f778",
+          "status-id": "1156806e-d06a-38bd-83f0-cf2284a808b9",
+          "artist-credit-id": "03d2a467-c9a5-306f-8c24-abf84da0778a",
+          "count": 1,
+          "title": "1987‐12‐09: Wembley Arena, London, UK",
+          "status": "Bootleg",
+          "artist-credit": [
+            {
+              "name": "The Cure",
+              "artist": {
+                "id": "69ee3720-a7cb-4402-b48d-a02c366f2bcf",
+                "name": "The Cure",
+                "sort-name": "Cure, The"
+              }
+            }
+          ],
+          "release-group": {
+            "id": "dc6bf79a-84cc-489c-9172-acca96a7b2f0",
+            "type-id": "6fd474e2-6b58-3102-9d17-d6f7eb7da0a0",
+            "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+            "title": "1987‐12‐09: Wembley Arena, London, UK",
+            "primary-type": "Album",
+            "secondary-types": [
+              "Live"
+            ],
+            "secondary-type-ids": [
+              "6fd474e2-6b58-3102-9d17-d6f7eb7da0a0"
+            ]
+          },
+          "track-count": 34,
+          "media": [
+            {
+              "id": "6ae96e06-92e6-32c4-a63d-dff9272f8e7a",
+              "position": 1,
+              "track": [
+                {
+                  "id": "773cb12f-290d-472f-af62-37b7461727c7",
+                  "number": "20",
+                  "title": "The Lovecats",
+                  "length": 243382
+                }
+              ],
+              "track-count": 34,
+              "track-offset": 19
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "31077180-bcb8-453e-afa5-c40c264f44d8",
+      "score": 100,
+      "artist-credit-id": "03d2a467-c9a5-306f-8c24-abf84da0778a",
+      "title": "The Lovecats",
+      "length": 216737,
+      "disambiguation": "live, 2012‐07‐09: Ippodromo delle Capannelle, Rome, Italy",
+      "video": null,
+      "artist-credit": [
+        {
+          "name": "The Cure",
+          "artist": {
+            "id": "69ee3720-a7cb-4402-b48d-a02c366f2bcf",
+            "name": "The Cure",
+            "sort-name": "Cure, The",
+            "aliases": [
+              {
+                "sort-name": "Cure",
+                "name": "Cure",
+                "locale": null,
+                "type": null,
+                "primary": null,
+                "begin-date": null,
+                "end-date": null
+              }
+            ]
+          }
+        }
+      ],
+      "releases": [
+        {
+          "id": "29e150f4-d798-4717-8805-93f5694c3ae0",
+          "status-id": "1156806e-d06a-38bd-83f0-cf2284a808b9",
+          "artist-credit-id": "03d2a467-c9a5-306f-8c24-abf84da0778a",
+          "count": 1,
+          "title": "2012‐07‐09: Ippodromo delle Capannelle, Rome, Italy",
+          "status": "Bootleg",
+          "artist-credit": [
+            {
+              "name": "The Cure",
+              "artist": {
+                "id": "69ee3720-a7cb-4402-b48d-a02c366f2bcf",
+                "name": "The Cure",
+                "sort-name": "Cure, The"
+              }
+            }
+          ],
+          "release-group": {
+            "id": "2f4fb85c-d643-4e41-a50b-e976f39dfd72",
+            "type-id": "6fd474e2-6b58-3102-9d17-d6f7eb7da0a0",
+            "primary-type-id": "f529b476-6e62-324f-b0aa-1f3e33d313fc",
+            "title": "2012‐07‐09: Ippodromo delle Capannelle, Rome, Italy",
+            "primary-type": "Album",
+            "secondary-types": [
+              "Live"
+            ],
+            "secondary-type-ids": [
+              "6fd474e2-6b58-3102-9d17-d6f7eb7da0a0"
+            ]
+          },
+          "track-count": 36,
+          "media": [
+            {
+              "id": "99e98bc3-0b80-392e-8051-06b55d58c649",
+              "position": 1,
+              "format": "Digital Media",
+              "track": [
+                {
+                  "id": "265bff12-2b94-46aa-a998-5c7b4fb862e2",
+                  "number": "31",
+                  "title": "The Lovecats",
+                  "length": 216737
+                }
+              ],
+              "track-count": 36,
+              "track-offset": 30
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
