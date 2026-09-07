@@ -26,7 +26,7 @@ export const DIMENSION_LABEL: Record<ScoredDimension, string> = {
   rhythmic_character: 'rhythm & groove',
   vocal_delivery: 'vocals',
   emotional_register: 'mood',
-  scene_context: 'scene / setting',
+  scene_context: 'genre',
   signature_hook: 'signature hook',
   instrumentation: 'instruments',
   harmonic_language: 'harmony',

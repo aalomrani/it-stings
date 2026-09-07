@@ -281,13 +281,17 @@ function eraCloseness(a: FeatureProfile, b: FeatureProfile, span: number): numbe
   return 1 - Math.min(1, Math.abs(a.year - b.year) / span);
 }
 
+/**
+ * The `scene_context` dimension, shown in the UI as "genre": how much the two songs' own
+ * genre/tag sets overlap. Pure genre now — the era nudge is gone, because era is its own
+ * scored dimension and blending it here double-counted it. The tags are the SONG's (its
+ * album genres, its crowd/MusicBrainz tags), so this measures the song's genre, not a
+ * blanket artist label, and includes sub-genres wherever the source carried them.
+ */
 function scene(a: FeatureProfile, b: FeatureProfile): DimResult {
   const hasTags = a.normalizedTags.length > 0 || b.normalizedTags.length > 0;
-  if (!hasTags) return { score: NEUTRAL, note: 'no tags to compare (low confidence)' };
-  const tagJ = weightedJaccard(a.rawTags, b.rawTags);
-  const era = eraCloseness(a, b, 40);
-  const score = era === null ? tagJ : 0.85 * tagJ + 0.15 * era;
-  return { score, note: 'weighted tag/era overlap (soft, genre-guarded)' };
+  if (!hasTags) return { score: NEUTRAL, note: 'no genre tags to compare (low confidence)' };
+  return { score: weightedJaccard(a.rawTags, b.rawTags), note: 'genre/tag overlap (weighted)' };
 }
 
 function era(a: FeatureProfile, b: FeatureProfile): DimResult {

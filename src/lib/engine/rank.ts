@@ -47,30 +47,30 @@ export type WeightsMap = Partial<Record<DimensionScore['dimension'], number>>;
  * ------------------------------------------------------------------------------------ */
 
 /**
- * The DEFAULT per-run weights, total 15. A run with no `weights` in its options scores
- * with exactly this map; the UI reads it to seed its sliders (one shared copy). `era`
- * now carries weight 1 (a same-era track is a weak positive), `scene_context` is 0 (too
- * noisy a signal to weight by default) and `emotional_register` is 3.
+ * The DEFAULT per-run weights, total 27. A run with no `weights` in its options scores
+ * with exactly this map; the UI reads it to seed its sliders (one shared copy). These are
+ * the user's chosen defaults: rhythm & groove and mood lead (6 each), genre next (5 — this
+ * is the `scene_context` tag/genre-overlap dimension, shown as "genre" in the UI), then era
+ * (4), instruments (3), harmony (2) and production (1).
  *
- * A caller may override any of the nine per run; `signature_hook` and `vocal_delivery`
- * are kept in the default at 2 for continuity, but in the keyless engine they carry no
- * measured signal (always a neutral 0.5), so weighting them only flattens the spread —
- * the UI marks them "not measured (keyless)".
+ * `vocal_delivery` and `signature_hook` are 0: in the keyless engine they carry no measured
+ * signal (always a neutral 0.5), so any weight on them only flattens the spread — the UI
+ * marks them "not measured (keyless)". A caller may still override any of the nine per run.
  */
 export const DEFAULT_DIMENSION_WEIGHTS: Record<DimensionScore['dimension'], number> = {
   // `DimensionScore['dimension']` is `keyof Fingerprint['confidence'] | 'era'`, so the
   // type admits `tempo_feel` even though no scoring pass emits it (Stage 5 returns the
-  // nine in `SCORED_DIMENSIONS`). Weight 0 keeps the record total honest at 15.
+  // nine in `SCORED_DIMENSIONS`). Weight 0 keeps it out of the total.
   tempo_feel: 0,
-  rhythmic_character: 3,
-  vocal_delivery: 3,
-  emotional_register: 3,
-  scene_context: 0,
-  signature_hook: 2,
-  instrumentation: 1,
-  harmonic_language: 1,
+  rhythmic_character: 6,
+  vocal_delivery: 0,
+  emotional_register: 6,
+  scene_context: 5, // shown as "genre" in the UI — the song's genre/tag overlap
+  signature_hook: 0,
+  instrumentation: 3,
+  harmonic_language: 2,
   production_texture: 1,
-  era: 1,
+  era: 4,
 };
 
 /** The clamped weight for one dimension: the map's value (0..10) or the default. */

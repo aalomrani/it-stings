@@ -303,10 +303,13 @@ export async function resolveTrack(
     return null;
   });
 
-  // Fast candidate genre: one keyless Deezer /album call — no iTunes, no MusicBrainz — so a
-  // candidate that skipped both still carries a coarse genre tag for the tag-overlap scoring.
+  // The song's genre, from one keyless Deezer /album call — the genres of the ALBUM this
+  // track sits on (its own record, not a blanket artist label), including sub-genres where
+  // Deezer carries them. Run for the SEED as well as candidates so both sides of the "genre"
+  // dimension share the same taxonomy — a seed left with only iTunes' single coarse genre
+  // would otherwise barely overlap a candidate's richer Deezer genre set.
   const deezerGenreTask = timed('deezer-genre', timings, async () => {
-    if (!opts.candidate || !dz?.album.id) return null;
+    if (!dz?.album.id) return null;
     const res = await deezer.getAlbumGenres(dz.album.id);
     return res.ok ? res.value : null;
   });
@@ -489,6 +492,26 @@ export async function resolveTrack(
         field: 'album.genres',
       },
     );
+  }
+
+  // Enrich a non-Deezer primary with the song's Deezer album genres, deduped, so the "genre"
+  // dimension compares the same taxonomy on both sides (a seed with only iTunes' one coarse
+  // genre would barely overlap a candidate's Deezer genre set). Candidates already have Deezer
+  // as their primary, so the guard skips them. The primary source's provenance is kept —
+  // these are an additive genre enrichment.
+  if (
+    deezerGenres && deezerGenres.length > 0
+    && trackTags !== null
+    && trackTags.source.source !== 'deezer'
+  ) {
+    const have = new Set(trackTags.value.map((t) => t.name.toLowerCase()));
+    const extra = deezerGenres
+      .filter((name) => name.trim().length > 0 && !have.has(name.toLowerCase()))
+      .slice(0, 5)
+      .map((name) => ({ name, count: 1 }));
+    if (extra.length > 0) {
+      trackTags = { value: [...trackTags.value, ...extra], source: trackTags.source };
+    }
   }
 
   const features: TrackRecord['features'] = ab

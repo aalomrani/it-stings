@@ -64,29 +64,43 @@ describe('learnWeights — the difference-of-means learner', () => {
 
   it('matches the hand-computed weights for the 2-match / 2-reject fixture', () => {
     // n=2, K=5 -> learnedShare 2/7, baseShare 5/7. Only rhythmic has importance (1-0=1),
-    // scaled to the base total 15. rhythmic = 2/7*15 + 5/7*3 = 45/7 ≈ 6.43 -> 6; every
-    // other dimension keeps 5/7 of its base (2.14->2, 1.43->1, 0.71->1, 0->0).
+    // scaled to the base total 27. rhythmic = 2/7*27 + 5/7*6 = 84/7 = 12 -> clamps to 10;
+    // every other dimension keeps 5/7 of its base (emotional 4.29->4, genre/scene 3.57->4,
+    // instruments 2.14->2, harmony 1.43->1, production 0.71->1, era 2.86->3, the 0s stay 0).
     expect(learnWeights(pairs(2, 2))).toEqual({
-      rhythmic_character: 6,
-      vocal_delivery: 2,
-      emotional_register: 2,
-      scene_context: 0,
-      signature_hook: 1,
-      instrumentation: 1,
+      rhythmic_character: 10,
+      vocal_delivery: 0,
+      emotional_register: 4,
+      scene_context: 4,
+      signature_hook: 0,
+      instrumentation: 2,
       harmonic_language: 1,
       production_texture: 1,
-      era: 1,
+      era: 3,
     });
   });
 
   it('shrinkage moves with n: more evidence pushes the learned dimension further from base', () => {
-    const w2 = learnWeights(pairs(2, 2)).rhythmic_character ?? 0;
-    const w6 = learnWeights(pairs(6, 6)).rhythmic_character ?? 0;
-    const w20 = learnWeights(pairs(20, 20)).rhythmic_character ?? 0;
-    const base = DEFAULT_DIMENSION_WEIGHTS.rhythmic_character;
+    // A modest custom base (total 15) so the climb stays visible before the 0..10 clamp; with
+    // the real default (total 27) rhythmic already saturates to 10 at n=2.
+    const base = {
+      tempo_feel: 0,
+      rhythmic_character: 3,
+      vocal_delivery: 3,
+      emotional_register: 3,
+      scene_context: 0,
+      signature_hook: 2,
+      instrumentation: 1,
+      harmonic_language: 1,
+      production_texture: 1,
+      era: 1,
+    };
+    const w2 = learnWeights(pairs(2, 2), base).rhythmic_character ?? 0;
+    const w6 = learnWeights(pairs(6, 6), base).rhythmic_character ?? 0;
+    const w20 = learnWeights(pairs(20, 20), base).rhythmic_character ?? 0;
     // Each step has strictly more evidence, so rhythmic climbs above its base and keeps
     // rising until it saturates at the 0..10 clamp.
-    expect(w2).toBeGreaterThan(base);
+    expect(w2).toBeGreaterThan(base.rhythmic_character);
     expect(w6).toBeGreaterThan(w2);
     expect(w20).toBeGreaterThanOrEqual(w6);
     expect(w20).toBe(10);
@@ -166,14 +180,14 @@ describe('pairsFromFeedback — resolving rows to pairs', () => {
 
 function expectedBaseMap() {
   return {
-    rhythmic_character: 3,
-    vocal_delivery: 3,
-    emotional_register: 3,
-    scene_context: 0,
-    signature_hook: 2,
-    instrumentation: 1,
-    harmonic_language: 1,
+    rhythmic_character: 6,
+    vocal_delivery: 0,
+    emotional_register: 6,
+    scene_context: 5,
+    signature_hook: 0,
+    instrumentation: 3,
+    harmonic_language: 2,
     production_texture: 1,
-    era: 1,
+    era: 4,
   };
 }

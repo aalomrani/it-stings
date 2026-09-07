@@ -93,7 +93,7 @@ import { trackNormKey } from '@/lib/util/normalize';
  * weights change re-ranks it instantly (no network, no model). A pre-engine-4 run has no
  * pool and would re-rank from `results`, so it is retired by this bump instead.
  */
-export const ENGINE_VERSION = 'engine-10-fast-tempo-era';
+export const ENGINE_VERSION = 'engine-11-genre-weights';
 
 /** The channels, in the order their `start` events are emitted. */
 export const CHANNELS: readonly Channel[] = ['A', 'B', 'C'] as const;
