@@ -94,7 +94,7 @@ export function CheckBox() {
   return (
     <svg className="box" viewBox="0 0 24 24" aria-hidden="true">
       <path
-        d="M2.4 3.1 C8 2.2 16 3.4 21.4 2.4 C22.3 8 21.2 16 22 21.5 C16 22.4 8 21.1 2.6 22 C1.7 16 2.9 8 2.4 3.1 Z"
+        d="M2.5 2.5 H21.5 V21.5 H2.5 Z"
         fill="none"
         stroke="#A8A296"
         strokeWidth="1.8"
@@ -127,7 +127,7 @@ export function TornEdge() {
   return (
     <svg className="tornedge" viewBox="0 0 14 800" preserveAspectRatio="none" aria-hidden="true">
       <path
-        d="M0 0 L9 0 L5 42 L11 96 L4 150 L10 206 L3 258 L9 312 L4 366 L11 420 L5 474 L10 528 L3 582 L9 636 L4 690 L10 744 L5 800 L0 800 Z"
+        d="M0 0 H14 V800 H0 Z"
         fill="#1D1A16"
       />
     </svg>
@@ -139,7 +139,7 @@ export function Tear() {
   return (
     <svg className="tear" viewBox="0 0 1200 9" preserveAspectRatio="none" aria-hidden="true">
       <path
-        d="M0 4 L60 1 L120 7 L180 2 L240 8 L300 3 L360 7 L420 1 L480 6 L540 2 L600 8 L660 3 L720 7 L780 1 L840 6 L900 2 L960 8 L1020 3 L1080 7 L1140 2 L1200 5 L1200 9 L0 9 Z"
+        d="M0 2 H1200 V7 H0 Z"
         fill="#EDE9DD"
         opacity="0.28"
       />
@@ -168,11 +168,11 @@ export function PaperStrip({ variant }: { variant: 'hero' | 'bar' }) {
     return (
       <svg className="slot-bg" viewBox="0 0 1200 160" preserveAspectRatio="none" aria-hidden="true">
         <path
-          d="M0 18 L48 12 L96 20 L150 11 L206 21 L262 13 L318 22 L372 12 L430 19 L486 10 L540 21 L598 13 L654 20 L710 11 L766 22 L822 14 L878 19 L934 10 L990 20 L1046 13 L1102 21 L1156 12 L1200 18 L1200 154 L1150 160 L1096 151 L1042 161 L986 152 L932 162 L878 153 L822 159 L768 150 L714 161 L658 152 L604 162 L548 153 L494 160 L438 151 L384 161 L328 152 L274 159 L218 150 L164 161 L108 152 L54 160 L0 152 Z"
+          d="M0 12 H1200 V160 H0 Z"
           fill="#E33127"
         />
         <path
-          d="M0 10 L48 4 L96 12 L150 3 L206 13 L262 5 L318 14 L372 4 L430 11 L486 2 L540 13 L598 5 L654 12 L710 3 L766 14 L822 6 L878 11 L934 2 L990 12 L1046 5 L1102 13 L1156 4 L1200 10 L1200 146 L1150 152 L1096 143 L1042 153 L986 144 L932 154 L878 145 L822 151 L768 142 L714 153 L658 144 L604 154 L548 145 L494 152 L438 143 L384 153 L328 144 L274 151 L218 142 L164 153 L108 144 L54 152 L0 144 Z"
+          d="M0 4 H1200 V152 H0 Z"
           fill="#EDE9DD"
         />
       </svg>
@@ -181,11 +181,11 @@ export function PaperStrip({ variant }: { variant: 'hero' | 'bar' }) {
   return (
     <svg className="bar-bg" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true">
       <path
-        d="M0 16 L52 10 L104 18 L158 9 L214 19 L270 11 L326 20 L382 10 L440 17 L496 8 L552 19 L608 11 L664 18 L720 9 L776 20 L832 12 L888 17 L944 8 L1000 18 L1056 11 L1112 19 L1160 10 L1200 16 L1200 114 L1150 120 L1096 111 L1042 121 L986 112 L932 122 L878 113 L822 119 L768 110 L714 121 L658 112 L604 122 L548 113 L494 120 L438 111 L384 121 L328 112 L274 119 L218 110 L164 121 L108 112 L54 120 L0 112 Z"
+        d="M0 12 H1200 V120 H0 Z"
         fill="#E33127"
       />
       <path
-        d="M0 8 L52 2 L104 10 L158 1 L214 11 L270 3 L326 12 L382 2 L440 9 L496 0 L552 11 L608 3 L664 10 L720 1 L776 12 L832 4 L888 9 L944 0 L1000 10 L1056 3 L1112 11 L1160 2 L1200 8 L1200 106 L1150 112 L1096 103 L1042 113 L986 104 L932 114 L878 105 L822 111 L768 102 L714 113 L658 104 L604 114 L548 105 L494 112 L438 103 L384 113 L328 104 L274 111 L218 102 L164 113 L108 104 L54 112 L0 104 Z"
+        d="M0 4 H1200 V112 H0 Z"
         fill="#EDE9DD"
       />
     </svg>
