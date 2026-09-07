@@ -36,7 +36,7 @@ import { FINGERPRINT_PROMPT_VERSION, fingerprintTrack } from '@/lib/engine/finge
 import { SCORED_DIMENSIONS } from '@/lib/engine/rank';
 import { SCORE_PROMPT_VERSION, scoreBatch } from '@/lib/engine/score';
 import type { ScoredCandidate } from '@/lib/engine/score';
-import { FINGERPRINT_CONFIDENCE_KEYS, type Candidate, type Channel, type Evidence, type Fingerprint, type PipelineEvent, type SourceRef, type TrackRecord } from '@/lib/types';
+import { FINGERPRINT_CONFIDENCE_KEYS, type Candidate, type Channel, type Evidence, type Fingerprint, type PipelineEvent, type RunOptions, type SourceRef, type TrackRecord } from '@/lib/types';
 import { trackNormKey } from '@/lib/util/normalize';
 
 /* ------------------------------------------------------------------------------------ *
@@ -240,6 +240,7 @@ async function run(
   args: {
     seedKey?: string;
     includeSameArtist?: boolean;
+    weights?: Partial<Record<string, number>>;
     deps?: Partial<PipelineDeps>;
     signal?: AbortSignal;
     force?: boolean;
@@ -248,7 +249,10 @@ async function run(
   const events: PipelineEvent[] = [];
   const record = await runPipeline({
     seedKey: args.seedKey ?? SEED.key,
-    options: { includeSameArtist: args.includeSameArtist ?? false },
+    options: {
+      includeSameArtist: args.includeSameArtist ?? false,
+      ...(args.weights ? { weights: args.weights as RunOptions['weights'] } : {}),
+    },
     onEvent: (e) => events.push(e),
     signal: args.signal,
     force: args.force,
@@ -1032,6 +1036,120 @@ describe('the run cache', () => {
     expect(raw).not.toContain('hmac');
     expect(stored?.seed.preview).toBeNull();
     expect(stored?.results[0]?.track.preview).toBeNull();
+  });
+});
+
+/* ------------------------------------------------------------------------------------ *
+ * Per-run weights: the instant, keyless re-rank (Feature 1)
+ * ------------------------------------------------------------------------------------ */
+
+describe('per-run weights', () => {
+  // Two candidates with mirror-image dimension profiles: deezer:1 leans on `era`,
+  // deezer:2 on `rhythmic_character`. Base 0.7 keeps every other dimension strong so both
+  // survive rule 4 and only the era/rhythmic weights decide who leads.
+  const STRONG: Record<string, Record<string, number>> = {
+    'deezer:1': { era: 1, rhythmic_character: 0.4 },
+    'deezer:2': { era: 0.4, rhythmic_character: 1 },
+  };
+  const scoreByProfile: PipelineDeps['score'] = async (_seed, _fp, candidates) => ({
+    scored: candidates.map((c) =>
+      scored(c.track.key, {
+        dimensions: SCORED_DIMENSIONS.map((dimension) => ({
+          dimension,
+          score: STRONG[c.track.key]?.[dimension] ?? 0.7,
+          note: 'walking upright bass under the vocal',
+        })),
+      }),
+    ),
+    failed: [],
+  });
+
+  it('persists the full scored pool, on the record and in the run cache', async () => {
+    const { record } = await run({ deps: deps({ score: scoreByProfile }) });
+    expect(record.scoredPool.map((r) => r.track.key).sort()).toEqual(['deezer:1', 'deezer:2']);
+    // The pool has real dimensions, so a replay can re-score it.
+    expect(record.scoredPool[0]?.dimensions.length).toBe(SCORED_DIMENSIONS.length);
+
+    const stored = runsRepo.find(
+      SEED.key,
+      runCacheHash({ includeSameArtist: false }),
+      ENGINE_VERSION,
+    );
+    expect(stored?.scoredPool.map((r) => r.track.key).sort()).toEqual(['deezer:1', 'deezer:2']);
+  });
+
+  it('a replay with different weights re-ranks the SAME pool, no model call, no re-verify', async () => {
+    await run({ deps: deps({ score: scoreByProfile }) });
+    expect(runsRepo.count()).toBe(1);
+
+    // The replay must not touch the channels, the verifier or the scorer.
+    const verifyMany = vi.fn(async () => []);
+    const score = vi.fn(scoreByProfile);
+
+    const eraHeavy = await run({
+      weights: { era: 10, rhythmic_character: 0 },
+      deps: deps({ verifyMany, score }),
+    });
+    const rhythmHeavy = await run({
+      weights: { era: 0, rhythmic_character: 10 },
+      deps: deps({ verifyMany, score }),
+    });
+
+    // Both are cache replays: cheap, keyless, and budget-free (the route reads modelCalls 0
+    // and the same cache key to know not to charge them).
+    expect(eraHeavy.labels[0]).toBe('run:cached');
+    expect(rhythmHeavy.labels[0]).toBe('run:cached');
+    expect(verifyMany).not.toHaveBeenCalled();
+    expect(score).not.toHaveBeenCalled();
+    expect(eraHeavy.record.stats.modelCalls).toBe(0);
+
+    // The SAME two candidates, re-ordered by the requested weights.
+    const eraOrder = eraHeavy.record.results.map((r) => r.track.key);
+    const rhythmOrder = rhythmHeavy.record.results.map((r) => r.track.key);
+    expect(eraOrder.slice().sort()).toEqual(rhythmOrder.slice().sort());
+    expect(eraOrder[0]).toBe('deezer:1'); // era-strong leads when era is heavy
+    expect(rhythmOrder[0]).toBe('deezer:2'); // rhythm-strong leads when rhythm is heavy
+    expect(eraOrder).not.toEqual(rhythmOrder);
+
+    // Still one stored run — a re-tune never writes a new cache row.
+    expect(runsRepo.count()).toBe(1);
+  });
+
+  it('a replay with NO weights re-ranks by the engine defaults, not the stored run’s weights', async () => {
+    // First run is created with an era-heavy map, so it is stored with options.weights={era:10}
+    // and its results lead with the era-strong candidate.
+    const first = await run({
+      weights: { era: 10, rhythmic_character: 0 },
+      deps: deps({ score: scoreByProfile }),
+    });
+    expect(first.record.results.map((r) => r.track.key)[0]).toBe('deezer:1');
+    expect(runsRepo.count()).toBe(1);
+
+    // A later request with NO weights param (reset to defaults / a plain share link) must
+    // re-rank the SAME pool by DEFAULT_DIMENSION_WEIGHTS (rhythmic_character:3 > era:1), NOT
+    // silently inherit the stored run's era-heavy map.
+    const replayed = await run({ deps: deps({ verifyMany: vi.fn(async () => []) }) });
+    expect(replayed.labels[0]).toBe('run:cached');
+    expect(replayed.record.results.map((r) => r.track.key)[0]).toBe('deezer:2');
+    expect(runsRepo.count()).toBe(1);
+  });
+
+  it('a pre-engine-4 run with no pool falls back to its stored results on replay', async () => {
+    const { record } = await run({ deps: deps({ score: scoreByProfile }) });
+    // Simulate an old row: same key, but the pool was never captured.
+    runsRepo.save(
+      { ...record, scoredPool: [] },
+      runCacheHash({ includeSameArtist: false }),
+    );
+    const replayed = await run({
+      weights: { era: 10, rhythmic_character: 0 },
+      deps: deps({ verifyMany: vi.fn(async () => []) }),
+    });
+    expect(replayed.labels[0]).toBe('run:cached');
+    // No pool to re-rank, so the stored (already-ranked) results come back unchanged.
+    expect(replayed.record.results.map((r) => r.track.key)).toEqual(
+      record.results.map((r) => r.track.key),
+    );
   });
 });
 

@@ -302,6 +302,49 @@ summary:focus-visible,
 .drops b{color:var(--bone);font-weight:500}
 .drops .warn{color:var(--ochre)}
 
+/* ---------------- the bee bar — progress as the sting driving home ----
+   The fill is not a timer: it is the share of pipeline stages that finished
+   (progress.ts), so a stalled run reads as a stalled bar. The rail is the
+   gaster laid flat — the same acid / ink / blood bands the drawing carries —
+   and the drawn stinger rides the fill's leading edge toward the target.
+   The wasp itself is reused whole beside it, so the mascot is on this page
+   too, knocked back into an inked plate. */
+.beeprog{position:relative;isolation:isolate;padding:16px 20px 14px;margin:0 0 16px}
+.beeprog::before{
+  content:"";position:absolute;inset:0;z-index:-1;background:var(--card);
+  transform:rotate(-.5deg);
+  border:10px solid transparent;border-image:var(--e-fb-dust) 10 / 10px / 0 round;
+}
+.beehead{display:flex;align-items:center;gap:16px}
+.beebar-wrap{flex:1 1 auto;min-width:0}
+
+.beebar{position:relative;height:15px;margin:0 0 9px;overflow:visible;
+  background:repeating-linear-gradient(-20deg,#26221c 0 6px,#16130f 6px 12px);
+  box-shadow:inset 0 0 0 1.5px rgba(168,162,150,.38)}
+.beebar-fill{position:absolute;top:0;bottom:0;left:0;
+  background:repeating-linear-gradient(-20deg,var(--acid) 0 7px,var(--ink) 7px 10px,
+    var(--blood) 10px 12px,var(--ink) 12px 15px);
+  transition:width .38s ease}
+.beebar.is-done .beebar-fill{background:repeating-linear-gradient(-20deg,var(--acid) 0 8px,var(--ink) 8px 11px)}
+.beebar.is-fail .beebar-fill{background:repeating-linear-gradient(-20deg,var(--blood) 0 7px,var(--ink) 7px 12px)}
+.beebar-sting{position:absolute;top:50%;transform:translate(-50%,-54%);line-height:0;
+  pointer-events:none;transition:left .38s ease}
+.beebar-sting .slot-mark{position:static;right:auto;top:auto;transform:none;
+  width:26px;height:26px;display:block}
+.beecap{margin:0;font-family:var(--mono);font-size:12px;color:var(--acid);letter-spacing:.01em;
+  min-height:1em}
+.beecap.is-fail{color:var(--blood-t)}
+
+/* the mascot: the empty-state drawing, reused verbatim and knocked back */
+.bee-mascot{flex:none;position:relative;isolation:isolate;overflow:hidden;
+  width:clamp(92px,14vw,132px);height:clamp(70px,10.5vw,100px);opacity:.5}
+
+/* the per-channel funnel, one click down from the bar */
+.beedet{margin:12px 0 0}
+.beedet-body{margin-top:10px}
+.beedet-body .chan{margin:0 0 6px}
+.beedet-body .chan.cachedrun{color:var(--dust)}
+
 /* ---------------- degraded notice ------------------------------------
    The BAND is rotated. The sentence is not. ------------------------- */
 .notice{position:relative;isolation:isolate;padding:18px 20px 18px 24px;margin:0 0 26px}
@@ -322,6 +365,35 @@ summary:focus-visible,
 .notice .lbl{display:block;font-family:var(--mono);font-size:11px;color:var(--blood-t);margin:0 0 4px}
 .notice code{font-family:var(--mono);font-size:13px;color:var(--acid)}
 .notice b{font-weight:600}
+
+/* ---------------- the degraded "!" badge --------------------------------
+   The soft skip list is no longer a square that dominates the page: it is a
+   small blood dot marked "!" that opens the same lines and their consequence
+   sentences on click. The glyph is silent; the summary's sr text and title
+   carry the meaning. A hard run error stays the loud .notice above. */
+.degr{position:relative;display:inline-block;margin:2px 0 20px}
+.degr > summary{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:30px;padding:0;gap:0;
+  border:0;border-image:none;border-radius:999px;
+  background:var(--blood);color:var(--bone);
+  font-family:var(--display);font-variation-settings:"opsz" 24,"wght" 800;
+  font-size:20px;line-height:1;cursor:pointer;transform:rotate(-3deg)}
+.degr > summary:hover,
+.degr[open] > summary{color:var(--bone);background:var(--blood-t);transform:rotate(2deg)}
+.degr > summary::-webkit-details-marker{display:none}
+.degr-pop{position:absolute;z-index:9;top:calc(100% + 8px);left:0;
+  min-width:min(92vw,420px);max-width:min(92vw,520px);isolation:isolate;padding:16px 18px 16px 22px}
+.degr-pop::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--card);
+  transform:rotate(.6deg);
+  border:10px solid transparent;border-image:var(--e-fa-blood) 10 / 10px / 0 round}
+.degr-pop::after{content:"";position:absolute;inset:0;z-index:-1;
+  border-left:6px solid var(--blood);transform:rotate(.6deg)}
+.degr-h{margin:0 0 10px;font-family:var(--mono);font-size:11px;color:var(--blood-t)}
+.degr-line{margin:0;font-size:13.5px;line-height:1.55;color:var(--bone);max-width:60ch}
+.degr-line + .degr-line{margin-top:9px}
+.degr-line b{font-weight:600}
+.degr-pop code{font-family:var(--mono);font-size:12.5px;color:var(--acid)}
 
 /* ---------------- cards ---------------- */
 .card{position:relative;background:var(--card);padding:10px 12px 14px;margin:0 0 16px;
@@ -514,6 +586,12 @@ details[open] .caret{transform:rotate(90deg)}
 details[open] .lbl-open{display:inline}
 details[open] .lbl-shut{display:none}
 
+/* the seed card's "explore this song": the same disclosure the result cards use, so the
+   seed head is compact and the fingerprint (with its × wrong buttons) folds away by default */
+.seedmore{margin:10px 0 4px}
+.seedmore .fp{margin-top:0}
+.seedmore .fp-h{margin-top:0}
+
 /* ---------------- expandable panel ---------------- */
 .expand{position:relative;margin:14px 0 4px;background:var(--raised);padding:12px 14px 14px;
         border:10px solid transparent;border-image:var(--e-fb-dust) 10 / 10px / 0 round}
@@ -624,6 +702,9 @@ details[open] .lbl-shut{display:none}
   .bar-rule{right:68px;left:5%}
   .bar .ta{left:5%;right:14px}
   .stages{padding:16px 15px 14px}
+  .beeprog{padding:14px 14px 12px}
+  .beehead{gap:11px}
+  .degr-pop{min-width:min(94vw,420px)}
   .notice{padding:15px 15px 15px 19px}
   .card{padding:8px 9px 12px}
   .card.seed{padding:10px 10px 4px}
@@ -668,6 +749,8 @@ details[open] .lbl-shut{display:none}
   .blot .fr{animation:none}
   .blot .f1,.blot .f3{opacity:0}
   .blot .f2{opacity:1}
+  /* the bee bar snaps between phases instead of sweeping */
+  .beebar-fill,.beebar-sting{transition:none}
 }
 
 /* ---------------- share: "copy link" on the results header ------------
@@ -679,3 +762,58 @@ details[open] .lbl-shut{display:none}
 .share-note,.sec span.share-note{font-family:var(--mono);font-size:11px;color:var(--acid)}
 .share-note code{font-family:var(--mono);color:var(--bone);word-break:break-all}
 .share-note:has(code),.sec span.share-note:has(code){color:var(--blood-t)}
+
+/* ================= THE WEIGHTS FILTER =================================
+   One slider per scored dimension, behind the same native <details> the
+   result cards use (summary/lbl-shut/lbl-open/caret are the shared rules
+   above). On the sheet it sits under the search strip; on the plate it is
+   pinned top-left with its own opaque patch — texture never under a glyph. */
+.weights{margin:6px 0 20px}
+.weights > summary{color:var(--dust)}
+
+/* hero: on the drawing, so every box carries a --card patch and the open
+   panel scrolls inside itself rather than bleeding past the clipped plate */
+.weights--hero{position:absolute;z-index:5;top:clamp(14px,3vh,30px);
+  left:clamp(20px,5vw,64px);max-width:min(90vw,360px);margin:0}
+.weights--hero > summary{background:var(--card)}
+.weights--hero .wpanel{max-height:min(58vh,440px);overflow:auto}
+
+.wpanel{position:relative;margin:12px 0 4px;background:var(--raised);
+  padding:14px 16px 16px;border:10px solid transparent;
+  border-image:var(--e-fb-dust) 10 / 10px / 0 round}
+.wintro{margin:0 0 12px;font-family:var(--mono);font-size:11.5px;line-height:1.7;
+  color:var(--dust);max-width:56ch}
+
+.wlist{margin:0 0 6px;padding:0;list-style:none}
+.wrow{display:grid;grid-template-columns:1fr 34px;grid-template-areas:"k v" "s s";
+  gap:5px 10px;align-items:center;padding:8px 0;
+  border-top:1px solid rgba(237,233,221,.10)}
+.wrow:first-child{border-top:0}
+@media (min-width:560px){
+  .wrow{grid-template-columns:154px minmax(0,1fr) 30px;
+    grid-template-areas:"k s v";gap:14px;align-items:center}
+}
+.wname{grid-area:k;font-family:var(--mono);font-size:11.5px;color:var(--bone);
+  display:flex;flex-wrap:wrap;gap:1px 6px;align-items:baseline;line-height:1.35}
+.wrow--off .wname{color:var(--dust)}
+.wtag{font-family:var(--mono);font-size:10px;letter-spacing:.01em;color:var(--ochre)}
+.wval{grid-area:v;font-family:var(--mono);font-size:12px;color:var(--acid);text-align:right}
+.wrow--off .wval{color:var(--dust)}
+
+/* the slider: a thin dust rail with a small acid thumb — a printed tick, no
+   circles, tilted like every other pasted mark on the page */
+.wslider{grid-area:s;-webkit-appearance:none;appearance:none;width:100%;height:20px;
+  background:none;cursor:pointer;margin:0;padding:0}
+.wslider:focus-visible{outline:3px solid var(--acid);outline-offset:4px}
+.wslider::-webkit-slider-runnable-track{height:3px;background:var(--dust)}
+.wslider::-moz-range-track{height:3px;background:var(--dust)}
+.wslider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:14px;height:14px;margin-top:-6px;background:var(--acid);border:0;
+  border-radius:0;transform:rotate(-4deg)}
+.wslider::-moz-range-thumb{width:14px;height:14px;background:var(--acid);border:0;
+  border-radius:0}
+.wrow--off .wslider::-webkit-slider-thumb{background:var(--dust)}
+.wrow--off .wslider::-moz-range-thumb{background:var(--dust)}
+
+.wreset{margin-top:4px}
+.wreset:disabled{color:var(--dust);cursor:default}

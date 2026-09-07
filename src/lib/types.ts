@@ -109,9 +109,23 @@ export interface Recommendation {
 }
 
 export type FingerprintField = keyof Fingerprint['confidence'];
+
+/**
+ * The nine dimensions `rank.ts` actually scores, in display order (the order the UI shows
+ * the weight sliders in). This is `DimensionScore['dimension']` MINUS `tempo_feel`: tempo
+ * is a measurement on the record, never a judgement to weight. A per-run `weights` map may
+ * only mention these nine — `tempo_feel` and any unknown key are rejected by the schema.
+ */
+export const SCORED_DIMENSION_KEYS = [
+  'rhythmic_character', 'vocal_delivery', 'emotional_register', 'scene_context',
+  'signature_hook', 'instrumentation', 'harmonic_language', 'production_texture', 'era',
+] as const;
+export type ScoredDimension = (typeof SCORED_DIMENSION_KEYS)[number];
+
 export interface RunOptions {
   includeSameArtist: boolean;
   corrections?: Partial<Record<FingerprintField, 'wrong' | string>>;   // user disagreed with the fingerprint: 'wrong' = re-interpret this field; a string = use this instead
+  weights?: Partial<Record<ScoredDimension, number>>;                  // per-run scoring weights (0..10 integers), one per scored dimension; absent dims fall back to DEFAULT_DIMENSION_WEIGHTS. NOT part of the run cache key — a weight change replays the same scored pool re-ranked.
 }
 
 export interface RunStats {
@@ -130,6 +144,7 @@ export interface RunRecord {
   options: RunOptions;
   fingerprint: Fingerprint | null;
   results: Recommendation[];
+  scoredPool: Recommendation[]; // every scored candidate pre-rank (with its dimensions), so a weight change re-ranks instantly with no network/model. Empty on runs that produced nothing.
   degraded: string[];          // e.g. "Channel B skipped: no TAVILY_API_KEY"
   stats: RunStats;
   engineVersion: string;       // bump when ranking logic changes; part of the run cache key
@@ -316,9 +331,17 @@ export const RecommendationSchema = z.object({
 
 export const FingerprintFieldSchema = z.enum(FINGERPRINT_CONFIDENCE_KEYS);
 
+/** The nine scored dimensions a `weights` map may name — `tempo_feel` is deliberately out. */
+export const ScoredDimensionSchema = z.enum(SCORED_DIMENSION_KEYS);
+
 export const RunOptionsSchema = z.object({
   includeSameArtist: z.boolean(),
   corrections: z.partialRecord(FingerprintFieldSchema, z.string()).optional(),
+  // Each weight is an integer 0..10; only the nine scored dimensions are accepted, so
+  // `tempo_feel` and any unknown key are a validation error, not a silently dropped field.
+  weights: z
+    .partialRecord(ScoredDimensionSchema, z.number().int().min(0).max(10))
+    .optional(),
 });
 
 export const ChannelStatsSchema = z.object({
@@ -375,6 +398,9 @@ export const RunRecordSchema = z.object({
   options: RunOptionsSchema,
   fingerprint: FingerprintSchema.nullable(),
   results: z.array(RecommendationSchema),
+  // `.default([])` so a run stored before engine-4 (no pool) still parses — it re-ranks
+  // from `results` on replay instead. New runs always write the pool.
+  scoredPool: z.array(RecommendationSchema).default([]),
   degraded: z.array(z.string()),
   stats: RunStatsSchema,
   engineVersion: z.string(),

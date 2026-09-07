@@ -105,6 +105,7 @@ function runRecord(options: RunOptions, fp: Fingerprint, createdAt: number): Run
     options,
     fingerprint: fp,
     results: [],
+    scoredPool: [],
     degraded: [],
     stats: {
       perChannel: {
@@ -249,5 +250,53 @@ describe('corrections', () => {
     const res = route.GET(url(`seed=${encodeURIComponent(SEED)}&corrections=not-json`));
     expect(res.status).toBe(400);
     expect(mocks.runPipeline).not.toHaveBeenCalled();
+  });
+});
+
+describe('weights (Feature 1)', () => {
+  const weightsParam = (w: Record<string, number>) => encodeURIComponent(JSON.stringify(w));
+
+  it('parses url-encoded JSON weights and threads them into RunOptions', async () => {
+    const w = { era: 1, rhythmic_character: 5, scene_context: 0 };
+    await events(route.GET(url(`seed=${encodeURIComponent(SEED)}&weights=${weightsParam(w)}`)));
+
+    const args = mocks.runPipeline.mock.calls[0][0] as { options: RunOptions };
+    expect(args.options.weights).toEqual(w);
+  });
+
+  it('400s on weights that are not JSON', async () => {
+    const res = route.GET(url(`seed=${encodeURIComponent(SEED)}&weights=not-json`));
+    expect(res.status).toBe(400);
+    expect(mocks.runPipeline).not.toHaveBeenCalled();
+  });
+
+  it('400s on a non-scored dimension (tempo_feel) or an out-of-range weight', async () => {
+    const tempo = route.GET(url(`seed=${encodeURIComponent(SEED)}&weights=${weightsParam({ tempo_feel: 2 })}`));
+    expect(tempo.status).toBe(400);
+    const tooBig = route.GET(url(`seed=${encodeURIComponent(SEED)}&weights=${weightsParam({ era: 99 })}`));
+    expect(tooBig.status).toBe(400);
+    expect(mocks.runPipeline).not.toHaveBeenCalled();
+  });
+
+  it('a replay under DIFFERENT weights is a free cache hit — no run is charged', async () => {
+    process.env.ITSTINGS_MAX_RUNS_PER_DAY = '1';
+    // A cached run stored WITHOUT weights (weights are not in the cache key).
+    const options: RunOptions = { includeSameArtist: false };
+    runsRepo.save(
+      runRecord(options, fingerprint('a dry sung-spoken deadpan'), 10),
+      pipeline.runCacheHash(options),
+    );
+
+    // Requesting the same seed with a weights map still resolves to that cached run, so it
+    // costs nothing: the budget of one is untouched and no counter row is written.
+    const heavy = weightsParam({ era: 10, rhythmic_character: 0 });
+    await events(route.GET(url(`seed=${encodeURIComponent(SEED)}&weights=${heavy}`)));
+    const light = weightsParam({ era: 0, rhythmic_character: 10 });
+    await events(route.GET(url(`seed=${encodeURIComponent(SEED)}&weights=${light}`)));
+    expect(counters.count()).toBe(0);
+
+    // The real (uncached) run still gets to happen within the budget.
+    const seen = await events(route.GET(url('seed=something-else')));
+    expect(seen.some((e) => e.type === 'error')).toBe(false);
   });
 });

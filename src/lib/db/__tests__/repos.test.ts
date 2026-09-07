@@ -94,6 +94,7 @@ function runRecord(overrides: Partial<RunRecord> = {}): RunRecord {
     options: { includeSameArtist: false },
     fingerprint: fingerprint(),
     results: [recommendation()],
+    scoredPool: [recommendation()],
     degraded: ['Channel B skipped: no TAVILY_API_KEY'],
     stats: {
       perChannel: {

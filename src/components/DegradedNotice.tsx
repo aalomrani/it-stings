@@ -101,11 +101,23 @@ function withCode(text: string): React.ReactNode[] {
   });
 }
 
+/**
+ * The label the "!" badge carries for a screen reader and as its hover title. The glyph is
+ * silent (`aria-hidden`), so this sentence is the only thing that says what the badge is —
+ * it must name the count and that opening it explains the consequence.
+ */
+export function degradedBadgeLabel(lines: string[]): string {
+  const n = lines.length;
+  return `${n} thing${n === 1 ? '' : 's'} the run skipped or degraded — open for what each one cost`;
+}
+
 export function DegradedNotice({ lines, error }: { lines: string[]; error: string | null }) {
   if (lines.length === 0 && !error) return null;
 
   return (
     <>
+      {/* A hard run error is the one thing that may still be loud: it means the page below is
+          incomplete, not merely narrower. The soft skip list is not — it is a small badge. */}
       {error ? (
         <div className="notice" role="status">
           <p>
@@ -117,16 +129,23 @@ export function DegradedNotice({ lines, error }: { lines: string[]; error: strin
       ) : null}
 
       {lines.length > 0 ? (
-        <div className="notice" role="status">
-          {lines.map((line, index) => {
-            return (
-              <p key={line}>
-                {index === 0 ? <span className="lbl">degraded</span> : null}
+        <details className="degr">
+          <summary className="degr-badge" title={degradedBadgeLabel(lines)}>
+            <span aria-hidden="true">!</span>
+            <span className="sr">{degradedBadgeLabel(lines)}</span>
+          </summary>
+          <div className="degr-pop" role="status">
+            <p className="degr-h">
+              degraded — {lines.length} skipped. Everything below is honest about it; nothing was
+              invented to fill a gap.
+            </p>
+            {lines.map((line) => (
+              <p key={line} className="degr-line">
                 <b>{withCode(line)}</b> {withCode(consequenceFor(line))}
               </p>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        </details>
       ) : null}
     </>
   );

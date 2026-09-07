@@ -10,7 +10,13 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { CONSEQUENCE, FALLBACK_CONSEQUENCE, consequenceFor } from '@/components/DegradedNotice';
+import {
+  CONSEQUENCE,
+  FALLBACK_CONSEQUENCE,
+  consequenceFor,
+  degradedBadgeLabel,
+} from '@/components/DegradedNotice';
+import { CHANNEL_LABEL } from '@/lib/client/useRecommendStream';
 import {
   BAD_API_KEY_DEGRADED,
   BILLING_DEGRADED,
@@ -78,5 +84,33 @@ describe('consequenceFor', () => {
       const first = CONSEQUENCE.findIndex((c) => c.match.test(line));
       expect(first, line).toBeLessThan(generic);
     }
+  });
+});
+
+describe('degradedBadgeLabel', () => {
+  // The soft skip list is now a silent "!" dot; its meaning lives entirely in the summary's
+  // label and title, so the label has to say how many there are and that opening it explains
+  // the cost. A wrong count here is a lie the glyph cannot correct.
+  it('names the count and singular/plural, and points at the consequence', () => {
+    expect(degradedBadgeLabel(['a'])).toContain('1 thing');
+    expect(degradedBadgeLabel(['a'])).not.toContain('1 things');
+    expect(degradedBadgeLabel(['a', 'b'])).toContain('2 things');
+    expect(degradedBadgeLabel(['a', 'b', 'c'])).toMatch(/what each one cost|cost/);
+  });
+});
+
+describe('CHANNEL_LABEL', () => {
+  // The detail line names each channel; the LLM-era "web search" / "model prior" were retired
+  // when the engine went keyless (Channel B is MusicBrainz tag cohorts, Channel C is Deezer
+  // related-artists). A stale label here would describe a pipeline that no longer exists.
+  it('has no LLM-era wording', () => {
+    const all = Object.values(CHANNEL_LABEL).join(' ').toLowerCase();
+    expect(all).not.toContain('web search');
+    expect(all).not.toContain('model prior');
+  });
+
+  it('names the keyless sources', () => {
+    expect(CHANNEL_LABEL.B).toContain('musicbrainz');
+    expect(CHANNEL_LABEL.C).toContain('deezer');
   });
 });

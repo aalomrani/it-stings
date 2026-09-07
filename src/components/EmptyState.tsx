@@ -19,9 +19,11 @@ export interface EmptyStateProps extends Omit<SearchBarProps, 'variant' | 'onCle
   /** True while `POST /api/resolve` is out on a selected row. */
   resolving: boolean;
   credits: React.ReactNode;
+  /** The weights filter, so a mix can be dialled in before the first search. */
+  weightsPanel?: React.ReactNode;
 }
 
-export function EmptyState({ hint, resolving, credits, ...bar }: EmptyStateProps) {
+export function EmptyState({ hint, resolving, credits, weightsPanel, ...bar }: EmptyStateProps) {
   // The dropdown grows down over the hint's patch. §6: nothing overlaps a glyph — and the
   // hint's whole job is to say "pick from the list", which is now on screen saying it.
   const listOpen = showsTypeahead(bar.typeahead, bar.value, bar.open);
@@ -33,6 +35,8 @@ export function EmptyState({ hint, resolving, credits, ...bar }: EmptyStateProps
       <RegMark />
 
       <SearchBar {...bar} variant="hero" autoFocus />
+
+      {weightsPanel}
 
       {listOpen && !resolving ? null : (
         <p className={resolving || bar.typeahead.pending ? 'hint searching' : 'hint'} role="status">

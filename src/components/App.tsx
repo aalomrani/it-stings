@@ -12,7 +12,7 @@
  * in the left gutter (≥1180px), and the search strip holds the seed.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { DegradedNotice } from '@/components/DegradedNotice';
@@ -25,12 +25,23 @@ import { SearchBar } from '@/components/SearchBar';
 import { SeedCard } from '@/components/SeedCard';
 import { ShareLink } from '@/components/ShareLink';
 import { StageLine } from '@/components/StageLine';
+import { WeightsPanel } from '@/components/WeightsPanel';
 import { health as getHealth, resolve, type Health, type TypeaheadHit } from '@/lib/client/api';
 import { mergeDegraded, useRecommendStream } from '@/lib/client/useRecommendStream';
 import { typeaheadHint, useTypeahead } from '@/lib/client/useTypeahead';
+import {
+  hydrateWeights,
+  readWeights,
+  weightsParam,
+  type ScoredWeights,
+} from '@/lib/client/weights';
 import type { Channel, FingerprintField } from '@/lib/types';
 
 const CHANNELS: Channel[] = ['A', 'B', 'C'];
+
+/** A weight change re-ranks the same pool for free, but each drag tick would still re-open
+ *  the SSE stream, so the URL write (which is what the stream keys on) is debounced. */
+const WEIGHTS_DEBOUNCE_MS = 300;
 
 /** The run's inputs live in the URL, so a reload or a shared link restores the run the
  *  user was actually looking at rather than an uncorrected one at the same address. */
@@ -50,14 +61,21 @@ function readCorrections(raw: string | null): Partial<Record<FingerprintField, s
 }
 
 function runHref(
-  seedKey: string,
+  seedKey: string | null,
   sameArtist: boolean,
   corrections: Partial<Record<FingerprintField, string>>,
+  weights: ScoredWeights,
 ): string {
-  const params = new URLSearchParams({ seed: seedKey });
+  const params = new URLSearchParams();
+  // Weights survive a `clear` (no seed) so a mix the user is dialling in is not lost when
+  // they drop back to the empty state to try another seed.
+  if (seedKey) params.set('seed', seedKey);
   if (sameArtist) params.set('sameArtist', '1');
   if (Object.keys(corrections).length > 0) params.set('corrections', JSON.stringify(corrections));
-  return `/?${params.toString()}`;
+  const weights_ = weightsParam(weights);
+  if (weights_) params.set('weights', weights_);
+  const query = params.toString();
+  return query ? `/?${query}` : '/';
 }
 
 export function App() {
@@ -83,24 +101,64 @@ export function App() {
   const correctionsRaw = params.get('corrections');
   const corrections = useMemo(() => readCorrections(correctionsRaw), [correctionsRaw]);
 
+  // Weights ARE in the URL (share/reload keep them), but unlike corrections they also have
+  // a live draft so the slider thumb tracks the drag before the debounced URL write lands.
+  // `appliedWeights` (the diff the stream re-ranks on) is derived straight from the URL, and
+  // the draft drives that URL — so the draft is seeded from the URL once, at mount, and
+  // thereafter is the source. (Weight writes are `router.replace`, so there is no back/forward
+  // history of weight states to follow, and a fresh navigation carries the draft along.)
+  const weightsRaw = params.get('weights');
+  const appliedWeights = useMemo(() => readWeights(weightsRaw), [weightsRaw]);
+  const [weights, setWeights] = useState<ScoredWeights>(() => hydrateWeights(weightsRaw));
+
+  // The slider updates the draft instantly; the URL (what the stream re-ranks on) follows
+  // ~300ms later, so a burst of drags collapses to one replay instead of one per tick.
+  const weightsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Any other URL write (same-artist, a correction, a new seed, clear) already carries the
+  // current `weights` draft in its own runHref, so a still-pending weights-only write is
+  // redundant AND dangerous: its closure captured the OLD seed/sameArtist/corrections and
+  // would revert them when it fires. Cancel it before writing anything else.
+  const cancelWeightsWrite = useCallback(() => {
+    if (weightsTimer.current) {
+      clearTimeout(weightsTimer.current);
+      weightsTimer.current = null;
+    }
+  }, []);
+
   const setSameArtist = useCallback(
     (on: boolean) => {
       if (!seedKey) return;
-      router.replace(runHref(seedKey, on, corrections), { scroll: false });
+      cancelWeightsWrite();
+      router.replace(runHref(seedKey, on, corrections, weights), { scroll: false });
     },
-    [router, seedKey, corrections],
+    [router, seedKey, corrections, weights, cancelWeightsWrite],
   );
 
   const setCorrections = useCallback(
     (next: Partial<Record<FingerprintField, string>>) => {
       if (!seedKey) return;
-      router.replace(runHref(seedKey, sameArtist, next), { scroll: false });
+      cancelWeightsWrite();
+      router.replace(runHref(seedKey, sameArtist, next, weights), { scroll: false });
     },
-    [router, seedKey, sameArtist],
+    [router, seedKey, sameArtist, weights, cancelWeightsWrite],
   );
 
+  const onWeightsChange = useCallback(
+    (next: ScoredWeights) => {
+      setWeights(next);
+      if (weightsTimer.current) clearTimeout(weightsTimer.current);
+      weightsTimer.current = setTimeout(() => {
+        router.replace(runHref(seedKey, sameArtist, corrections, next), { scroll: false });
+      }, WEIGHTS_DEBOUNCE_MS);
+    },
+    [router, seedKey, sameArtist, corrections],
+  );
+  useEffect(() => () => {
+    if (weightsTimer.current) clearTimeout(weightsTimer.current);
+  }, []);
+
   // The hook keys its effect on the derived URL, so a fresh object here re-opens nothing.
-  const run = useRecommendStream({ seedKey, sameArtist, corrections });
+  const run = useRecommendStream({ seedKey, sameArtist, corrections, weights: appliedWeights });
   const seed = run.seed;
   const query = typed ?? (seed ? `${seed.title} — ${seed.artist}` : '');
   const typeahead = useTypeahead(query, open);
@@ -125,10 +183,13 @@ export function App() {
       setResolving(true);
       setResolveError(null);
       setTyped(`${hit.title} — ${hit.artist}`);
+      cancelWeightsWrite();
       resolve(hit)
         .then((track) => {
           // A new seed starts a clean run: no corrections, same-artist back to its default.
-          router.replace(runHref(track.key, false, {}), { scroll: false });
+          // The weights the user dialled in before searching ride along, though.
+          cancelWeightsWrite();
+          router.replace(runHref(track.key, false, {}, weights), { scroll: false });
         })
         .catch((err: unknown) => {
           setResolveError(
@@ -137,14 +198,15 @@ export function App() {
         })
         .finally(() => setResolving(false));
     },
-    [router],
+    [router, weights, cancelWeightsWrite],
   );
 
   const onClear = useCallback(() => {
     setTyped('');
     setResolveError(null);
-    router.replace('/', { scroll: false });
-  }, [router]);
+    cancelWeightsWrite();
+    router.replace(runHref(null, false, {}, weights), { scroll: false });
+  }, [router, weights, cancelWeightsWrite]);
 
   const credits = (
     <>
@@ -174,6 +236,9 @@ export function App() {
         hint={resolveError ?? typeaheadHint(typeahead, query, open)}
         resolving={resolving}
         credits={credits}
+        weightsPanel={
+          <WeightsPanel weights={weights} onChange={onWeightsChange} variant="hero" />
+        }
       />
     );
   }
@@ -226,6 +291,13 @@ export function App() {
             them. Under the search bar — nothing ever goes above it. */}
         <PlaylistsLink />
 
+        {/* The weights filter, shut by default so the seed stays the focus. A change here
+            debounces into the URL and the stream re-ranks the same scored pool for free. */}
+        <WeightsPanel weights={weights} onChange={onWeightsChange} variant="sheet" />
+
+        {/* The bee bar + plain-word phase caption (the mascot rides this page too), and the
+            degraded skip list folded into a small "!" badge. A hard run error stays a loud
+            notice; the soft skips do not. Both sit above the seed card. */}
         <StageLine run={run} />
         <DegradedNotice lines={degraded} error={run.error ?? resolveError} />
 

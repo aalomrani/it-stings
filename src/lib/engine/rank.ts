@@ -21,8 +21,10 @@
  * ("If a recommendation reason would apply to any two songs in the same genre, the
  * pipeline is broken. Say so rather than shipping it") — so it is said, in `stats.cut`.
  *
- * The weights in `DIMENSION_WEIGHTS` are printed inline in the UI and are the first thing
- * Phase 5 tunes; they live here so there is exactly one copy of them.
+ * The DEFAULT weights in `DEFAULT_DIMENSION_WEIGHTS` are printed inline in the UI and are
+ * the starting point the listener tunes per run; they live here so there is exactly one
+ * copy of them. A run may override any of the nine via `RunOptions.weights`, threaded to
+ * `modelScore`/`finalScore`/`rank` rather than read from this global.
  */
 
 import type {
@@ -34,30 +36,51 @@ import type {
 } from '@/lib/types';
 import * as normalize from '@/lib/util/normalize';
 
+/** A per-run weights map: any subset of the scored dimensions (plus, harmlessly, the
+ *  non-scored ones); every entry is clamped 0..10 and a missing one falls back to the
+ *  default. Threaded through scoring instead of read from a global so re-tuning is a pure
+ *  function of its argument. */
+export type WeightsMap = Partial<Record<DimensionScore['dimension'], number>>;
+
 /* ------------------------------------------------------------------------------------ *
  * Constants
  * ------------------------------------------------------------------------------------ */
 
 /**
- * Weights total 15. `era` counts toward spread (rule 5), never toward a match — a track
- * from the same year is not thereby a better answer, which is the failing mode the spec
- * calls out ("Generic 1980s alternative rock sharing nothing but the decade").
+ * The DEFAULT per-run weights, total 15. A run with no `weights` in its options scores
+ * with exactly this map; the UI reads it to seed its sliders (one shared copy). `era`
+ * now carries weight 1 (a same-era track is a weak positive), `scene_context` is 0 (too
+ * noisy a signal to weight by default) and `emotional_register` is 3.
+ *
+ * A caller may override any of the nine per run; `signature_hook` and `vocal_delivery`
+ * are kept in the default at 2 for continuity, but in the keyless engine they carry no
+ * measured signal (always a neutral 0.5), so weighting them only flattens the spread —
+ * the UI marks them "not measured (keyless)".
  */
-export const DIMENSION_WEIGHTS: Record<DimensionScore['dimension'], number> = {
+export const DEFAULT_DIMENSION_WEIGHTS: Record<DimensionScore['dimension'], number> = {
   // `DimensionScore['dimension']` is `keyof Fingerprint['confidence'] | 'era'`, so the
   // type admits `tempo_feel` even though no scoring pass emits it (Stage 5 returns the
   // nine in `SCORED_DIMENSIONS`). Weight 0 keeps the record total honest at 15.
   tempo_feel: 0,
   rhythmic_character: 3,
   vocal_delivery: 3,
-  emotional_register: 2,
-  scene_context: 2,
+  emotional_register: 3,
+  scene_context: 0,
   signature_hook: 2,
   instrumentation: 1,
   harmonic_language: 1,
   production_texture: 1,
-  era: 0,
+  era: 1,
 };
+
+/** The clamped weight for one dimension: the map's value (0..10) or the default. */
+function weightFor(weights: WeightsMap, dimension: DimensionScore['dimension']): number {
+  const raw = weights[dimension];
+  const value = typeof raw === 'number' && Number.isFinite(raw)
+    ? raw
+    : DEFAULT_DIMENSION_WEIGHTS[dimension] ?? 0;
+  return value < 0 ? 0 : value > 10 ? 10 : value;
+}
 
 /**
  * The nine dimensions Stage 5 actually returns, in the order docs/tasks/phase3-engine.md
@@ -245,14 +268,17 @@ export function primaryGenre(track: TrackRecord): string | null {
  * per-dimension scores, computed here, rounded to 2 dp. Duplicate dimensions: first wins.
  * Zero-weight dimensions (`era`) contribute nothing to either side of the mean.
  */
-export function modelScore(dimensions: DimensionScore[]): number {
+export function modelScore(
+  dimensions: DimensionScore[],
+  weights: WeightsMap = DEFAULT_DIMENSION_WEIGHTS,
+): number {
   let weighted = 0;
   let weight = 0;
   const seen = new Set<string>();
   for (const d of dimensions) {
     if (seen.has(d.dimension)) continue;
     seen.add(d.dimension);
-    const w = DIMENSION_WEIGHTS[d.dimension] ?? 0;
+    const w = weightFor(weights, d.dimension);
     if (w === 0) continue;
     weighted += w * clamp01(d.score);
     weight += w;
@@ -270,9 +296,11 @@ export function modelScore(dimensions: DimensionScore[]): number {
  */
 export function finalScore(
   rec: Recommendation,
-  opts: { liveChannels: Channel[] },
+  opts: { liveChannels: Channel[]; weights?: WeightsMap },
 ): number {
-  const base = rec.dimensions.length > 0 ? modelScore(rec.dimensions) : clamp01(rec.modelScore);
+  const base = rec.dimensions.length > 0
+    ? modelScore(rec.dimensions, opts.weights ?? DEFAULT_DIMENSION_WEIGHTS)
+    : clamp01(rec.modelScore);
   const channels = new Set(rec.channels).size;
   const multiChannel = CHANNEL_BONUS * Math.max(0, channels - 1);
   const live = new Set(opts.liveChannels);
@@ -379,6 +407,7 @@ export function rank(
   const target = opts.targetLength ?? TARGET_LENGTH;
   const floor = opts.minResults ?? MIN_RESULTS;
   const enforceGenreOnly = opts.enforceGenreOnly ?? true;
+  const weights = opts.weights ?? DEFAULT_DIMENSION_WEIGHTS;
   const cut: RankCut[] = [];
 
   // Step 0 — normalise every input: recompute the two scores and the same-artist flag so
@@ -389,8 +418,10 @@ export function rank(
     return {
       ...rec,
       sameArtist: isSameArtist(rec.track.artist, seed.artist),
-      modelScore: rec.dimensions.length > 0 ? modelScore(rec.dimensions) : clamp01(rec.modelScore),
-      finalScore: finalScore(rec, { liveChannels: opts.liveChannels }),
+      modelScore: rec.dimensions.length > 0
+        ? modelScore(rec.dimensions, weights)
+        : clamp01(rec.modelScore),
+      finalScore: finalScore(rec, { liveChannels: opts.liveChannels, weights }),
       sharedTraits: rec.sharedTraits ?? [],
       flags: [...flags],
     };

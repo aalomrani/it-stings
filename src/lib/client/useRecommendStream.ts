@@ -25,6 +25,7 @@ import type {
   PipelineStage,
   Recommendation,
   RunRecord,
+  ScoredDimension,
   TrackRecord,
 } from '@/lib/types';
 
@@ -76,11 +77,13 @@ export const STAGE_LABEL: Record<PipelineStage, string> = {
   done: 'done',
 };
 
-/** What each channel is, spelled out on the receipt line. */
+/** What each channel is, spelled out on the detail line. Keyless wording: Channel B is
+ *  MusicBrainz tag cohorts and Channel C is Deezer related-artists — the old "web search"
+ *  and "model prior" were the LLM era's names and both are gone from the engine. */
 export const CHANNEL_LABEL: Record<Channel, string> = {
   A: 'last.fm',
-  B: 'web search',
-  C: 'model prior',
+  B: 'musicbrainz tags',
+  C: 'deezer related',
 };
 
 function emptyChannel(): ChannelState {
@@ -221,6 +224,8 @@ export interface StreamArgs {
   seedKey: string | null;
   sameArtist: boolean;
   corrections: Partial<Record<FingerprintField, string>>;
+  /** Diff-from-default scored weights; empty means "score with the engine defaults". */
+  weights: Partial<Record<ScoredDimension, number>>;
 }
 
 /** The url the stream is opened on — also what the provenance foot quotes. */
@@ -232,6 +237,12 @@ export function recommendUrl(args: StreamArgs): string | null {
   });
   if (Object.keys(args.corrections).length > 0) {
     params.set('corrections', JSON.stringify(args.corrections));
+  }
+  // A weight change is a free cache replay: it re-ranks the same scored pool, off the run
+  // budget, so the results page may re-open the stream on it freely. Omitted when empty —
+  // an empty object is not the "use defaults" signal, an absent param is.
+  if (Object.keys(args.weights).length > 0) {
+    params.set('weights', JSON.stringify(args.weights));
   }
   return `/api/recommend?${params.toString()}`;
 }

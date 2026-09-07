@@ -24,15 +24,15 @@ import {
 } from '@/lib/client/format';
 import type { Health } from '@/lib/client/api';
 import type { RunState } from '@/lib/client/useRecommendStream';
-import { CHANNEL_BONUS, DIMENSION_WEIGHTS, ENTHUSIASM_BONUS, SCORED_DIMENSIONS } from '@/lib/engine/rank';
+import { CHANNEL_BONUS, DEFAULT_DIMENSION_WEIGHTS, ENTHUSIASM_BONUS, SCORED_DIMENSIONS } from '@/lib/engine/rank';
 import { weighted } from '@/components/ResultCard';
 import type { Channel } from '@/lib/types';
 
 const CHANNELS: Channel[] = ['A', 'B', 'C'];
 
 function weightSentence(): string {
-  const parts = SCORED_DIMENSIONS.map((d) => `${d} ×${DIMENSION_WEIGHTS[d] ?? 0}`);
-  const total = SCORED_DIMENSIONS.reduce((sum, d) => sum + (DIMENSION_WEIGHTS[d] ?? 0), 0);
+  const parts = SCORED_DIMENSIONS.map((d) => `${d} ×${DEFAULT_DIMENSION_WEIGHTS[d] ?? 0}`);
+  const total = SCORED_DIMENSIONS.reduce((sum, d) => sum + (DEFAULT_DIMENSION_WEIGHTS[d] ?? 0), 0);
   return `${parts.join(', ')}. Total weight ${total}.`;
 }
 
@@ -182,10 +182,11 @@ export function ProvenanceFoot({ run, health }: { run: RunState; health: Health 
               : 'provisional results in arrival order — the ranked list has not landed yet, so this count can still change.'}
         </dd>
 
-        <dt>weights ×3 / ×2 / ×1 / ×0</dt>
+        <dt>weights</dt>
         <dd>
-          constants in <code>engine/rank.ts</code>, identical for every candidate: {weightSentence()}{' '}
-          <code>era</code> counts toward spread, never toward a match.
+          the default weights in <code>engine/rank.ts</code>, applied to every candidate in a run
+          unless you change them in the weights panel above: {weightSentence()}{' '}
+          A trait at <code>×0</code> never touches a match.
         </dd>
 
         {shown.length > 0 ? (

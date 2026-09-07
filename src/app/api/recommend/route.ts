@@ -47,6 +47,37 @@ export const runtime = 'nodejs';
  */
 const CorrectionsSchema = RunOptionsSchema.shape.corrections;
 
+/**
+ * `weights` is url-encoded JSON, exactly like `corrections`: a map of scored-dimension ->
+ * integer 0..10. It is NOT part of the run cache key, so a replay under different weights
+ * re-ranks the cached pool for free and never spends a run of the budget (see `wouldReplay`
+ * / `runCacheHash`, which drop weights). An unknown key (or `tempo_feel`) is a 400.
+ */
+const WeightsSchema = RunOptionsSchema.shape.weights;
+
+/** Parse a `?<name>=<url-encoded JSON>` param against `schema`; a bad value is a 400. */
+function jsonParam<T extends z.ZodTypeAny>(name: string, schema: T) {
+  return (raw: string | undefined, ctx: z.RefinementCtx): z.infer<T> | undefined => {
+    if (raw === undefined || raw.trim().length === 0) return undefined;
+    let json: unknown;
+    try {
+      json = JSON.parse(raw);
+    } catch {
+      ctx.addIssue({ code: 'custom', message: `${name} must be url-encoded JSON` });
+      return undefined;
+    }
+    const result = schema.safeParse(json);
+    if (!result.success) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `${name}: ${result.error.issues.map((i) => i.message).join('; ')}`,
+      });
+      return undefined;
+    }
+    return result.data;
+  };
+}
+
 const Query = z.object({
   seed: z.string().trim().min(1, 'seed is required'),
   sameArtist: z
@@ -56,25 +87,11 @@ const Query = z.object({
   corrections: z
     .string()
     .optional()
-    .transform((raw, ctx) => {
-      if (raw === undefined || raw.trim().length === 0) return undefined;
-      let json: unknown;
-      try {
-        json = JSON.parse(raw);
-      } catch {
-        ctx.addIssue({ code: 'custom', message: 'corrections must be url-encoded JSON' });
-        return undefined;
-      }
-      const result = CorrectionsSchema.safeParse(json);
-      if (!result.success) {
-        ctx.addIssue({
-          code: 'custom',
-          message: `corrections: ${result.error.issues.map((i) => i.message).join('; ')}`,
-        });
-        return undefined;
-      }
-      return result.data;
-    }),
+    .transform(jsonParam('corrections', CorrectionsSchema)),
+  weights: z
+    .string()
+    .optional()
+    .transform(jsonParam('weights', WeightsSchema)),
 });
 
 /**
@@ -122,6 +139,7 @@ export function GET(request: Request) {
     seed: params.get('seed') ?? undefined,
     sameArtist: params.get('sameArtist') ?? undefined,
     corrections: params.get('corrections') ?? undefined,
+    weights: params.get('weights') ?? undefined,
   });
 
   if (!parsed.success) {
@@ -138,6 +156,7 @@ export function GET(request: Request) {
   const options: RunOptions = {
     includeSameArtist: parsed.data.sameArtist,
     ...(parsed.data.corrections ? { corrections: parsed.data.corrections } : {}),
+    ...(parsed.data.weights ? { weights: parsed.data.weights } : {}),
   };
 
   // Cached replays cost nothing and count for nothing (docs/tasks/phase7-ship.md §5).

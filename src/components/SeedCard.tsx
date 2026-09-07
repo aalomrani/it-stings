@@ -9,8 +9,11 @@
  * from, and the kick line names the sources that were actually joined into this record.
  */
 
+import { useState } from 'react';
+
 import { ArtTile } from '@/components/ArtTile';
 import { FingerprintPanel } from '@/components/FingerprintPanel';
+import { Caret } from '@/components/Icons';
 import { NoPreviewNote, NoPreviewTag, PlayButton, PlayTime, previewMode, SpotifyEmbed } from '@/components/PlayButton';
 import { SavePopover } from '@/components/SavePopover';
 import { keyLine, tempoLine } from '@/lib/client/format';
@@ -55,6 +58,10 @@ export interface SeedCardProps {
 }
 
 export function SeedCard({ seed, fingerprint, applied, onRerun }: SeedCardProps) {
+  // The fingerprint is folded away by default so the seed card is a compact head — the same
+  // native `<details>` the result cards use, so it reads and toggles identically. The
+  // `× wrong` correction buttons keep working inside the panel once it is open.
+  const [open, setOpen] = useState(false);
   const snap = usePlayerSnapshot();
   const mode = previewMode(seed, snap.fallback[seed.key]);
   const year = seed.year;
@@ -133,12 +140,21 @@ export function SeedCard({ seed, fingerprint, applied, onRerun }: SeedCardProps)
       </div>
 
       {fingerprint ? (
-        <FingerprintPanel
-          seed={seed}
-          fingerprint={fingerprint}
-          applied={applied}
-          onRerun={onRerun}
-        />
+        <details className="seedmore" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
+          <summary>
+            <Caret />
+            <span className="lbl-shut">explore this song</span>
+            <span className="lbl-open">hide the working</span>
+          </summary>
+          <div className="expand">
+            <FingerprintPanel
+              seed={seed}
+              fingerprint={fingerprint}
+              applied={applied}
+              onRerun={onRerun}
+            />
+          </div>
+        </details>
       ) : null}
     </article>
   );

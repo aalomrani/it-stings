@@ -144,3 +144,33 @@ describe('schemas reject malformed data', () => {
     ).toBe(false);
   });
 });
+
+describe('RunOptions.weights — the per-run scoring weights (Feature 1)', () => {
+  it('accepts a partial map of scored dimensions with integer weights 0..10', () => {
+    const parsed = RunOptionsSchema.parse({
+      includeSameArtist: false,
+      weights: { era: 1, rhythmic_character: 5, scene_context: 0 },
+    });
+    expect(parsed.weights).toEqual({ era: 1, rhythmic_character: 5, scene_context: 0 });
+  });
+
+  it('rejects tempo_feel — it is measured, never scored, so never weighted', () => {
+    expect(
+      RunOptionsSchema.safeParse({ includeSameArtist: false, weights: { tempo_feel: 2 } }).success,
+    ).toBe(false);
+  });
+
+  it('rejects an unknown dimension key rather than dropping it silently', () => {
+    expect(
+      RunOptionsSchema.safeParse({ includeSameArtist: false, weights: { loudness: 2 } }).success,
+    ).toBe(false);
+  });
+
+  it('rejects a non-integer or an out-of-range weight', () => {
+    const bad = (weights: Record<string, number>) =>
+      RunOptionsSchema.safeParse({ includeSameArtist: false, weights }).success;
+    expect(bad({ era: 1.5 })).toBe(false);
+    expect(bad({ era: 11 })).toBe(false);
+    expect(bad({ era: -1 })).toBe(false);
+  });
+});

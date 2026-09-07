@@ -10,7 +10,7 @@ import {
   CHANNEL_BONUS,
   FLAG_COVER_OR_SAME_SONG,
   FLAG_GENERIC_WHY,
-  DIMENSION_WEIGHTS,
+  DEFAULT_DIMENSION_WEIGHTS,
   ENTHUSIASM_BONUS,
   GENRE_ONLY_TERMS,
   SAME_ARTIST_MIN_SCORE,
@@ -67,7 +67,7 @@ const YEAR = (value: number): TrackRecord['year'] => ({
   source: { source: 'itunes', field: 'releaseDate' },
 });
 
-const ALL_DIMENSIONS = Object.keys(DIMENSION_WEIGHTS) as DimensionScore['dimension'][];
+const ALL_DIMENSIONS = Object.keys(DEFAULT_DIMENSION_WEIGHTS) as DimensionScore['dimension'][];
 
 /** Every dimension at the same score, unless `over` names a different value for one. */
 function dims(base: number, over: Partial<Record<string, number>> = {}): DimensionScore[] {
@@ -122,10 +122,21 @@ const LIVE_ALL: Channel[] = ['A', 'B', 'C'];
  * ------------------------------------------------------------------------------------ */
 
 describe('modelScore: weighted mean of the nine dimensions', () => {
-  it('weights sum to 15 and era carries zero weight', () => {
-    const total = Object.values(DIMENSION_WEIGHTS).reduce((a, b) => a + b, 0);
+  it('the DEFAULT distribution sums to 15, with scene_context 0 and era 1', () => {
+    const total = Object.values(DEFAULT_DIMENSION_WEIGHTS).reduce((a, b) => a + b, 0);
     expect(total).toBe(15);
-    expect(DIMENSION_WEIGHTS.era).toBe(0);
+    expect(DEFAULT_DIMENSION_WEIGHTS).toMatchObject({
+      rhythmic_character: 3,
+      vocal_delivery: 3,
+      emotional_register: 3,
+      scene_context: 0,
+      signature_hook: 2,
+      instrumentation: 1,
+      harmonic_language: 1,
+      production_texture: 1,
+      era: 1,
+      tempo_feel: 0,
+    });
   });
 
   it('all dimensions equal -> that value', () => {
@@ -133,19 +144,20 @@ describe('modelScore: weighted mean of the nine dimensions', () => {
     expect(modelScore(dims(1))).toBe(1);
   });
 
-  it('era never moves the score (0.64 with era 1.0, 0.66 if era were weighted)', () => {
+  it('under the DEFAULT, scene_context is ignored and era now counts', () => {
     const d = dims(0, {
       rhythmic_character: 0.9,
       vocal_delivery: 0.8,
       emotional_register: 0.7,
-      scene_context: 0.6,
+      scene_context: 0.6, // weight 0 in the default -> contributes nothing
       signature_hook: 0.5,
       instrumentation: 0.4,
       harmonic_language: 0.3,
       production_texture: 0.2,
-      era: 1,
+      era: 1, // weight 1 in the default -> DOES count now
     });
-    expect(modelScore(d)).toBe(0.64);
+    // (3·.9+3·.8+3·.7+2·.5+1·.4+1·.3+1·.2+1·1) / 15 = 10.1/15 = 0.673 -> 0.67
+    expect(modelScore(d)).toBe(0.67);
   });
 
   it('rounds to 2 dp', () => {
@@ -160,12 +172,129 @@ describe('modelScore: weighted mean of the nine dimensions', () => {
 
   it('no scorable dimensions -> 0', () => {
     expect(modelScore([])).toBe(0);
-    expect(modelScore([{ dimension: 'era', score: 1, note: '' }])).toBe(0);
+    // scene_context and tempo_feel both carry weight 0 in the default, so a lone one of
+    // either contributes nothing (era, now weight 1, is no longer a zero-weight example).
+    expect(modelScore([{ dimension: 'scene_context', score: 1, note: '' }])).toBe(0);
+    expect(modelScore([{ dimension: 'tempo_feel', score: 1, note: '' }])).toBe(0);
   });
 
   it('clamps a model that returns a score outside 0-1', () => {
     expect(modelScore([{ dimension: 'rhythmic_character', score: 4, note: '' }])).toBe(1);
     expect(modelScore([{ dimension: 'rhythmic_character', score: -2, note: '' }])).toBe(0);
+  });
+});
+
+/* ------------------------------------------------------------------------------------ *
+ * modelScore — a PASSED per-run weights map (Feature 1)
+ * ------------------------------------------------------------------------------------ */
+
+/** A FULL weights map, every dimension zero unless `over` names it — for isolating one. */
+const only = (over: Partial<Record<string, number>>): Partial<Record<string, number>> => ({
+  ...Object.fromEntries(ALL_DIMENSIONS.map((d) => [d, 0])),
+  ...over,
+});
+
+describe('modelScore: honours a passed weights map', () => {
+  it('a full map that isolates one dimension makes the score exactly that dimension', () => {
+    // Every weight 0 except era: the score is the era dimension's value.
+    expect(modelScore(dims(0.2, { era: 0.9 }), only({ era: 1 }))).toBe(0.9);
+    // Every weight 0 except rhythmic_character.
+    expect(modelScore(dims(0.2, { rhythmic_character: 0.8 }), only({ rhythmic_character: 5 })))
+      .toBe(0.8);
+  });
+
+  it('a dimension NOT named in a PARTIAL map falls back to its default weight', () => {
+    // The map overrides only rhythmic_character (5); the rest keep their DEFAULT weights,
+    // including scene_context 0 (still ignored) and era 1 (still counted).
+    const d = dims(0, { rhythmic_character: 1, era: 1 });
+    // weights: rc 5 (override), vd 3, er 3, sc 0, sh 2, inst 1, harm 1, prod 1, era 1
+    // weighted = 5·1 + 1·1 = 6 ; total = 5+3+3+0+2+1+1+1+1 = 17 ; 6/17 = 0.3529 -> 0.35
+    expect(modelScore(d, { rhythmic_character: 5 })).toBe(0.35);
+  });
+
+  it('scene_context 0 removes its contribution; a positive weight restores it', () => {
+    const d = dims(0, { rhythmic_character: 0, scene_context: 1 });
+    // Isolate rhythmic_character (value 0) with scene_context pinned at 0 -> score 0.
+    expect(modelScore(d, only({ rhythmic_character: 1, scene_context: 0 }))).toBe(0);
+    // Give scene_context all the weight -> the score becomes its value (1).
+    expect(modelScore(d, only({ scene_context: 4 }))).toBe(1);
+  });
+
+  it('a weight above 10 clamps to 10', () => {
+    const d = dims(0, { rhythmic_character: 1, era: 1 });
+    // rc 100 -> 10 (override); era stays default 1; the rest keep defaults but sit at 0.
+    // weighted = 10·1 + 1·1 = 11 ; total = 10 + 3 + 3 + 0 + 2 + 1 + 1 + 1 + 1 = 22 ; = 0.5
+    expect(modelScore(d, { rhythmic_character: 100 })).toBe(0.5);
+  });
+
+  it('a negative weight clamps to 0 — the dimension drops out', () => {
+    // rc -5 -> 0, so rhythmic_character (0.9) no longer counts; every other dim is 0.2.
+    expect(modelScore(dims(0.2, { rhythmic_character: 0.9 }), { rhythmic_character: -5 })).toBe(0.2);
+  });
+
+  it('the default argument is exactly DEFAULT_DIMENSION_WEIGHTS', () => {
+    const d = dims(0.3, { era: 0.9, scene_context: 0.9 });
+    expect(modelScore(d)).toBe(modelScore(d, DEFAULT_DIMENSION_WEIGHTS));
+  });
+});
+
+/* ------------------------------------------------------------------------------------ *
+ * rank — a passed weights map re-orders the SAME candidates (Feature 1)
+ * ------------------------------------------------------------------------------------ */
+
+describe('rank: a per-run weights map changes the order', () => {
+  // Two candidates that TIE under the default but separate once a single dimension is
+  // weighted: X is strong on era, Y is strong on rhythmic_character, mirror images
+  // otherwise, so only the weight on those two dimensions decides who leads.
+  // Base 0.7 keeps every other dimension strong (rule 4 needs >=2 dims at 0.6+), so both
+  // survive and only the era/rhythmic_character weights decide the order.
+  const candX = rec({
+    artist: 'X',
+    title: 'Era Twin',
+    dimensions: dims(0.7, { era: 1, rhythmic_character: 0.4 }),
+  });
+  const candY = rec({
+    artist: 'Y',
+    title: 'Rhythm Twin',
+    dimensions: dims(0.7, { era: 0.4, rhythmic_character: 1 }),
+  });
+
+  const order = (weights?: Partial<Record<string, number>>) =>
+    rank([candX, candY], seed, {
+      includeSameArtist: false,
+      liveChannels: LIVE_ALL,
+      ...(weights ? { weights } : {}),
+    }).results.map((r) => r.track.artist);
+
+  it('era 0 vs era heavily weighted flips the leader', () => {
+    // era 0, rhythmic_character heavy -> Y (the rhythm-strong one) leads.
+    expect(order({ era: 0, rhythmic_character: 10 })[0]).toBe('Y');
+    // era heavy, rhythmic_character 0 -> X (the era-strong one) leads.
+    expect(order({ era: 10, rhythmic_character: 0 })[0]).toBe('X');
+  });
+
+  it('scene_context 0 (its default) contributes nothing to the ranking', () => {
+    const sceneStrong = rec({
+      artist: 'S',
+      title: 'Scene',
+      dimensions: dims(0.7, { scene_context: 1 }),
+    });
+    const plain = rec({ artist: 'P', title: 'Plain', dimensions: dims(0.7, { scene_context: 0 }) });
+    // Under the default (scene_context 0) the scene-strong track earns no edge -> the
+    // deterministic tiebreak (artist/key) decides, not the scene_context value.
+    const def = rank([sceneStrong, plain], seed, {
+      includeSameArtist: false,
+      liveChannels: LIVE_ALL,
+    }).results;
+    expect(def[0]?.finalScore).toBe(def[1]?.finalScore);
+    // Give scene_context weight and the scene-strong track pulls ahead.
+    const weighted = rank([sceneStrong, plain], seed, {
+      includeSameArtist: false,
+      liveChannels: LIVE_ALL,
+      weights: only({ scene_context: 5 }),
+    }).results;
+    expect(weighted[0]?.track.artist).toBe('S');
+    expect(weighted[0]!.finalScore).toBeGreaterThan(weighted[1]!.finalScore);
   });
 });
 

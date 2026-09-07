@@ -34,7 +34,7 @@ import { evidenceStamp, rank2, score2 } from '@/lib/client/format';
 import { usePlayerSnapshot, usePlayerStore } from '@/lib/client/player';
 import {
   CHANNEL_BONUS,
-  DIMENSION_WEIGHTS,
+  DEFAULT_DIMENSION_WEIGHTS,
   ENTHUSIASM_BONUS,
   SCORED_DIMENSIONS,
 } from '@/lib/engine/rank';
@@ -50,7 +50,7 @@ export function weighted(dimensions: DimensionScore[]): { sum: number; total: nu
   for (const d of dimensions) {
     if (seen.has(d.dimension)) continue;
     seen.add(d.dimension);
-    const w = DIMENSION_WEIGHTS[d.dimension] ?? 0;
+    const w = DEFAULT_DIMENSION_WEIGHTS[d.dimension] ?? 0;
     if (w === 0) continue;
     sum += w * Math.max(0, Math.min(1, d.score));
     total += w;
@@ -60,7 +60,7 @@ export function weighted(dimensions: DimensionScore[]): { sum: number; total: nu
 
 /** The bar fill. Acid normally, ochre below 0.50, dust for a zero-weight dimension. */
 function barFill(d: DimensionScore): string {
-  if ((DIMENSION_WEIGHTS[d.dimension] ?? 0) === 0) return '#A8A296';
+  if ((DEFAULT_DIMENSION_WEIGHTS[d.dimension] ?? 0) === 0) return '#A8A296';
   return d.score < 0.5 ? '#D89B2A' : '#D9F227';
 }
 
@@ -264,7 +264,7 @@ export function ResultCard({
                   {dims.map((d) => (
                     <li key={d.dimension}>
                       <span className="dn">
-                        {d.dimension} <span className="w">×{DIMENSION_WEIGHTS[d.dimension] ?? 0}</span>
+                        {d.dimension} <span className="w">×{DEFAULT_DIMENSION_WEIGHTS[d.dimension] ?? 0}</span>
                       </span>
                       <MatchBar d={d} />
                       <span className="dv">{score2(d.score)}</span>

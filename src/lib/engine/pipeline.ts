@@ -89,8 +89,11 @@ import { trackNormKey } from '@/lib/util/normalize';
  * (fingerprint) and Stage 5 (score) make no model call, and the three channels generate
  * candidates from Deezer/MusicBrainz/Last.fm rather than an LLM. A run stored by the
  * LLM-era `engine-2` (there is a persisted Lovecats run) must never replay.
+ * `engine-4-weights`: every run now persists the full scored candidate pool so a per-run
+ * weights change re-ranks it instantly (no network, no model). A pre-engine-4 run has no
+ * pool and would re-rank from `results`, so it is retired by this bump instead.
  */
-export const ENGINE_VERSION = 'engine-3-keyless';
+export const ENGINE_VERSION = 'engine-4-weights';
 
 /** The channels, in the order their `start` events are emitted. */
 export const CHANNELS: readonly Channel[] = ['A', 'B', 'C'] as const;
@@ -402,8 +405,13 @@ export function runCacheHash(options: RunOptions): string {
  * quietly falling OUT of the key, which no hash comparison would show.
  */
 export function runCacheInputs(options: RunOptions): Record<string, unknown> {
+  // `weights` is deliberately NOT in the key: the same (seed, sameArtist, corrections)
+  // must replay the SAME scored pool no matter the weights, so a weight change re-ranks
+  // that pool instantly instead of re-browsing. `replay` applies the requested weights.
+  const { weights: _weights, ...cacheableOptions } = options;
+  void _weights;
   return {
-    options,
+    options: cacheableOptions,
     engine: ENGINE_VERSION,
     fingerprint: fingerprintPromptKey(options.corrections),
     score: SCORE_PROMPT_VERSION,
@@ -440,7 +448,7 @@ export async function runPipeline(args: RunPipelineArgs): Promise<RunRecord> {
   const hash = runCacheHash(options);
   if (!args.force) {
     const cached = runsRepo.find(seedKey, hash, ENGINE_VERSION);
-    if (cached) return replay(cached, emit);
+    if (cached) return replay(cached, emit, options);
   }
 
   const runId = newRunId();
@@ -494,6 +502,7 @@ export async function runPipeline(args: RunPipelineArgs): Promise<RunRecord> {
       options,
       fingerprint: null,
       results: [],
+      scoredPool: [],
       degraded,
       stats,
       engineVersion: ENGINE_VERSION,
@@ -546,6 +555,7 @@ export async function runPipeline(args: RunPipelineArgs): Promise<RunRecord> {
       options,
       fingerprint: null,
       results: [],
+      scoredPool: [],
       degraded,
       stats,
       engineVersion: ENGINE_VERSION,
@@ -657,6 +667,10 @@ export async function runPipeline(args: RunPipelineArgs): Promise<RunRecord> {
     options,
     fingerprint,
     results: ranked.results,
+    // The FULL scored candidate list, exactly as it was handed to `rank()` — every
+    // verified+scored candidate with its dimensions, before any ranking rule ran. A replay
+    // re-ranks THIS with the requested weights, so re-tuning is instant and keyless.
+    scoredPool: [...recommendations],
     degraded,
     stats,
     engineVersion: ENGINE_VERSION,
@@ -1089,10 +1103,17 @@ function makeLogger(onLog: ((line: string) => void) | undefined, startedAt: numb
  * ones.
  */
 export function persistable(run: RunRecord): RunRecord {
+  const stripPreview = (rec: Recommendation): Recommendation => ({
+    ...rec,
+    track: stripVolatilePreview(rec.track),
+  });
   return {
     ...run,
     seed: stripVolatilePreview(run.seed),
-    results: run.results.map((rec) => ({ ...rec, track: stripVolatilePreview(rec.track) })),
+    results: run.results.map(stripPreview),
+    // The pool holds the same tracks with their own signed preview URLs — strip them too,
+    // or a replay days later would try to play a dead 15-minute Deezer link.
+    scoredPool: run.scoredPool.map(stripPreview),
   };
 }
 
@@ -1142,10 +1163,28 @@ function channelVerifiedEvents(stats: RunRecord['stats']): PipelineEvent[] {
 async function replay(
   stored: RunRecord,
   emit: (event: PipelineEvent) => void,
+  options: RunOptions,
 ): Promise<RunRecord> {
   const seed = await freshPreview(stored.seed);
+
+  // Re-rank the stored pool under the REQUESTED weights, so changing a weight is a free
+  // cache hit that re-orders the same candidates with no network and no model. `weights`
+  // is not in the cache key, so the stored run's own weights may differ from these; the
+  // pool is identical either way. A pre-engine-4 run has no pool — fall back to its
+  // stored results, which are already ranked.
+  const reRanked = stored.scoredPool.length > 0
+    ? rank(stored.scoredPool, stored.seed, {
+        ...stored.options,
+        // Pass the REQUESTED weights unconditionally so an absent param resolves to
+        // DEFAULT_DIMENSION_WEIGHTS inside rank (opts.weights ?? DEFAULT) rather than
+        // silently inheriting the weights the stored run was originally created with.
+        weights: options.weights,
+        liveChannels: liveChannelsFromStats(stored.stats),
+      }).results
+    : stored.results;
+
   const results: Recommendation[] = [];
-  for (const item of stored.results) {
+  for (const item of reRanked) {
     results.push({ ...item, track: await freshPreview(item.track) });
   }
   const run: RunRecord = { ...stored, seed, results };
@@ -1167,6 +1206,17 @@ async function replay(
   emit({ type: 'final', results: run.results, degraded: run.degraded, stats: run.stats });
   emit({ type: 'stage', stage: 'done', status: 'done' });
   return run;
+}
+
+/**
+ * The channels that ran (were not skipped) in the stored run — the set `rank`'s enthusiasm
+ * bonus is scoped to. Reconstructed from the persisted per-channel stats because the live
+ * flag is not stored on its own; a channel served entirely from cache counts as run here,
+ * which at most restores a 0.05 forum-enthusiasm bonus and never reorders a keyless run
+ * (no channel returns forum evidence without a key).
+ */
+function liveChannelsFromStats(stats: RunRecord['stats']): Channel[] {
+  return CHANNELS.filter((channel) => !stats.perChannel[channel].skipped);
 }
 
 /** Never lets a dead preview (or a dead Deezer) take a replay down. */
