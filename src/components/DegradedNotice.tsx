@@ -19,13 +19,6 @@
  */
 export const CONSEQUENCE: { match: RegExp; say: string }[] = [
   {
-    // The whole-run degrade: with no key there is no interpretation, no scoring and
-    // therefore no list — and the page says which key, by name.
-    match: /recommendations unavailable: no ANTHROPIC_API_KEY/i,
-    say:
-      'Every stage of this engine is a model call — the fingerprint, the three channels’ judgement, the per-dimension scoring — so with no key there is nothing to rank and the list below is empty. The seed card and whatever the hard sources measured are all this run produced. Set ANTHROPIC_API_KEY and run it again.',
-  },
-  {
     // The account behind the key has no credit. The failure is one HTTP 400 the listener
     // never sees; what they need is the consequence and the console page that fixes it.
     // The same line can arrive from a channel or from the scoring when the fingerprint

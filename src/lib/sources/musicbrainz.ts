@@ -65,6 +65,15 @@ export interface MbRecording {
   url: string;
 }
 
+/** An artist lookup (`GET /artist/{mbid}?inc=tags+genres`), used to densify thin tags. */
+export interface MbArtist {
+  mbid: string;
+  name: string;
+  tags: MbTag[];
+  genres: MbTag[];
+  url: string;
+}
+
 const TagSchema = z.object({ name: z.string().optional(), count: z.number().optional() }).loose();
 
 const ArtistCreditSchema = z
@@ -98,7 +107,17 @@ const SearchResponseSchema = z
   .object({ count: z.number().optional(), recordings: z.array(RecordingSchema).optional() })
   .loose();
 
+const ArtistSchema = z
+  .object({
+    id: z.string().optional(),
+    name: z.string().optional(),
+    tags: z.array(TagSchema).optional(),
+    genres: z.array(TagSchema).optional(),
+  })
+  .loose();
+
 type RawRecording = z.infer<typeof RecordingSchema>;
+type RawArtist = z.infer<typeof ArtistSchema>;
 
 /** "The Cure" from `artist-credit: [{name, joinphrase}]`, joinphrases included. */
 function creditedArtist(raw: RawRecording): string {
@@ -285,6 +304,75 @@ export async function getEarliestReleaseYear(mbid: string): Promise<SourceResult
   if (years.length === 0) return fail('not_found', `no release dates for recording ${mbid}`);
 
   return ok(Math.min(...years), { fromCache: res.fromCache, fetchedAt: res.fetchedAt });
+}
+
+/**
+ * Keyless tag-cohort discovery (Channel B). ANDs the seed's top normalised tags into one
+ * Lucene query — `tag:"swing" AND tag:"electro swing"` — and returns the recordings
+ * MusicBrainz scores at or above 85.
+ *
+ * QUOTING IS MANDATORY. An unquoted multi-word tag (`tag:electro swing`) parses as
+ * `tag:electro` OR the bare term `swing`, which explodes to ~1M loosely-related junk;
+ * quoting each tag keeps the cohort tight. Every tag is stripped of `"` and `\` first so a
+ * tag cannot break out of its own quotes.
+ *
+ * Dedupe-by-artist and seed-artist removal are the caller's (Channel B) job — this returns
+ * every qualifying hit, each carrying its inline tags.
+ */
+export async function searchRecordingsByTags(
+  tags: string[],
+  { limit = 25, minScore = 85 }: { limit?: number; minScore?: number } = {},
+): Promise<SourceResult<MbRecording[]>> {
+  const clean = tags
+    .map((t) => cleanQuery(t).replace(/["\\]/g, '').trim())
+    .filter((t) => t.length > 0);
+  if (clean.length === 0) return fail('invalid_request', 'at least one tag required');
+
+  const query = clean.map((t) => `tag:"${t}"`).join(' AND ');
+  const url = buildUrl(`${BASE}/recording`, { fmt: 'json', limit, query });
+
+  const res = await getJson(url, SearchResponseSchema);
+  if (!res.ok) return res;
+
+  const hits = toArray(res.value.recordings)
+    .filter((r) => (r.score ?? 0) >= minScore)
+    .map(toRecording)
+    .filter((r): r is MbRecording => r !== null);
+  return ok(hits, { fromCache: res.fromCache, fetchedAt: res.fetchedAt });
+}
+
+/**
+ * `GET /artist/{mbid}?inc=tags+genres` — the artist's crowd tags and genres, used to
+ * densify a recording whose own tags are thin. Falls back to no `inc` if a future
+ * MusicBrainz rejects the list, so a bad `inc` never costs us the artist.
+ */
+export async function getArtist(
+  mbid: string,
+  inc = 'tags+genres',
+): Promise<SourceResult<MbArtist>> {
+  if (!/^[0-9a-f-]{36}$/i.test(mbid)) return fail('invalid_request', `bad MBID ${mbid}`);
+
+  const url = (i: string) => buildUrl(`${BASE}/artist/${mbid}`, { fmt: 'json', inc: i });
+  let res = await getJson(url(inc), ArtistSchema);
+  if (!res.ok && res.reason === 'invalid_request') res = await getJson(url(''), ArtistSchema);
+  if (!res.ok) return res;
+
+  const raw: RawArtist = res.value;
+  if (!raw.id || !raw.name) return fail('bad_response', 'artist body had no id');
+  const toTags = (list: RawArtist['tags']): MbTag[] =>
+    toArray(list)
+      .filter((t) => t.name)
+      .map((t) => ({ name: t.name as string, count: t.count ?? 0 }));
+  return ok(
+    {
+      mbid: raw.id,
+      name: raw.name,
+      tags: toTags(raw.tags),
+      genres: toTags(raw.genres),
+      url: `https://musicbrainz.org/artist/${raw.id}`,
+    },
+    { fromCache: res.fromCache, fetchedAt: res.fetchedAt },
+  );
 }
 
 export function describe(): SourceDescription {

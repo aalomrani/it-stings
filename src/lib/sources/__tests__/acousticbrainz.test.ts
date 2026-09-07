@@ -20,6 +20,18 @@ describe('getLowLevel', () => {
     expect(res.value.scale).toBe('major');
     expect(res.value.danceabilityScalar).toBeCloseTo(1.22, 2);
   });
+
+  it('additively exposes key_strength, dynamic_complexity and (absent) spectral_centroid', async () => {
+    // ADDITIVE keyless dimensions for the deterministic scorer; the pruned fixture has no
+    // spectral_centroid, which must read as null rather than throw.
+    installFetch([{ when: '/low-level', body: fixture('ab-low-level-1c19fbb9') }]);
+    const res = await getLowLevel(MBID);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.value.keyStrength).toBeCloseTo(0.5041, 3);
+    expect(res.value.dynamicComplexity).toBeCloseTo(3.4266, 3);
+    expect(res.value.spectralCentroid).toBeNull();
+  });
 });
 
 describe('getHighLevel', () => {
@@ -33,6 +45,17 @@ describe('getHighLevel', () => {
     // `genre_dortmund` ("electronic" for every high-level hit on the sample) is dropped:
     // api-reality.md §3.3 measured it constant, so it is noise, not a label.
     expect(res.value.genreLabels).toEqual(['rhythm and blues', 'jazz']);
+  });
+
+  it('additively exposes voice, party/acoustic/electronic moods and tonality', async () => {
+    installFetch([{ when: '/high-level', body: fixture('ab-high-level-1c19fbb9') }]);
+    const res = await getHighLevel(MBID);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(res.value.voiceInstrumental).toBeCloseTo(0.2082, 3); // p(voice)
+    expect(res.value.moodElectronic).toBeCloseTo(0.9794, 3);
+    expect(res.value.moodParty).toBeCloseTo(0, 3);
+    expect(res.value.tonal).toBeCloseTo(0.0788, 3);
   });
 
   it('reports a 404 as not_in_dataset, which is normal after 2022', async () => {

@@ -36,6 +36,12 @@ export interface AcousticLowLevel {
   /** Essentia's rhythm.danceability scalar, roughly 0-3. */
   danceabilityScalar: number | null;
   averageLoudness: number | null;
+  /** tonal.key_strength 0-1 — how confidently Essentia called the key. Optional/additive. */
+  keyStrength?: number | null;
+  /** lowlevel.dynamic_complexity — loudness variation. Optional/additive. */
+  dynamicComplexity?: number | null;
+  /** lowlevel.spectral_centroid.mean — brightness. Absent from pruned bodies. Optional. */
+  spectralCentroid?: number | null;
 }
 
 export interface AcousticHighLevel {
@@ -48,6 +54,16 @@ export interface AcousticHighLevel {
     relaxed: number | null;
   };
   genreLabels: string[];
+  /** Probability 0-1 the track carries a voice (voice_instrumental.all.voice). Optional. */
+  voiceInstrumental?: number | null;
+  /** Extra mood probabilities, additive. mood_party.party / mood_acoustic.acoustic / mood_electronic.electronic. */
+  moodParty?: number | null;
+  moodAcoustic?: number | null;
+  moodElectronic?: number | null;
+  /** tonal_atonal.all.tonal — how tonal (vs atonal) the track is. Optional. */
+  tonal?: number | null;
+  /** timbre.all.dark — how dark (vs bright) the timbre is. Optional. */
+  timbreDark?: number | null;
 }
 
 /** What the resolver stores: the union of both endpoints. */
@@ -64,10 +80,21 @@ const LowLevelSchema = z
       .loose()
       .optional(),
     tonal: z
-      .object({ key_key: z.string().optional(), key_scale: z.string().optional() })
+      .object({
+        key_key: z.string().optional(),
+        key_scale: z.string().optional(),
+        key_strength: z.number().optional(),
+      })
       .loose()
       .optional(),
-    lowlevel: z.object({ average_loudness: z.number().optional() }).loose().optional(),
+    lowlevel: z
+      .object({
+        average_loudness: z.number().optional(),
+        dynamic_complexity: z.number().optional(),
+        spectral_centroid: z.object({ mean: z.number().optional() }).loose().optional(),
+      })
+      .loose()
+      .optional(),
   })
   .loose();
 
@@ -88,6 +115,12 @@ const HighLevelSchema = z
         mood_sad: ClassifierSchema.optional(),
         mood_aggressive: ClassifierSchema.optional(),
         mood_relaxed: ClassifierSchema.optional(),
+        mood_party: ClassifierSchema.optional(),
+        mood_acoustic: ClassifierSchema.optional(),
+        mood_electronic: ClassifierSchema.optional(),
+        voice_instrumental: ClassifierSchema.optional(),
+        tonal_atonal: ClassifierSchema.optional(),
+        timbre: ClassifierSchema.optional(),
         genre_dortmund: ClassifierSchema.optional(),
         genre_rosamerica: ClassifierSchema.optional(),
         genre_tzanetakis: ClassifierSchema.optional(),
@@ -136,6 +169,9 @@ export async function getLowLevel(mbid: string): Promise<SourceResult<AcousticLo
       scale: v.tonal?.key_scale ?? null,
       danceabilityScalar: v.rhythm?.danceability ?? null,
       averageLoudness: v.lowlevel?.average_loudness ?? null,
+      keyStrength: v.tonal?.key_strength ?? null,
+      dynamicComplexity: v.lowlevel?.dynamic_complexity ?? null,
+      spectralCentroid: v.lowlevel?.spectral_centroid?.mean ?? null,
     },
     { fromCache: parsed.fromCache, fetchedAt: parsed.fetchedAt },
   );
@@ -178,6 +214,12 @@ export async function getHighLevel(mbid: string): Promise<SourceResult<AcousticH
         relaxed: prob(hl?.mood_relaxed, 'relaxed'),
       },
       genreLabels,
+      voiceInstrumental: prob(hl?.voice_instrumental, 'voice'),
+      moodParty: prob(hl?.mood_party, 'party'),
+      moodAcoustic: prob(hl?.mood_acoustic, 'acoustic'),
+      moodElectronic: prob(hl?.mood_electronic, 'electronic'),
+      tonal: prob(hl?.tonal_atonal, 'tonal'),
+      timbreDark: prob(hl?.timbre, 'dark'),
     },
     { fromCache: parsed.fromCache, fetchedAt: parsed.fetchedAt },
   );

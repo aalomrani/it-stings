@@ -1,7 +1,7 @@
 {
   "deezer-quota-code-4": {
     "status": 200,
-    "note": "HAND-WRITTEN from docs/api-reality.md §3.2 (needs a 70-request burst to trigger live)",
+    "note": "HAND-WRITTEN from docs/api-reality.md \u00a73.2 (needs a 70-request burst to trigger live)",
     "source": "hand-written"
   },
   "itunes-search-lovecats": {
@@ -78,21 +78,21 @@
     "url": "https://api.deezer.com/track/0",
     "method": "GET",
     "status": 200,
-    "note": "HTTP 200 with {\"error\":{\"code\":800}} — Deezer never uses HTTP status for errors",
+    "note": "HTTP 200 with {\"error\":{\"code\":800}} \u2014 Deezer never uses HTTP status for errors",
     "recordedAt": "2026-09-06T13:20:11.107Z"
   },
   "mb-isrc-GBALB8300001": {
     "url": "https://musicbrainz.org/ws/2/isrc/GBALB8300001?fmt=json&inc=artist-credits%2Bisrcs%2Btags",
     "method": "GET",
     "status": 200,
-    "note": "the ISRC join: recording 1c19fbb9…, first-release-date 1983-11-28",
+    "note": "the ISRC join: recording 1c19fbb9\u2026, first-release-date 1983-11-28",
     "recordedAt": "2026-09-06T13:21:21.914Z"
   },
   "mb-isrc-not-found": {
     "url": "https://musicbrainz.org/ws/2/isrc/USCA29900213?fmt=json&inc=artist-credits%2Bisrcs",
     "method": "GET",
     "status": 404,
-    "note": "HTTP 404 — 2 of 15 sample ISRCs miss",
+    "note": "HTTP 404 \u2014 2 of 15 sample ISRCs miss",
     "recordedAt": "2026-09-06T13:20:14.390Z"
   },
   "mb-search-lovecats": {
@@ -173,5 +173,33 @@
     "status": 200,
     "note": "keyless; a nonexistent id answers 404 with an empty body",
     "recordedAt": "2026-09-06T13:20:33.666Z"
+  },
+  "deezer-related-parov": {
+    "url": "https://api.deezer.com/artist/27/related",
+    "method": "GET",
+    "status": 200,
+    "note": "HAND-WRITTEN: /artist/{id}/related neighbours; third entry has no id and is dropped",
+    "source": "hand-written"
+  },
+  "deezer-top-parov": {
+    "url": "https://api.deezer.com/artist/27/top?limit=25",
+    "method": "GET",
+    "status": 200,
+    "note": "HAND-WRITTEN: /artist/{id}/top; second track has no artist field so primary comes from contributors[0]",
+    "source": "hand-written"
+  },
+  "mb-search-tags-swing": {
+    "url": "https://musicbrainz.org/ws/2/recording?fmt=json&limit=25&query=tag%3A%22electro%20swing%22%20AND%20tag%3A%22swing%22",
+    "method": "GET",
+    "status": 200,
+    "note": "HAND-WRITTEN: tag-cohort search; third hit score 62 is dropped by the >=85 filter",
+    "source": "hand-written"
+  },
+  "mb-artist-tags-parov": {
+    "url": "https://musicbrainz.org/ws/2/artist/44444444-4444-4444-8444-444444444444?fmt=json&inc=tags%2Bgenres",
+    "method": "GET",
+    "status": 200,
+    "note": "HAND-WRITTEN: artist tags+genres to densify thin recording tags",
+    "source": "hand-written"
   }
 }

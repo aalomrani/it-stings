@@ -1,13 +1,15 @@
 /**
- * Channel A. Two seams are stubbed and nothing else: `fetchExternal` (the source harness,
- * with bodies in the exact XML-shaped JSON Last.fm documents — string numbers, `@attr`
- * ranks, a plain-string artist on `track.search`) and `setModelTransport`. No network, no
- * model, no API key.
+ * Channel A — the Last.fm channel, now with a DETERMINISTIC tag pivot (no model).
+ *
+ * One seam is stubbed and nothing else: `fetchExternal` (the source harness, with bodies in
+ * the exact XML-shaped JSON Last.fm documents — string numbers, `@attr` ranks, a plain
+ * string artist on `track.search`). No network, no model, and the channel is skipped
+ * entirely without the free Last.fm key.
  *
  * The assertions that matter to the spec, not just to the code:
  *   - without a key the channel makes NO request (upstream error 6 is ambiguous);
- *   - the generic tags never reach the model, the seed's own artist name included;
- *   - the model may only choose from tags the API returned — an invented one is dropped;
+ *   - the generic tags never become a pivot, the seed's own artist name included;
+ *   - the pivot is the heaviest surviving crowd tags, chosen by count with no model;
  *   - the seed never comes back as its own candidate, including under Last.fm's other
  *     spelling of the same recording;
  *   - every evidence row carries the measured number and the Last.fm URL it came from.
@@ -42,13 +44,11 @@ vi.mock('@/lib/env', () => ({
   },
 }));
 
-import type { ModelRequest, ModelResponse } from '@/lib/engine/model';
 import type { Fingerprint, TrackRecord } from '@/lib/types';
 
-const { channelA, isGenericTag, MAX_CANDIDATES, PICK_TAGS_SYSTEM, NO_KEY_REASON } = await import(
-  '@/lib/engine/channels/a'
-);
-const { createUsageCounter, setModelTransport } = await import('@/lib/engine/model');
+const { channelA, isGenericTag, pickPivotTags, MAX_PIVOT_TAGS, MAX_CANDIDATES, NO_KEY_REASON } =
+  await import('@/lib/engine/channels/a');
+const { createUsageCounter } = await import('@/lib/engine/model');
 
 /* ------------------------------------------------------------------------------------ *
  * Fixtures
@@ -100,7 +100,7 @@ const fingerprint = (): Fingerprint => ({
     signature_hook: 'high',
   },
   grounded_on: ['Deezer bpm 128'],
-  model: 'claude-opus-5',
+  model: 'deterministic-v1',
 });
 
 /** Last.fm's documented JSON: string numbers, artist as a nested object. */
@@ -157,26 +157,7 @@ const searchBody = (tracks: Array<{ artist: string; title: string; listeners: nu
  * Harness
  * ------------------------------------------------------------------------------------ */
 
-interface FakeCall {
-  request: ModelRequest;
-  name: string;
-}
-
-let modelCalls: FakeCall[] = [];
 let logs: string[] = [];
-
-/** A transport that answers `pickTags` with `chosen`, or fails the way `reply` says. */
-function installModel(reply: (user: string) => ModelResponse): void {
-  setModelTransport(async (request, meta) => {
-    modelCalls.push({ request, name: String(meta.name) });
-    return reply(request.messages[0].content);
-  });
-}
-
-const picks = (...tags: string[]): ModelResponse => ({
-  parsed_output: { chosen: tags.map((tag) => ({ tag, reason: `because of ${tag}` })) },
-  usage: { input_tokens: 400, output_tokens: 40 },
-});
 
 function ctx(signal?: AbortSignal) {
   return {
@@ -189,15 +170,12 @@ function ctx(signal?: AbortSignal) {
 
 beforeEach(() => {
   resetHarness();
-  modelCalls = [];
   logs = [];
   mocks.env.lastfmApiKey = 'testkey';
-  setModelTransport(null);
 });
 
 afterEach(() => {
   resetHarness();
-  setModelTransport(null);
 });
 
 /* ------------------------------------------------------------------------------------ *
@@ -205,10 +183,9 @@ afterEach(() => {
  * ------------------------------------------------------------------------------------ */
 
 describe('without LASTFM_API_KEY', () => {
-  it('skips without touching the network or the model', async () => {
+  it('skips without touching the network', async () => {
     mocks.env.lastfmApiKey = undefined;
     const h = installFetch([]);
-    installModel(() => picks('anything'));
 
     const res = await channelA(seedTrack(), fingerprint(), ctx());
 
@@ -221,7 +198,30 @@ describe('without LASTFM_API_KEY', () => {
       evidence: {},
     });
     expect(h.calls).toHaveLength(0);
-    expect(modelCalls).toHaveLength(0);
+  });
+});
+
+describe('the deterministic tag picker', () => {
+  it('keeps the heaviest surviving tags, by count, up to the ceiling', () => {
+    const picked = pickPivotTags([
+      { name: 'swing revival', count: 100, url: null },
+      { name: 'lounge', count: 40, url: null },
+      { name: 'jump blues', count: 70, url: null },
+      { name: 'psychobilly', count: 10, url: null },
+      { name: 'sophisti-pop', count: 5, url: null },
+    ]);
+    expect(picked.map((p) => p.tag)).toEqual(['swing revival', 'jump blues', 'lounge', 'psychobilly']);
+    expect(picked).toHaveLength(MAX_PIVOT_TAGS);
+    // Every pick carries the concrete number, so the evidence trail says why it fired.
+    expect(picked[0].reason).toMatch(/100/);
+  });
+
+  it('is stable: equal counts break by name, and it makes no model call', () => {
+    const picked = pickPivotTags([
+      { name: 'zydeco', count: 20, url: null },
+      { name: 'ska', count: 20, url: null },
+    ]);
+    expect(picked.map((p) => p.tag)).toEqual(['ska', 'zydeco']);
   });
 });
 
@@ -239,14 +239,13 @@ describe('similar tracks + the tag pivot', () => {
     {
       when: 'method=track.getTopTags',
       body: tagsBody([
-        ['post-punk', 100],
-        ['80s', 96],
+        // The heaviest two SURVIVORS of the blocklist are the pivot; the rest are generic.
+        ['swing revival', 100],
         ['rock', 90],
+        ['80s', 96],
+        ['lounge', 40],
         ['the cure', 74],
-        ['jazz', 60],
-        ['swing revival', 40],
         ['seen live', 33],
-        ['lounge', 12],
         ['female vocalists', 4],
       ]),
     },
@@ -266,17 +265,16 @@ describe('similar tracks + the tag pivot', () => {
     },
   ];
 
-  it('merges both halves, drops the seed, and orders similar tracks first', async () => {
+  it('merges both halves, drops the seed, orders similar first, and makes no model call', async () => {
     installFetch(routes());
-    installModel(() => picks('swing revival', 'lounge'));
 
     const c = ctx();
     const res = await channelA(seedTrack(), fingerprint(), c);
 
     expect(res.status).toBe('done');
     expect(res.live).toBe(true);
-    expect(c.usage.calls).toBe(1);
-    expect(c.usage.inputTokens).toBe(400);
+    // Deterministic: nothing here costs a model call.
+    expect(c.usage.calls).toBe(0);
 
     // The seed itself is gone under BOTH of Last.fm's spellings; "Close to Me" is not the
     // seed, so it survives this stage (rule 1 in rank.ts is what cuts it later).
@@ -297,11 +295,14 @@ describe('similar tracks + the tag pivot', () => {
     const bluebeard = res.candidates.find((x) => x.artist === 'Combustible Edison');
     expect(bluebeard?.channels).toEqual(['A']);
     expect(bluebeard?.hints).toEqual([{ lastfmMatch: 0.42 }, { tag: 'lounge' }]);
+
+    // The generic tags never became a pivot: no request was ever made for one, and the
+    // harness throws on an unrouted request, so a clean run is the proof.
+    expect(logs.some((l) => l.includes('pivot tags "swing revival", "lounge"'))).toBe(true);
   });
 
   it('records an evidence row per half, with the measured number and the Last.fm URL', async () => {
     installFetch(routes());
-    installModel(() => picks('swing revival', 'lounge'));
 
     const before = Date.now();
     const res = await channelA(seedTrack(), fingerprint(), ctx());
@@ -314,9 +315,6 @@ describe('similar tracks + the tag pivot', () => {
         url: 'https://www.last.fm/music/Combustible%20Edison/_/Bluebeard',
         title: 'Combustible Edison — Bluebeard',
         detail: 'Last.fm match 0.42 · rank 3 of 3',
-        // Both halves came off the wire in this run, so both rows say so and carry the
-        // moment they were fetched — the card stamps `live` from these, not from the
-        // channel's status.
         live: true,
       },
       {
@@ -334,34 +332,6 @@ describe('similar tracks + the tag pivot', () => {
     }
     // No row survives for a candidate that is not in the list.
     expect(res.evidence['the cure|the love cats']).toBeUndefined();
-  });
-
-  it('shows the model only the specific tags, and only lets it choose from those', async () => {
-    installFetch(routes());
-    // "acid jazz" was never in the list: an invented tag must not become a pivot.
-    installModel(() => picks('swing revival', 'acid jazz', 'lounge'));
-
-    const res = await channelA(seedTrack(), fingerprint(), ctx());
-
-    expect(modelCalls).toHaveLength(1);
-    const call = modelCalls[0];
-    expect(call.name).toBe('pickTags');
-    expect(call.request.output_config.effort).toBe('low');
-    expect(call.request.system).toEqual([
-      { type: 'text', text: PICK_TAGS_SYSTEM, cache_control: { type: 'ephemeral' } },
-    ]);
-
-    const user = call.request.messages[0].content;
-    for (const kept of ['post-punk', 'jazz', 'swing revival', 'lounge']) {
-      expect(user).toContain(kept);
-    }
-    for (const dropped of ['80s', '"rock"', 'the cure', 'seen live', 'female vocalists']) {
-      expect(user).not.toContain(dropped);
-    }
-
-    // Only the two real tags were pivoted on; nothing was pulled for "acid jazz".
-    expect(res.candidates.some((x) => x.hints.some((h) => h.tag === 'acid jazz'))).toBe(false);
-    expect(logs.some((l) => l.includes('dropped invented tag "acid jazz"'))).toBe(true);
   });
 });
 
@@ -416,7 +386,6 @@ describe('the title-variant retry', () => {
         ]),
       },
     ]);
-    installModel(() => picks('nothing'));
 
     const res = await channelA(seed, fingerprint(), ctx());
 
@@ -431,7 +400,6 @@ describe('the title-variant retry', () => {
     expect(res.candidates.some((c) => c.artist === 'The Cure')).toBe(false);
     expect(res.reason).toContain('title variant "The Love Cats"');
     expect(res.reason).toContain('tag pivot skipped: every tag was generic');
-    expect(modelCalls).toHaveLength(0);
   });
 
   it('does not retry when search returns the same title back', async () => {
@@ -455,33 +423,29 @@ describe('the title-variant retry', () => {
 });
 
 describe('degrading', () => {
-  it('keeps the similar tracks when the pickTags call fails', async () => {
+  it('keeps the similar tracks when every chosen tag pull fails', async () => {
     installFetch([
       {
         when: 'method=track.getSimilar',
         body: similarBody([{ artist: 'Combustible Edison', title: 'Bluebeard', match: 0.42 }]),
       },
       { when: 'method=track.getTopTags', body: tagsBody([['swing revival', 40]]) },
+      // The one chosen tag's top-tracks lookup fails.
+      { when: 'tag=swing%20revival', status: 500, body: { error: 8, message: 'operation failed' } },
     ]);
-    setModelTransport(async () => ({
-      stop_reason: 'refusal',
-      stop_details: { category: 'other' },
-      usage: { input_tokens: 300, output_tokens: 0 },
-    }));
 
     const c = ctx();
     const res = await channelA(seedTrack(), fingerprint(), c);
 
     expect(res.status).toBe('done');
     expect(res.candidates.map((x) => x.artist)).toEqual(['Combustible Edison']);
-    expect(res.reason).toBe('tag pivot skipped: pickTags refusal:other');
-    // The call reached the API and is billable, so the run counts it.
-    expect(c.usage.calls).toBe(1);
+    expect(res.reason).toBe('tag pivot skipped: tag.getTopTracks failed for every chosen tag');
+    // No model call anywhere on this path.
+    expect(c.usage.calls).toBe(0);
   });
 
   it('is an error only when BOTH halves fail', async () => {
     installFetch([{ when: 'audioscrobbler', status: 403, body: fixture('lastfm-error-10') }]);
-    installModel(() => picks('swing revival'));
 
     const res = await channelA(seedTrack(), fingerprint(), ctx());
 
@@ -489,7 +453,6 @@ describe('degrading', () => {
     expect(res.reason).toContain('track.getSimilar invalid_api_key');
     expect(res.reason).toContain('track.getTopTags invalid_api_key');
     expect(res.candidates).toEqual([]);
-    expect(modelCalls).toHaveLength(0);
   });
 
   it('never throws: anything unexpected becomes status error', async () => {
@@ -500,7 +463,6 @@ describe('degrading', () => {
       },
       { when: 'method=track.getTopTags', body: tagsBody([['swing revival', 40]]) },
     ]);
-    installModel(() => picks('swing revival'));
 
     // The channel's own logger blowing up is the cheapest way to prove that a throw from
     // ANY collaborator lands as a degraded result rather than as an exception in the run.
@@ -549,7 +511,6 @@ describe('the cap', () => {
       { when: 'tag=jump%20blues', body: tagTracksBody(many('Jump', 50)) },
       { when: 'tag=lounge', body: tagTracksBody(many('Lounge', 50)) },
     ]);
-    installModel(() => picks('swing revival', 'jump blues', 'lounge'));
 
     const res = await channelA(seedTrack(), fingerprint(), ctx());
 

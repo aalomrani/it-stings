@@ -1,0 +1,8 @@
+{
+  "count": 3,
+  "recordings": [
+    { "id": "11111111-1111-4111-8111-111111111111", "title": "Booty Swing", "score": 100, "artist-credit": [ { "name": "Parov Stelar", "joinphrase": "" } ], "tags": [ { "name": "electro swing", "count": 5 }, { "name": "swing", "count": 3 } ], "first-release-date": "2012-05-01" },
+    { "id": "22222222-2222-4222-8222-222222222222", "title": "That Man", "score": 90, "artist-credit": [ { "name": "Caro Emerald", "joinphrase": "" } ], "tags": [ { "name": "electro swing", "count": 2 } ], "first-release-date": "2010-01-01" },
+    { "id": "33333333-3333-4333-8333-333333333333", "title": "Unrelated Filler", "score": 62, "artist-credit": [ { "name": "Some One" } ], "tags": [] }
+  ]
+}

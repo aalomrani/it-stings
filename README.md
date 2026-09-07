@@ -14,8 +14,10 @@ module boundaries, shared types, database schema and streaming protocol.
 ## Requirements
 
 - Node 24.x (verified on 24.20.0) and npm 11.x
-- No API key is required to *run* the app. Every key is optional and unlocks one feature —
-  but with no `ANTHROPIC_API_KEY` there are no recommendations, only search and previews.
+- No API key is required. The recommendation engine is fully deterministic and keyless
+  (`engine-3-keyless`): it browses Deezer related artists and MusicBrainz tag cohorts for
+  candidates, then judges them on tempo, musical key, mood and shared tags from
+  AcousticBrainz — no LLM. Every key below is optional and only sharpens one signal.
 
 ## Run it locally
 
@@ -38,11 +40,11 @@ is `server-only` and every third-party call goes through a server route.
 
 | Var | Sign up | Missing → |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | <https://console.anthropic.com/settings/keys> | no recommendations; search / resolve / preview / playlists still work |
-| `ITSTINGS_MODEL` | — | defaults to `claude-opus-5`. Use a bare model id, never a date-suffixed one |
-| `LASTFM_API_KEY` | <https://www.last.fm/api/account/create> | Channel A skipped; the fingerprint loses crowd tags |
-| `TAVILY_API_KEY` | <https://app.tavily.com> | Channel B (forum evidence) skipped |
-| `BRAVE_SEARCH_API_KEY` | <https://api-dashboard.search.brave.com/app/plans> | fallback for Channel B only; card required even on free |
+| `ANTHROPIC_API_KEY` | — | **not used by the engine.** Recommendations are deterministic and keyless as of `engine-3-keyless`; the model seam in `src/lib/engine/model.ts` is dead on the recommend path and kept only for legacy tests |
+| `ITSTINGS_MODEL` | — | unused (no model is called) |
+| `LASTFM_API_KEY` | <https://www.last.fm/api/account/create> | Channel A skipped. Optional booster only: a **free** key adds Last.fm similar-tracks as extra candidates. The engine works fully without it |
+| `TAVILY_API_KEY` | — | **no longer used.** Channel B is now keyless MusicBrainz tag-cohort discovery |
+| `BRAVE_SEARCH_API_KEY` | — | **no longer used** (see `TAVILY_API_KEY`) |
 | `SPOTIFY_CLIENT_ID` | <https://developer.spotify.com/dashboard> | no "push to Spotify" on a playlist — the PKCE login is hidden and `/api/spotify/login` answers 400 |
 | `SPOTIFY_REDIRECT_URI` | — | defaults to `http://127.0.0.1:3000/api/spotify/callback`. Must match the dashboard entry character for character. Over `http` it must be a **`127.0.0.1` loopback literal** — Spotify rejects `localhost`; over `https` any host is allowed, so a deployed instance uses `https://<app>.fly.dev/api/spotify/callback` |
 | `SPOTIFY_CLIENT_SECRET` | same dashboard app | Spotify deep links fall back to a keyless `open.spotify.com/search/…` link. **Not used by the push** — PKCE needs no secret |

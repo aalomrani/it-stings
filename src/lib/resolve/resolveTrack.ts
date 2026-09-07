@@ -429,6 +429,13 @@ export async function resolveTrack(
         ...(ab.moods.relaxed !== null ? { moodRelaxed: ab.moods.relaxed } : {}),
         ...(ab.moods.sad !== null ? { moodSad: ab.moods.sad } : {}),
         ...(ab.genreLabels.length > 0 ? { genreLabels: ab.genreLabels } : {}),
+        // AcousticBrainz texture signals — feed the deterministic scorer's harmonic,
+        // production and vocal dimensions. Present only when AB actually scored them.
+        ...(ab.keyStrength != null ? { keyStrength: ab.keyStrength } : {}),
+        ...(ab.averageLoudness != null ? { loudness: ab.averageLoudness } : {}),
+        ...(ab.dynamicComplexity != null ? { dynamicComplexity: ab.dynamicComplexity } : {}),
+        ...(ab.spectralCentroid != null ? { spectralCentroid: ab.spectralCentroid } : {}),
+        ...(ab.voiceInstrumental != null ? { voiceInstrumental: ab.voiceInstrumental } : {}),
       }
     : null;
 

@@ -56,6 +56,41 @@ export interface DeezerTrack extends DeezerHit {
   fetchedAt: number;
 }
 
+/**
+ * A neighbour from `GET /artist/{id}/related` — the backbone of the keyless Channel C.
+ * `tracklist` is the ready-made `/artist/{id}/top`-style URL Deezer hands back; we only
+ * read the id off it, but it is kept for provenance.
+ */
+export interface DeezerArtist {
+  id: number;
+  name: string;
+  /** Deezer's fan count, a popularity prior; `0`/absent -> null. */
+  nbFan: number | null;
+  tracklist: string | null;
+}
+
+/**
+ * A track from `GET /artist/{id}/top` — a candidate before verification. `rank` is
+ * Deezer's popularity proxy, carried through as a hint. `contributors` lists every
+ * credited act; `artist` is the primary one (the `artist` field when present, else the
+ * first contributor).
+ */
+export interface DeezerContributor {
+  id: number | null;
+  name: string;
+}
+
+export interface DeezerTopTrack {
+  id: number;
+  title: string;
+  titleShort: string;
+  /** Seconds, as Deezer reports it. */
+  duration: number | null;
+  rank: number;
+  artist: DeezerContributor;
+  contributors: DeezerContributor[];
+}
+
 const ArtistSchema = z.object({ id: z.number().optional(), name: z.string().optional() }).loose();
 
 const AlbumSchema = z
@@ -106,7 +141,42 @@ const SearchSchema = z
 
 const TrackResponseSchema = TrackSchema.extend({ error: ErrorSchema.optional() });
 
+const RelatedArtistSchema = z
+  .object({
+    id: z.number().optional(),
+    name: z.string().optional(),
+    nb_fan: z.number().optional(),
+    tracklist: z.string().optional(),
+  })
+  .loose();
+
+const RelatedResponseSchema = z
+  .object({
+    data: z.array(RelatedArtistSchema).optional(),
+    total: z.number().optional(),
+    error: ErrorSchema.optional(),
+  })
+  .loose();
+
+const ContributorSchema = z
+  .object({ id: z.number().optional(), name: z.string().optional() })
+  .loose();
+
+const TopTrackSchema = TrackSchema.extend({
+  contributors: z.array(ContributorSchema).optional(),
+});
+
+const TopResponseSchema = z
+  .object({
+    data: z.array(TopTrackSchema).optional(),
+    total: z.number().optional(),
+    error: ErrorSchema.optional(),
+  })
+  .loose();
+
 type RawTrack = z.infer<typeof TrackSchema>;
+type RawRelatedArtist = z.infer<typeof RelatedArtistSchema>;
+type RawTopTrack = z.infer<typeof TopTrackSchema>;
 
 /**
  * Deezer's throttle (`{"error":{...,"code":4}}`) arrives as HTTP 200. Handing this to
@@ -341,6 +411,97 @@ export function pickBestMatch(
     if (!best || score > best.score) best = { hit, score };
   }
   return best?.hit ?? null;
+}
+
+function toArtist(raw: RawRelatedArtist): DeezerArtist | null {
+  if (typeof raw.id !== 'number' || !raw.name) return null;
+  return {
+    id: raw.id,
+    name: raw.name,
+    nbFan: numberOrNull(raw.nb_fan),
+    tracklist: raw.tracklist ?? null,
+  };
+}
+
+function toTopTrack(raw: RawTopTrack): DeezerTopTrack | null {
+  if (typeof raw.id !== 'number' || !raw.title) return null;
+  const contributors = (raw.contributors ?? [])
+    .filter((c): c is { id?: number; name: string } => typeof c.name === 'string' && c.name.length > 0)
+    .map((c) => ({ id: c.id ?? null, name: c.name }));
+  const primary: DeezerContributor =
+    raw.artist?.name && raw.artist.name.length > 0
+      ? { id: raw.artist.id ?? null, name: raw.artist.name }
+      : contributors[0] ?? { id: null, name: '' };
+  return {
+    id: raw.id,
+    title: raw.title,
+    titleShort: raw.title_short ?? raw.title,
+    duration: typeof raw.duration === 'number' ? raw.duration : null,
+    rank: typeof raw.rank === 'number' ? raw.rank : 0,
+    artist: primary,
+    contributors,
+  };
+}
+
+/**
+ * `GET /artist/{id}/related` — the ~20 neighbour artists Deezer thinks sit next to this
+ * one. Keyless, strongly on-genre, and the primary engine for Channel C candidate
+ * generation. Everything routes through `fetchExternal` (cache + throttle), so the
+ * related×top fan-out that follows never trips Deezer's per-window quota.
+ */
+export async function getRelatedArtists(artistId: number): Promise<SourceResult<DeezerArtist[]>> {
+  if (!Number.isFinite(artistId) || artistId <= 0) {
+    return fail('invalid_request', `bad Deezer artist id ${artistId}`);
+  }
+  const url = `${BASE}/artist/${artistId}/related`;
+  const res = await fetchExternal({
+    url,
+    ttlMs: TTL.search,
+    retries: 3,
+    isRetryableBody,
+    isCacheableBody,
+  });
+  if (!res.ok) return failureFromHttp(res, { 200: 'rate_limited' });
+
+  const parsed = parseBody(res, RelatedResponseSchema);
+  if (!parsed.ok) return parsed;
+  if (parsed.value.error) return failureFromBody(parsed.value.error);
+
+  const artists = (parsed.value.data ?? [])
+    .map(toArtist)
+    .filter((a): a is DeezerArtist => a !== null);
+  return ok(artists, { fromCache: parsed.fromCache, fetchedAt: parsed.fetchedAt });
+}
+
+/**
+ * `GET /artist/{id}/top?limit=N` — the artist's most-played tracks, the second half of the
+ * Channel C engine (related neighbour -> its top tracks). Keyless, cached, throttled.
+ */
+export async function getArtistTopTracks(
+  artistId: number,
+  limit = 25,
+): Promise<SourceResult<DeezerTopTrack[]>> {
+  if (!Number.isFinite(artistId) || artistId <= 0) {
+    return fail('invalid_request', `bad Deezer artist id ${artistId}`);
+  }
+  const url = buildUrl(`${BASE}/artist/${artistId}/top`, { limit });
+  const res = await fetchExternal({
+    url,
+    ttlMs: TTL.search,
+    retries: 3,
+    isRetryableBody,
+    isCacheableBody,
+  });
+  if (!res.ok) return failureFromHttp(res, { 200: 'rate_limited' });
+
+  const parsed = parseBody(res, TopResponseSchema);
+  if (!parsed.ok) return parsed;
+  if (parsed.value.error) return failureFromBody(parsed.value.error);
+
+  const tracks = (parsed.value.data ?? [])
+    .map(toTopTrack)
+    .filter((t): t is DeezerTopTrack => t !== null);
+  return ok(tracks, { fromCache: parsed.fromCache, fetchedAt: parsed.fetchedAt });
 }
 
 export function describe(): SourceDescription {

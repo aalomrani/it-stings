@@ -16,7 +16,6 @@ import {
   BAD_API_KEY_DEGRADED,
   BILLING_DEGRADED,
   ENGINE_VERSION,
-  NO_MODEL_DEGRADED,
   OVERLOADED_DEGRADED,
   RATE_LIMITED_DEGRADED,
   PipelineAbortError,
@@ -33,11 +32,11 @@ import { ACCOUNT_FAILURE_REASONS } from '@/lib/engine/model';
 import { PICK_TAGS_PROMPT_VERSION } from '@/lib/engine/channels/a';
 import { CHANNEL_B_PROMPT_VERSION } from '@/lib/engine/channels/b';
 import { CHANNEL_C_PROMPT_VERSION } from '@/lib/engine/channels/c';
-import { FINGERPRINT_PROMPT_VERSION } from '@/lib/engine/fingerprint';
+import { FINGERPRINT_PROMPT_VERSION, fingerprintTrack } from '@/lib/engine/fingerprint';
 import { SCORED_DIMENSIONS } from '@/lib/engine/rank';
-import { SCORE_PROMPT_VERSION } from '@/lib/engine/score';
+import { SCORE_PROMPT_VERSION, scoreBatch } from '@/lib/engine/score';
 import type { ScoredCandidate } from '@/lib/engine/score';
-import { FINGERPRINT_CONFIDENCE_KEYS, type Candidate, type Channel, type Evidence, type Fingerprint, type PipelineEvent, type TrackRecord } from '@/lib/types';
+import { FINGERPRINT_CONFIDENCE_KEYS, type Candidate, type Channel, type Evidence, type Fingerprint, type PipelineEvent, type SourceRef, type TrackRecord } from '@/lib/types';
 import { trackNormKey } from '@/lib/util/normalize';
 
 /* ------------------------------------------------------------------------------------ *
@@ -160,7 +159,11 @@ interface FakeOptions {
   resolveTrack?: PipelineDeps['resolveTrack'];
 }
 
-/** Deps that answer instantly: A and C each find one track, B is skipped for want of a key. */
+/**
+ * Deps that answer instantly: A and C each find one track, B skips honestly because this
+ * seed has too few usable tags for a MusicBrainz cohort — exactly how the keyless Channel B
+ * (channels/b.ts) skips. No key is involved; Channel B needs none.
+ */
 function deps(over: FakeOptions = {}): Partial<PipelineDeps> {
   const known = over.verify ?? DEFAULT_CATALOGUE;
   return {
@@ -177,7 +180,12 @@ function deps(over: FakeOptions = {}): Partial<PipelineDeps> {
         channelResult('A', {
           candidates: [candidate('Squirrel Nut Zippers', 'Hell', 'A', [{ lastfmMatch: 0.42 }])],
         }),
-      B: async () => channelResult('B', { status: 'skipped', reason: 'no TAVILY_API_KEY', live: false }),
+      B: async () =>
+        channelResult('B', {
+          status: 'skipped',
+          reason: 'fewer than 2 usable tags on the seed',
+          live: false,
+        }),
       C: async () =>
         channelResult('C', {
           candidates: [
@@ -314,7 +322,7 @@ describe('event order (docs/architecture.md, "Streaming protocol")', () => {
     const final = events.find((e) => e.type === 'final');
     expect(final?.type === 'final' && final.results).toHaveLength(2);
     expect(record.stats.perChannel.A).toMatchObject({ found: 1, verified: 1, dropped: 0 });
-    expect(record.stats.perChannel.B.skipped).toBe('no TAVILY_API_KEY');
+    expect(record.stats.perChannel.B.skipped).toBe('fewer than 2 usable tags on the seed');
     expect(record.stats.perChannel.C).toMatchObject({ found: 1, verified: 1, dropped: 0 });
     // Two channels, two score calls, both recorded into the run's accumulator.
     expect(record.stats.modelCalls).toBe(2);
@@ -517,7 +525,7 @@ describe('the Channel-C drop-rate guard', () => {
 
   it('re-runs C once with the stricter prompt when too much of it does not exist', async () => {
     const calls: (string | undefined)[] = [];
-    const C: PipelineDeps['channels']['C'] = async (_fp, _ctx, opts) => {
+    const C: PipelineDeps['channels']['C'] = async (_seed, _fp, _ctx, opts) => {
       calls.push(opts?.tightness);
       if (opts?.tightness === 'tight') {
         return channelResult('C', { candidates: [candidate(wide[0], wide[1], 'C')] });
@@ -552,7 +560,7 @@ describe('the Channel-C drop-rate guard', () => {
 
   it('leaves C alone when its drop rate is inside the budget', async () => {
     const calls: (string | undefined)[] = [];
-    const C: PipelineDeps['channels']['C'] = async (_fp, _ctx, opts) => {
+    const C: PipelineDeps['channels']['C'] = async (_seed, _fp, _ctx, opts) => {
       calls.push(opts?.tightness);
       return channelResult('C', {
         candidates: [
@@ -573,35 +581,108 @@ describe('the Channel-C drop-rate guard', () => {
  * ------------------------------------------------------------------------------------ */
 
 describe('degrading', () => {
-  it('no ANTHROPIC_API_KEY: fingerprint error, empty final, honest message, nothing cached', async () => {
-    const { labels, events, record } = await run({
-      deps: deps({
-        fingerprint: async () => ({ ok: false, reason: 'no_api_key' }),
-        channels: {
-          A: async () => {
-            throw new Error('channels must not run without a fingerprint');
+  it('a ZERO-KEY run still produces results and never emits the no-key line', async () => {
+    // The keyless engine: the default deps run every stage deterministically (Channel B
+    // skips because this seed has too few tags for a MusicBrainz cohort — no key involved,
+    // exactly as a real keyless run would), so the run must still return a non-empty list
+    // and its degraded[] must not contain the old
+    // "recommendations unavailable: no ANTHROPIC_API_KEY" wording anywhere.
+    const { record } = await run({ deps: deps() });
+
+    expect(record.fingerprint).not.toBeNull();
+    expect(record.results.length).toBeGreaterThan(0);
+    expect(record.stats.modelCalls).toBe(0);
+    const degraded = record.degraded.join('\n');
+    expect(degraded).not.toMatch(/no ANTHROPIC_API_KEY/i);
+    expect(degraded).not.toMatch(/recommendations unavailable/i);
+  });
+
+  it('drives the REAL deterministic Stage 2 + Stage 5 end to end and still ranks a list', async () => {
+    // The zero-key test above fakes fingerprint + score for speed; this one wires the ACTUAL
+    // `fingerprintTrack` and `scoreBatch` (only resolve/verify/channels are stubbed to hand
+    // back rich TrackRecords), so it proves the real scorer's dimension outputs clear rank
+    // rule 4 through the pipeline — not just piecemeal in the unit suites.
+    const abSrc: SourceRef = { source: 'acousticbrainz' };
+    const richSeed: TrackRecord = {
+      ...SEED,
+      tempoBpm: { value: 120, source: { source: 'deezer' } },
+      keySignature: { value: 'A minor', source: abSrc },
+      tags: {
+        value: [
+          { name: 'post-punk', count: 8 },
+          { name: 'new wave', count: 6 },
+        ],
+        source: { source: 'musicbrainz' },
+      },
+      features: {
+        source: abSrc,
+        danceability: 0.7,
+        moodHappy: 0.4,
+        moodSad: 0.55,
+        moodAggressive: 0.15,
+        moodRelaxed: 0.6,
+        genreLabels: ['rock'],
+        keyStrength: 0.8,
+        loudness: 0.9,
+        dynamicComplexity: 3,
+        spectralCentroid: 1600,
+        voiceInstrumental: 0.9,
+      },
+    };
+    // A candidate that genuinely resembles the seed: near-identical tempo, same key, close
+    // moods. The REAL scorer must find >=2 dimensions >=0.6 and a concrete (non-genre) trait.
+    const richCand: TrackRecord = {
+      ...richSeed,
+      key: 'deezer:99',
+      isrc: null,
+      title: 'Cities in Dust',
+      artist: 'Siouxsie and the Banshees',
+      tempoBpm: { value: 122, source: { source: 'deezer' } },
+      features: { ...richSeed.features!, moodSad: 0.5, moodRelaxed: 0.62 },
+    };
+
+    const { record } = await run({
+      deps: {
+        ...deps({
+          channels: {
+            A: async () => channelResult('A', { status: 'skipped', reason: 'no LASTFM_API_KEY' }),
+            B: async () =>
+              channelResult('B', {
+                status: 'skipped',
+                reason: 'fewer than 2 usable tags on the seed',
+              }),
+            C: async () =>
+              channelResult('C', {
+                candidates: [candidate('Siouxsie and the Banshees', 'Cities in Dust', 'C')],
+              }),
           },
-        },
-      }),
+          resolveTrack: async () => richSeed,
+          verifyMany: async (candidates, opts) => {
+            const out: VerifiedCandidate[] = [];
+            for (const c of candidates) {
+              const verified = { candidate: c, track: richCand };
+              out.push(verified);
+              opts?.onVerified?.(verified);
+            }
+            return out;
+          },
+        }),
+        // The real deterministic stages — no fakes.
+        fingerprint: fingerprintTrack,
+        score: scoreBatch,
+      },
     });
 
-    expect(labels).toEqual([
-      'run:fresh',
-      'stage:resolve:start',
-      'seed',
-      'stage:resolve:done',
-      'stage:fingerprint:start',
-      'stage:fingerprint:error',
-      'final',
-      'stage:done:done',
-    ]);
-    const stage = events.find((e) => e.type === 'stage' && e.status === 'error');
-    expect(stage?.type === 'stage' && stage.message).toBe(NO_MODEL_DEGRADED);
-    expect(record.results).toEqual([]);
-    expect(record.fingerprint).toBeNull();
-    expect(record.degraded).toContain(NO_MODEL_DEGRADED);
-    expect(record.degraded.join(' ')).toMatch(/ANTHROPIC_API_KEY/);
-    expect(runsRepo.count()).toBe(0);
+    expect(record.stats.modelCalls).toBe(0);
+    expect(record.fingerprint?.model).toBe('deterministic-v1');
+    expect(record.results.length).toBeGreaterThan(0);
+
+    const rec = record.results[0];
+    // rule 4, actually cleared by the real scorer over the real feature profiles.
+    const strongDims = rec.dimensions.filter((d) => d.score >= 0.6).length;
+    expect(strongDims).toBeGreaterThanOrEqual(2);
+    expect(rec.sharedTraits.some((t) => /bpm|minor|major|classified/i.test(t))).toBe(true);
+    expect(rec.flags).not.toContain('weak-why-unfixed');
   });
 
   it('no credit on the account: the whole run degrades in words, never in JSON', async () => {
@@ -810,15 +891,15 @@ describe('degrading', () => {
         channels: {
           B: async () =>
             channelResult('B', {
-              reason: 'tag pivot skipped: model chose no usable tag',
-              notes: ['one query failed'],
+              reason: 'musicbrainz cohort query failed',
+              notes: ['one cohort query returned no rows'],
               candidates: [],
             }),
         },
       }),
     });
-    expect(record.degraded).toContain('Channel B: one query failed');
-    expect(record.degraded).toContain('Channel B: tag pivot skipped: model chose no usable tag');
+    expect(record.degraded).toContain('Channel B: one cohort query returned no rows');
+    expect(record.degraded).toContain('Channel B: musicbrainz cohort query failed');
   });
 
   it('a run with no results is not cached — one bad afternoon is not a permanent answer', async () => {
@@ -1042,7 +1123,7 @@ describe('abort', () => {
         channels: {
           A: capture as PipelineDeps['channels']['A'],
           B: capture as PipelineDeps['channels']['B'],
-          C: (async (_fp: Fingerprint, ctx: ChannelContext) => {
+          C: (async (_seed: TrackRecord, _fp: Fingerprint, ctx: ChannelContext) => {
             seen.push(ctx);
             return channelResult('C', { candidates: [] });
           }) as PipelineDeps['channels']['C'],
@@ -1202,7 +1283,7 @@ describe('the seed identity reaches Channel C only as something to strip', () =>
     await run({
       deps: deps({
         channels: {
-          C: async (_fp, _ctx, opts) => {
+          C: async (_seed, _fp, _ctx, opts) => {
             seen = opts?.seedIdentity;
             return channelResult('C', { candidates: [] });
           },

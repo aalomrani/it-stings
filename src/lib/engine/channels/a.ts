@@ -3,10 +3,10 @@
  *
  * The division of labour the spec insists on is visible in this file. Last.fm RETRIEVES:
  * it knows which tracks co-occur in real listening histories and which words a crowd puts
- * on a song. It does not know what the song is doing. So the only judgement here — which
- * of the seed's crowd tags are specific enough to pivot on — is the model's, and even that
- * choice is made from a list the API supplied: the model may not invent a tag, and code
- * drops any tag it returns that was not on the list.
+ * on a song. It does not know what the song is doing. The one choice here — which of the
+ * seed's crowd tags to pivot on — is now a DETERMINISTIC pick (no model): the generic-tag
+ * blocklist below removes the umbrella words, and `pickPivotTags` keeps the heaviest
+ * survivors. Zero keys beyond the free Last.fm one, and no LLM.
  *
  * Nothing this channel produces is a recommendation. Every candidate is verified against a
  * real catalogue (Stage 4) and then has to survive the scorer articulating a specific
@@ -19,16 +19,13 @@
  *     key, which is indistinguishable from "not found" — see api-reality §3.4);
  *   - either half failing leaves the other half's candidates intact; only both halves
  *     failing is a channel `error`;
- *   - the `pickTags` model call failing drops the pivot and keeps the similar tracks. No
- *     tag is chosen by fallback heuristic, because a tag chosen by popularity is exactly
- *     the "generic tag" the pivot exists to avoid.
+ *   - a seed whose tags are all generic drops the pivot and keeps the similar tracks. The
+ *     generic-tag blocklist is what guards against pivoting on an umbrella word; what
+ *     survives it is stylistic, so the heaviest survivor is a safe pivot.
  */
 
 import 'server-only';
 
-import { z } from 'zod';
-
-import { callStructured, jsonBlock } from '@/lib/engine/model';
 import type { ChannelContext, ChannelResult } from '@/lib/engine/channels/types';
 import { keys } from '@/lib/env';
 import * as lastfm from '@/lib/sources/lastfm';
@@ -49,10 +46,10 @@ export const TAG_TRACKS_LIMIT = 50;
 /** Hard cap on what the channel hands to the pipeline. */
 export const MAX_CANDIDATES = 80;
 
-/** How many tags the model may choose. The prompt asks for 3–4; code enforces the ceiling. */
+/** How many pivot tags `pickPivotTags` keeps. */
 export const MAX_PIVOT_TAGS = 4;
 
-/** How many surviving tags the model is shown. Beyond this the list is noise. */
+/** How many surviving tags the picker considers. Beyond this the list is noise. */
 const MAX_TAGS_SHOWN = 25;
 
 /**
@@ -68,14 +65,14 @@ const MIN_TAGS_AFTER_COUNT_CUT = 3;
  * ------------------------------------------------------------------------------------ */
 
 /**
- * Tags that are true of thousands of tracks, cut before the model ever sees them.
+ * Tags that are true of thousands of tracks, cut before the pivot picker ever sees them.
  *
  * Three families: umbrella genre words (the pivot's whole point is to escape them),
  * listener metadata that describes the LISTENER rather than the track, and
  * nationality/language labels. Decades and bare years are handled by pattern below.
  *
  * Deliberately conservative. Anything genuinely stylistic ("swing revival", "electro
- * swing", "lounge", "psychobilly", "sophisti-pop") must reach the model — this list only
+ * swing", "lounge", "psychobilly", "sophisti-pop") must reach the picker — this list only
  * removes words that could not possibly single a track out.
  */
 const GENERIC_TAGS = new Set(
@@ -153,77 +150,42 @@ export function isGenericTag(tag: string, seed?: { artist: string; title: string
 }
 
 /* ------------------------------------------------------------------------------------ *
- * The one model call: pickTags
+ * The tag pivot — deterministic, no model
  * ------------------------------------------------------------------------------------ */
 
-/** Bump when `PICK_TAGS_SYSTEM` or the schema changes. Part of nothing's cache key yet. */
-export const PICK_TAGS_PROMPT_VERSION = 'tags-v1';
+/** Bump when the deterministic picker's behaviour changes. Part of the run cache key. */
+export const PICK_TAGS_PROMPT_VERSION = 'tags-det-1';
+
+/** One chosen pivot tag and the plain reason it was chosen. */
+export interface PickedTag {
+  tag: string;
+  reason: string;
+}
 
 /**
- * Frozen system prompt (docs/model.md: stable, cacheable, no volatile data). The tag list
- * and the fingerprint travel in the user message.
+ * The deterministic pivot picker: the strongest surviving crowd tags by count.
+ *
+ * The umbrella genres, nationalities, decades and listener-metadata are already gone (the
+ * `isGenericTag` blocklist ran before this), so what remains is stylistic. We take the
+ * `MAX_PIVOT_TAGS` heaviest — a high crowd count on a NON-generic tag is real signal that a
+ * scene is well populated — breaking ties by name for stable, reproducible output. The
+ * reason names the concrete number, so the evidence row still says WHY the pivot fired.
  */
-export const PICK_TAGS_SYSTEM = [
-  'You are choosing which crowd-sourced Last.fm tags are worth pivoting on to find tracks',
-  'that share what makes one particular song feel the way it does.',
-  '',
-  'The user message gives you a fingerprint of that song and a list of tags real listeners',
-  'applied to it, with counts. Choose the 3-4 tags that would lead to the most specific',
-  'company: a tag that names a scene, a technique, a mood-with-an-edge, or a particular',
-  'joke a song is making. Reject tags whose top tracks would be a genre playlist — the',
-  'obviously broad ones have already been removed, but plenty of what remains is still',
-  'wide, and a high count usually means wide rather than apt.',
-  '',
-  'A tag is worth choosing when you can say what a track pulled from it would have in',
-  'common with this song beyond a shared shelf in a record shop. Say that in the reason,',
-  'in one line, naming the concrete musical thing. Prefer a lower-count tag that names the',
-  'scene precisely over a high-count tag that names the genre.',
-  '',
-  'Copy each tag exactly as it appears in the list. Do not invent tags, do not merge two',
-  'tags into one, and do not return a tag that is not in the list.',
-].join('\n');
-
-const PickTagsSchema = z.object({
-  chosen: z
-    .array(
-      z.object({
-        tag: z
-          .string()
-          .describe('The tag, copied character-for-character from the list in the user message.'),
-        reason: z
-          .string()
-          .describe(
-            'One line: the concrete musical thing a track from this tag would share with the seed. Not "similar style".',
-          ),
-      }),
-    )
-    .describe('3-4 tags, most specific first.'),
-});
-
-export type PickedTag = z.infer<typeof PickTagsSchema>['chosen'][number];
-
-/** The user message for `pickTags`. Exported so a test can read exactly what was sent. */
-export function buildPickTagsUser(fingerprint: Fingerprint, tags: LastfmTag[]): string {
-  return [
-    'The song, as interpreted from its recording and its hard data:',
-    jsonBlock({
-      emotional_register: fingerprint.emotional_register,
-      harmonic_language: fingerprint.harmonic_language,
-      instrumentation: fingerprint.instrumentation,
-      production_texture: fingerprint.production_texture,
-      rhythmic_character: fingerprint.rhythmic_character,
-      scene_context: fingerprint.scene_context,
-      signature_hook: fingerprint.signature_hook,
-      tempo_feel: fingerprint.tempo_feel,
-      vocal_delivery: fingerprint.vocal_delivery,
-    }),
-    '',
-    'Tags listeners applied to it (count is relative; the top tag on any track is ~100).',
-    'Decades, umbrella genres, nationalities and listener-metadata tags are already removed:',
-    jsonBlock(tags.map((t) => ({ count: t.count, tag: t.name }))),
-    '',
-    `Choose 3-4. Return them in the schema's order of specificity.`,
-  ].join('\n');
+export function pickPivotTags(tags: LastfmTag[], limit = MAX_PIVOT_TAGS): PickedTag[] {
+  const seen = new Set<string>();
+  const unique: LastfmTag[] = [];
+  for (const t of tags) {
+    const name = t.name.trim();
+    if (name.length === 0) continue;
+    const norm = name.toLowerCase();
+    if (seen.has(norm)) continue;
+    seen.add(norm);
+    unique.push({ name, count: Number.isFinite(t.count) ? t.count : 0, url: t.url ?? null });
+  }
+  return unique
+    .sort((a, b) => b.count - a.count || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+    .slice(0, Math.max(0, limit))
+    .map((t) => ({ tag: t.name, reason: `crowd tag weight ${t.count}` }));
 }
 
 /* ------------------------------------------------------------------------------------ *
@@ -280,7 +242,7 @@ export async function channelA(
       return result({ status: 'skipped', reason: NO_KEY_REASON });
     }
     if (aborted(ctx.signal)) return result({ status: 'error', reason: 'aborted' });
-    return await run(seed, fingerprint, ctx);
+    return await run(seed, ctx);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     try {
@@ -294,7 +256,6 @@ export async function channelA(
 
 async function run(
   seed: TrackRecord,
-  fingerprint: Fingerprint,
   ctx: ChannelContext,
 ): Promise<ChannelAResult> {
   const evidence: Record<string, Evidence[]> = {};
@@ -417,17 +378,17 @@ async function run(
     } else if (aborted(ctx.signal)) {
       return result({ status: 'error', reason: 'aborted' });
     } else {
-      const picked = await pickTags(fingerprint, shown, ctx);
-      if (!picked.ok) {
-        pivotFailed = `pickTags ${picked.reason}`;
+      const pickedTags = pickPivotTags(shown);
+      if (pickedTags.length === 0) {
+        pivotFailed = 'no usable pivot tag';
       } else {
-        ctx.log(`channel A: pivot tags ${picked.tags.map((t) => `"${t.tag}"`).join(', ')}`);
+        ctx.log(`channel A: pivot tags ${pickedTags.map((t) => `"${t.tag}"`).join(', ')}`);
         const pulled = await Promise.all(
-          picked.tags.map((t) => lastfm.getTagTopTracks(t.tag, { limit: TAG_TRACKS_LIMIT })),
+          pickedTags.map((t) => lastfm.getTagTopTracks(t.tag, { limit: TAG_TRACKS_LIMIT })),
         );
         let anyOk = false;
         pulled.forEach((res, tagIndex) => {
-          const tag = picked.tags[tagIndex].tag;
+          const tag = pickedTags[tagIndex].tag;
           if (!res.ok) {
             ctx.log(`channel A: tag.getTopTracks("${tag}") ${res.reason}`);
             return;
@@ -539,44 +500,6 @@ async function seedTags(
   }
   if (res.value.length === 0) return { ok: false, reason: 'no Last.fm tags for the seed' };
   return { ok: true, tags: res.value, live: !res.fromCache };
-}
-
-/**
- * ONE model call. Anything the model returns that was not on the list is dropped —
- * the model chooses among the crowd's words, it does not add its own.
- */
-async function pickTags(
-  fingerprint: Fingerprint,
-  tags: LastfmTag[],
-  ctx: ChannelContext,
-): Promise<{ ok: true; tags: PickedTag[] } | { ok: false; reason: string }> {
-  const res = await callStructured({
-    name: 'pickTags',
-    schema: PickTagsSchema,
-    system: PICK_TAGS_SYSTEM,
-    user: buildPickTagsUser(fingerprint, tags),
-    effort: 'low',
-    usage: ctx.usage,
-    signal: ctx.signal,
-  });
-  if (!res.ok) return { ok: false, reason: res.reason };
-
-  const allowed = new Map(tags.map((t) => [t.name.trim().toLowerCase(), t.name]));
-  const seen = new Set<string>();
-  const chosen: PickedTag[] = [];
-  for (const pick of res.value.chosen) {
-    const canonical = allowed.get(pick.tag.trim().toLowerCase());
-    if (!canonical) {
-      ctx.log(`channel A: dropped invented tag "${pick.tag}"`);
-      continue;
-    }
-    if (seen.has(canonical)) continue;
-    seen.add(canonical);
-    chosen.push({ tag: canonical, reason: pick.reason });
-    if (chosen.length === MAX_PIVOT_TAGS) break;
-  }
-  if (chosen.length === 0) return { ok: false, reason: 'model chose no usable tag' };
-  return { ok: true, tags: chosen };
 }
 
 /**

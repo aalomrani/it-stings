@@ -46,7 +46,6 @@ import {
   REASON,
   createUsageCounter,
   isAccountFailure,
-  isNoApiKey,
   type ModelUsage,
 } from '@/lib/engine/model';
 import {
@@ -64,6 +63,7 @@ import {
   type ScoreOutcome,
   type ScoredCandidate,
 } from '@/lib/engine/score';
+import { tierFromDimensionNote } from '@/lib/engine/similarity';
 import { hydratePreview, stripVolatilePreview } from '@/lib/resolve/hydratePreview';
 import {
   verificationKey,
@@ -85,11 +85,12 @@ import { trackNormKey } from '@/lib/util/normalize';
 
 /**
  * Part of the run cache key. Bump it whenever the engine's output would change.
- * `engine-2`: rule 0 (the seed's own song, cut on Stage 5's `is_cover_or_same_song`) and
- * rule 4b (a `why` the scorer flagged as generic twice) now cut, so a run stored by
- * `engine-1` would replay results these rules reject.
+ * `engine-3-keyless`: the whole engine is now deterministic and keyless — Stage 2
+ * (fingerprint) and Stage 5 (score) make no model call, and the three channels generate
+ * candidates from Deezer/MusicBrainz/Last.fm rather than an LLM. A run stored by the
+ * LLM-era `engine-2` (there is a persisted Lovecats run) must never replay.
  */
-export const ENGINE_VERSION = 'engine-2';
+export const ENGINE_VERSION = 'engine-3-keyless';
 
 /** The channels, in the order their `start` events are emitted. */
 export const CHANNELS: readonly Channel[] = ['A', 'B', 'C'] as const;
@@ -98,18 +99,12 @@ export const CHANNELS: readonly Channel[] = ['A', 'B', 'C'] as const;
 export const VERIFY_CONCURRENCY = 6;
 
 /**
- * The one whole-run degrade. Every stage needs the model, so a missing key is not a
- * channel failing — it is the engine being unavailable, and the UI says exactly that.
- */
-export const NO_MODEL_DEGRADED = 'recommendations unavailable: no ANTHROPIC_API_KEY';
-
-/**
  * What the ACCOUNT behind the key did, in plain words — `isAccountFailure` in `model.ts`
- * classifies, the wording lives here. Each is a cause and nothing else: the one thing to
- * do about it belongs to `DegradedNotice`'s consequence sentence, exactly as it does for
- * `NO_MODEL_DEGRADED`, so a run that hits the same wall in three stages does not print the
- * same instruction three times. Never the API's raw error body: a listener cannot act on
- * JSON.
+ * classifies, the wording lives here. DEAD on the keyless recommendation path: no stage
+ * calls a model any more, so a deterministic fingerprint never fails on an account reason.
+ * Kept only so a future optional-model feature has the wording, and so the wording tests
+ * that lock these strings to `model.ts`'s reason set still have something to check.
+ * Never the API's raw error body: a listener cannot act on JSON.
  */
 const ACCOUNT_CAUSE: Readonly<Record<string, string>> = {
   [REASON.billing]: 'the Anthropic account behind ANTHROPIC_API_KEY has no credit',
@@ -139,7 +134,6 @@ const ACCOUNT_DEGRADED: Readonly<Record<string, string>> = {
  * `null` when the reason belongs to one call and the stage says so in its own line.
  */
 export function modelUnavailable(reason: string): string | null {
-  if (isNoApiKey(reason)) return NO_MODEL_DEGRADED;
   if (!isAccountFailure(reason)) return null;
   return ACCOUNT_DEGRADED[reason] ?? null;
 }
@@ -199,6 +193,7 @@ export type ChannelAFn = (
 export type ChannelBFn = ChannelAFn;
 
 export type ChannelCFn = (
+  seed: TrackRecord,
   fingerprint: Fingerprint,
   ctx: ChannelContext,
   opts?: ChannelCOptions,
@@ -533,9 +528,9 @@ export async function runPipeline(args: RunPipelineArgs): Promise<RunRecord> {
     // Nothing downstream can run without a fingerprint: the channels take it as input and
     // the scorer judges against it. So this is the whole run degrading, honestly, rather
     // than three channels each failing for the same reason.
-    // A missing key, no credit, a rejected key, a rate limit, an Anthropic outage: none
-    // of those are "the fingerprint failed", they are the engine being unavailable, and
-    // the notice says so in one sentence the listener can act on.
+    // The deterministic fingerprint never fails on a key or an account — it only returns
+    // `{ok:false}` on a pre-aborted signal (already thrown above) — so `modelUnavailable`
+    // is a dead safety net here, kept for the shape of the branch, not a live path.
     const message = modelUnavailable(fp.reason) ?? `fingerprint failed: ${fp.reason}`;
     emit({ type: 'stage', stage: 'fingerprint', status: 'error', message });
     degraded.push(message);
@@ -591,7 +586,7 @@ export async function runPipeline(args: RunPipelineArgs): Promise<RunRecord> {
   pending.set(
     'C',
     settle('C', () =>
-      deps.channels.C(fingerprint, ctx, {
+      deps.channels.C(seed, fingerprint, ctx, {
         tightness: 'normal',
         seedIdentity: seedIdentity(seed),
       }),
@@ -631,6 +626,21 @@ export async function runPipeline(args: RunPipelineArgs): Promise<RunRecord> {
     title: rec.track.title,
     reason,
   }));
+
+  // Signal-strength honesty: when the shipped list rests mostly on tags alone (no tempo,
+  // no AcousticBrainz profile on one side), say so, so the listener knows the judgement is
+  // coarser than a "both around 92 BPM"-grade match. The tier rides in each dimension note
+  // (scorePair); here we only lift the count of tags-only recommendations into degraded[].
+  const tagsOnly = ranked.results.filter(
+    (rec) => tierFromDimensionNote(rec.dimensions[0]?.note) === 'tags-only',
+  ).length;
+  if (ranked.results.length > 0 && tagsOnly * 2 >= ranked.results.length) {
+    degraded.push(
+      `${tagsOnly} of ${ranked.results.length} recommendation(s) were judged on shared tags `
+        + 'alone (no tempo or acoustic profile) — similarity is coarser for those',
+    );
+  }
+
   stats.durationMs = Date.now() - startedAt;
   stats.modelCalls = usage.calls;
   stats.tokens = tokenStats(usage);
@@ -748,7 +758,7 @@ export async function runPipeline(args: RunPipelineArgs): Promise<RunRecord> {
           }%) — re-ran with the stricter prompt`,
         );
         const retry = await settle('C', () =>
-          deps.channels.C(fingerprint, ctx, {
+          deps.channels.C(seed, fingerprint, ctx, {
             tightness: 'tight',
             seedIdentity: seedIdentity(seed),
           }),

@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
+  getArtistTopTracks,
+  getRelatedArtists,
   getTrack,
   getTrackByIsrc,
   isRetryableBody,
@@ -185,4 +187,61 @@ describe('pickBestMatch', () => {
       }),
     ).toBeNull();
   });
+});
+
+describe('getRelatedArtists (keyless Channel C backbone)', () => {
+  it('parses the neighbour list and drops entries without an id', async () => {
+    const h = installFetch([
+      { when: '/artist/27/related', body: fixture('deezer-related-parov') },
+    ]);
+    const res = await getRelatedArtists(27);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(h.urls()[0]).toBe('https://api.deezer.com/artist/27/related');
+    // The third fixture entry has no id and is dropped.
+    expect(res.value).toHaveLength(2);
+    expect(res.value[0]).toMatchObject({ id: 27, name: 'Parov Stelar', nbFan: 542000 });
+    // nb_fan 0 means "unknown" -> null, like every other Deezer zero.
+    expect(res.value[1]).toMatchObject({ id: 142, name: 'Caro Emerald', nbFan: null });
+  });
+
+  it('rejects a nonsense artist id without a request', async () => {
+    const h = installFetch([]);
+    expect(await getRelatedArtists(0)).toMatchObject({ ok: false, reason: 'invalid_request' });
+    expect(h.calls).toHaveLength(0);
+  });
+});
+
+describe('getArtistTopTracks (keyless Channel C backbone)', () => {
+  it('parses tracks, contributors, and the limit query param', async () => {
+    const h = installFetch([
+      { when: '/artist/27/top', body: fixture('deezer-top-parov') },
+    ]);
+    const res = await getArtistTopTracks(27, 25);
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+    expect(h.urls()[0]).toBe('https://api.deezer.com/artist/27/top?limit=25');
+    expect(res.value).toHaveLength(3);
+    expect(res.value[0]).toMatchObject({
+      id: 1001,
+      title: 'Booty Swing',
+      titleShort: 'Booty Swing',
+      duration: 175,
+      rank: 812000,
+      artist: { id: 27, name: 'Parov Stelar' },
+    });
+    // No `artist` field on the second track: the primary comes from contributors[0].
+    expect(res.value[1].artist).toEqual({ id: 27, name: 'Parov Stelar' });
+    expect(res.value[1].contributors).toHaveLength(2);
+    // No artist and no contributors: an empty primary, never a throw.
+    expect(res.value[2].artist).toEqual({ id: null, name: '' });
+    // title_short absent -> falls back to title.
+    expect(res.value[2].titleShort).toBe('All Night');
+  });
+
+  it('surfaces the Deezer quota body (HTTP 200 code 4) as rate_limited', async () => {
+    installFetch([{ when: '/artist/27/top', body: fixture('deezer-quota-code-4') }]);
+    const res = await getArtistTopTracks(27, 10);
+    expect(res).toMatchObject({ ok: false, reason: 'rate_limited' });
+  }, 15_000);
 });

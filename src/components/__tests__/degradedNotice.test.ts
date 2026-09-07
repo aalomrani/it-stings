@@ -14,15 +14,16 @@ import { CONSEQUENCE, FALLBACK_CONSEQUENCE, consequenceFor } from '@/components/
 import {
   BAD_API_KEY_DEGRADED,
   BILLING_DEGRADED,
-  NO_MODEL_DEGRADED,
   OVERLOADED_DEGRADED,
   RATE_LIMITED_DEGRADED,
   plainReason,
 } from '@/lib/engine/pipeline';
 import { ACCOUNT_FAILURE_REASONS } from '@/lib/engine/model';
 
+// The no-key whole-run degrade is gone with the LLM: the keyless engine never emits it.
+// The account-failure wordings stay as a dead safety net (see `pipeline.ts`) and are still
+// pinned here so a reworded constant cannot silently fall through to the generic sentence.
 const WHOLE_RUN: [string, string][] = [
-  ['no key', NO_MODEL_DEGRADED],
   ['no credit', BILLING_DEGRADED],
   ['a rejected key', BAD_API_KEY_DEGRADED],
   ['a rate limit', RATE_LIMITED_DEGRADED],
@@ -37,8 +38,8 @@ describe('consequenceFor', () => {
       expect(say, `${what} fell through to the fallback`).not.toBe(FALLBACK_CONSEQUENCE);
       said.add(say);
     }
-    // Five different failures, five different sentences: two of them matching the same
-    // entry would mean one of the causes is unreachable.
+    // Each failure gets a distinct sentence: two matching the same entry would mean one
+    // of the causes is unreachable.
     expect(said.size).toBe(WHOLE_RUN.length);
   });
 
@@ -46,7 +47,6 @@ describe('consequenceFor', () => {
     expect(consequenceFor(BILLING_DEGRADED)).toMatch(/console\.anthropic\.com/);
     expect(BILLING_DEGRADED).not.toMatch(/console\.anthropic\.com/);
 
-    expect(consequenceFor(NO_MODEL_DEGRADED)).toMatch(/Set ANTHROPIC_API_KEY/);
     expect(consequenceFor(RATE_LIMITED_DEGRADED)).toMatch(/Wait a minute/);
     expect(consequenceFor(BAD_API_KEY_DEGRADED)).toMatch(/Check the ANTHROPIC_API_KEY/);
     // The deployed app has no `.env.local` — the Dockerfile excludes `.env*` and the key

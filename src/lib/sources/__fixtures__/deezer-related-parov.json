@@ -1,0 +1,8 @@
+{
+  "data": [
+    { "id": 27, "name": "Parov Stelar", "nb_fan": 542000, "tracklist": "https://api.deezer.com/artist/27/top?limit=50", "type": "artist" },
+    { "id": 142, "name": "Caro Emerald", "nb_fan": 0, "tracklist": "https://api.deezer.com/artist/142/top?limit=50" },
+    { "name": "Missing Id Artist", "nb_fan": 10, "tracklist": "https://api.deezer.com/artist/0/top" }
+  ],
+  "total": 3
+}

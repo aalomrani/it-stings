@@ -1,0 +1,8 @@
+{
+  "data": [
+    { "id": 1001, "title": "Booty Swing", "title_short": "Booty Swing", "duration": 175, "rank": 812000, "artist": { "id": 27, "name": "Parov Stelar" }, "contributors": [ { "id": 27, "name": "Parov Stelar" } ] },
+    { "id": 1002, "title": "Catgroove (feat. Lilja Bloom)", "title_short": "Catgroove", "duration": 210, "rank": 754000, "contributors": [ { "id": 27, "name": "Parov Stelar" }, { "id": 99, "name": "Lilja Bloom" } ] },
+    { "id": 1003, "title": "All Night", "duration": 190, "rank": 690000 }
+  ],
+  "total": 3
+}

@@ -1,206 +1,68 @@
 /**
- * Stage 2 — the fingerprint.
+ * Stage 2 — the fingerprint, made DETERMINISTIC and KEYLESS.
  *
- * One model call turns the hard data the resolver collected into an interpretation of
- * what the track actually IS: how it moves, how it sounds, what the artist is doing, and
- * the one thing about it a listener would remember. Everything downstream — the three
- * candidate channels, the scoring pass, the `why` the user reads — hangs off this object,
- * so it is the one place in the engine where being vague is fatal.
+ * There is no model call here any more. `fingerprintTrack` assembles a fully-populated
+ * `Fingerprint` in code from the measured signals the resolver already collected, via the
+ * shared `buildFeatureProfile` — the same comparable vector Stage 5's scorer reads, so the
+ * two stages can never disagree about what the record "is".
  *
- * The division of labour is the spec's governing rule, enforced here by the schema rather
- * than by hope:
+ * The division of labour the spec asked for survives, only now BOTH halves are code:
  *
- *   - The model NEVER emits a BPM, a release year, a model id, or the provenance list.
- *     Those four fields are cut out of the schema it is given and filled in by code from
- *     the `TrackRecord`. A tempo the model invented cannot reach the UI because there is
- *     nowhere for it to be written down: if the transport returns `tempo_bpm: 999`, zod
- *     strips it and the record's measured value wins. That is a tested guarantee.
- *   - The model DOES emit every judgement: the groove, the voice, the joke, the hook,
- *     and a per-field confidence in its own reading.
+ *   - The four fields code has always owned — `tempo_bpm`, `era`, `model`, `grounded_on` —
+ *     are still copied straight off the `TrackRecord`; a tempo or a year is never invented,
+ *     because there is no interpreter left to invent one.
+ *   - The nine judgement fields are TEMPLATED from measured data: `tempo_feel` bucketed from
+ *     bpm, `rhythmic_character` from bpm + danceability, `emotional_register` from the AB
+ *     mood vector, `harmonic_language` from key + scale, `instrumentation`/`scene_context`
+ *     from the normalised tags, `genre_labels` from tags ∪ AB classifier labels. Where a
+ *     signal has no keyless source (`vocal_delivery`, `signature_hook`, and the low-level
+ *     texture behind `production_texture`) the field says so honestly — "not interpreted
+ *     (keyless)" — rather than guessing, and its confidence is `low`.
  *
- * Cached in the `fingerprints` table by (track key, model, prompt version + corrections
- * hash), so editing the prompt below or disagreeing with a field produces a fresh
- * interpretation instead of silently reusing the old one.
+ * `model` is a stable ENGINE id ('deterministic-v1'), never a Claude id, and
+ * `fingerprintTrack` ALWAYS returns `{ ok: true }`: there is no key to be missing and no
+ * network to fail, so the pipeline's Stage-2 model-unavailable branch is unreachable.
+ *
+ * Still cached in the `fingerprints` table by (track key, engine id, prompt version +
+ * corrections hash); the version is bumped to `fp-det-1` so any LLM-era row is invalidated.
  */
 
 import 'server-only';
 
-import { z } from 'zod';
-
 import * as fingerprintsRepo from '@/lib/db/repos/fingerprints';
-import { MODEL, callStructured, type ModelUsage } from '@/lib/engine/model';
+import { buildFeatureProfile, type FeatureProfile } from '@/lib/engine/featureProfile';
 import { isGenreOnlyTrait } from '@/lib/engine/rank';
 import {
-  ConfidenceSchema,
   TempoFeelSchema,
   type Confidence,
   type Fingerprint,
   type FingerprintField,
   type RunOptions,
   type SourceName,
+  type TempoFeel,
   type TrackRecord,
 } from '@/lib/types';
 import { stableHash } from '@/lib/util/ids';
 
 /* ------------------------------------------------------------------------------------ *
- * Prompt version
+ * Engine id + prompt version
  * ------------------------------------------------------------------------------------ */
 
 /**
- * Part of the fingerprint cache key AND of the run cache key. Bump it on ANY edit to
- * `FINGERPRINT_SYSTEM_PROMPT`, to the schema below, or to the user-message layout —
- * every one of those changes what the model would answer.
+ * The `model` tag on every `Fingerprint` this stage produces, and the `model` column of its
+ * cache row. A STABLE engine id, deliberately NOT a Claude id: no model runs here.
  */
-export const FINGERPRINT_PROMPT_VERSION = 'fp-v2';
-
-/* ------------------------------------------------------------------------------------ *
- * The schema the model sees
- *
- * `Fingerprint` MINUS `tempo_bpm`, `era`, `model` and `grounded_on`. The `.describe()`
- * strings are not documentation — they are the part of the prompt that travels with the
- * field, and they carry the spec's intent for each one.
- * ------------------------------------------------------------------------------------ */
-
-export const FingerprintModelSchema = z.object({
-  tempo_feel: TempoFeelSchema.describe(
-    'How the tempo feels in the body, not what a metronome says. The engine fills the ' +
-      'BPM in from its own measurements; this is the felt motion of the track.',
-  ),
-  rhythmic_character: z
-    .string()
-    .describe(
-      'The groove, concretely. Name the subdivision and whether it swings, and say what ' +
-        'the bass and the drums are each actually doing — e.g. "swung shuffle, upright ' +
-        'bass walking in quarters, brushed snare on 2 and 4" or "programmed four-on-the-' +
-        'floor kick under a dry syncopated clap, bass locked to the kick". A sentence ' +
-        'that does not mention the bass or the drums is not an answer.',
-    ),
-  instrumentation: z
-    .array(z.string())
-    .describe(
-      'The concrete instruments and sounds you can point at, most characteristic first: ' +
-        '"upright bass", "brushed kit", "clean chorused guitar", "DX7 electric piano", ' +
-        '"handclaps", "sampled string stab". Things, not adjectives. 3-8 entries.',
-    ),
-  vocal_delivery: z
-    .string()
-    .describe(
-      'What the voice physically does AND the attitude it does it with — e.g. "playful, ' +
-        'affected, breaks into scat and animal noises", "flat deadpan speak-singing that ' +
-        'never resolves the line". If the track has no vocal, say "instrumental" and why ' +
-        'that matters here.',
-    ),
-  harmonic_language: z
-    .string()
-    .describe(
-      'The chords and how they move — e.g. "minor-key jazz voicings over a chromatic ' +
-        'descending bassline", "two-chord modal vamp that never cadences". Describe the ' +
-        'motion; never name a key signature, which is a measurement the engine takes.',
-    ),
-  emotional_register: z
-    .string()
-    .describe(
-      'The emotional stance the record takes, in words specific enough to be wrong — ' +
-        '"arch, flirtatious, faintly sinister", "exhausted tenderness played completely ' +
-        'straight". Not "happy", "sad", "energetic" or "moody".',
-    ),
-  production_texture: z
-    .string()
-    .describe(
-      'How the recording sounds as a physical object: the room, the density, the era of ' +
-        'the gear, what is drenched and what is bone dry — e.g. "roomy analogue, live-' +
-        'feeling, minimal reverb on the vocal". Describe the sound; the engine already ' +
-        'knows the year.',
-    ),
-  scene_context: z
-    .string()
-    .describe(
-      'What the artist is doing and why it is notable — the pastiche, the joke, the ' +
-        'move — and name the scene it is being made from or against. "Post-punk band ' +
-        'deliberately playing lounge jazz" is the shape. This field and signature_hook ' +
-        'are what let the engine match on the joke a song is making rather than on its ' +
-        'genre, so a bare genre description here wastes the call.',
-    ),
-  signature_hook: z
-    .string()
-    .describe(
-      'The one weird memorable thing. The meowing. The whistle. The key change into the ' +
-        'last chorus. The bar of silence. Name the thing itself, not the feeling it ' +
-        'produces. If the track genuinely has no single such moment, say what a listener ' +
-        'would hum back instead, and mark this field low confidence.',
-    ),
-  genre_labels: z
-    .array(z.string())
-    .describe(
-      '2-5 short conventional labels you would actually file this under. Bookkeeping ' +
-        'only: the engine uses them to spread the results across scenes and to CUT ' +
-        'matches whose only connection is a shared label. They are never a reason two ' +
-        'songs belong together, so put your real observations in the other fields.',
-    ),
-  confidence: z
-    .object({
-      tempo_feel: ConfidenceSchema,
-      rhythmic_character: ConfidenceSchema,
-      instrumentation: ConfidenceSchema,
-      vocal_delivery: ConfidenceSchema,
-      harmonic_language: ConfidenceSchema,
-      emotional_register: ConfidenceSchema,
-      production_texture: ConfidenceSchema,
-      scene_context: ConfidenceSchema,
-      signature_hook: ConfidenceSchema,
-    })
-    .describe(
-      'Your confidence in each field, about THIS recording: high when you can hear the ' +
-        'detail in your head, medium for a reading the data supports, low for a guess ' +
-        'you would not defend. Low confidence is a useful answer; a confident invention ' +
-        'is the worst outcome available to you.',
-    ),
-});
-
-export type FingerprintModelOutput = z.infer<typeof FingerprintModelSchema>;
-
-/* Drift guard: the model schema plus the four code-filled fields must be exactly
- * `Fingerprint`. Adding a field to `types.ts` without deciding who fills it fails
- * `npm run typecheck` here rather than at runtime. */
-type Equals<A, B> =
-  (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
-type Assert<T extends true> = T;
-/** The four fields code owns; the model never sees them. */
-export type CodeFilledFingerprintField = 'tempo_bpm' | 'era' | 'model' | 'grounded_on';
-export type _FingerprintModelNoDrift = Assert<
-  Equals<FingerprintModelOutput, Omit<Fingerprint, CodeFilledFingerprintField>>
->;
-
-/* ------------------------------------------------------------------------------------ *
- * The frozen system prompt
- * ------------------------------------------------------------------------------------ */
+export const ENGINE_MODEL_ID = 'deterministic-v1';
 
 /**
- * ONE frozen, cacheable string. Nothing volatile is ever interpolated into it — the seed
- * data and the listener's corrections go in the user message, which is what keeps the
- * prompt cache warm across every run of the app.
+ * Part of the fingerprint cache key AND of the run cache key. Bump it on ANY change to how
+ * the fields below are templated. Bumped to `fp-det-1` for the keyless engine so no LLM-era
+ * fingerprint row is ever served.
  */
-export const FINGERPRINT_SYSTEM_PROMPT = `You are the interpretation stage of It Stings, an engine that answers one question: someone loves a specific song, what else sounds like THAT.
-
-You are given the hard data a catalogue API layer collected about one track. Your job is to say what the track actually is — how it moves, how it sounds, what the artist is doing, and the one thing about it a listener would still remember a week later.
-
-Specificity is the entire value of this output. Downstream stages use your fingerprint to find tracks that share this feeling across genres, decades and scenes, and to explain the match in one sentence. A description that would fit any record in the genre poisons every stage after it. "Upbeat 80s alternative rock with catchy vocals" is a failed fingerprint. "Swung shuffle, upright bass walking in quarters under brushed kit, vocal that keeps dissolving into scat" is the job.
-
-You will often know this recording. When you do, describe what you actually hear in it — that take, that arrangement, that performance — and use the data block to check yourself rather than as your only source. The rules below are about measurements and names, not about your ear: a reading that only restates the crowd tags is the failure mode, not the safe answer.
-
-Grounding rules:
-- Never name the artist, its members, the producer, the album or the song title in any field. A later stage reads this description with the record's identity deliberately withheld, so that it can name music from anywhere rather than more of the same act; a name anywhere in your text destroys that stage. Say "the singer", "the band", not who they are.
-- Each line of the data block is marked MEASURED, CROWD or ABSENT. A measured value is a fact: interpret it, never contradict it. ABSENT means nobody knows — do not supply it, do not estimate it, do not reason as though you knew it.
-- You never report a tempo in BPM, a release year, or a key signature. Those are measurements; the engine fills them in from its own sources and will overwrite anything you say about them. Report how the tempo feels instead.
-- CROWD tags are listener opinion, not measurement. They are good evidence of how people hear the track and are often lazy or plain wrong. Weigh them; never just restate them.
-- If you do not know this specific recording, interpret what the data supports and mark the shakiest fields low confidence. An honest low-confidence reading is useful. An invented detail asserted confidently is the worst thing you can return.
-
-Two fields do most of the work and deserve most of your attention: signature_hook (the one weird memorable thing) and scene_context (what the artist is doing and why it is notable). They are what let the engine match on the joke a song is making rather than on its genre label.
-
-The user message may end with a LISTENER CORRECTIONS block. That is the person who knows this song telling the engine that a previous reading was wrong. Treat it as ground truth about how they hear the record: re-interpret the named field from scratch rather than rephrasing the rejected version, and let the correction inform the neighbouring fields wherever it plainly should.`;
+export const FINGERPRINT_PROMPT_VERSION = 'fp-det-1';
 
 /* ------------------------------------------------------------------------------------ *
- * The user message
+ * Grounding helpers (shared with `grounded_on`)
  * ------------------------------------------------------------------------------------ */
 
 /** Human names for the provenance stamps, so the block reads like the UI does. */
@@ -216,8 +78,6 @@ const SOURCE_LABEL: Record<SourceName, string> = {
   model: 'model',
   user: 'listener',
 };
-
-const ABSENT = 'ABSENT';
 
 /** "Deezer bpm" / "MusicBrainz first-release-date" / "iTunes". */
 function stamp(source: { source: SourceName; field?: string; id?: string }): string {
@@ -244,7 +104,7 @@ function musicbrainzTags(track: TrackRecord): { name: string; count: number }[] 
   return track.tags.value.length > 0 ? track.tags.value : null;
 }
 
-/** How many crowd tags reach the prompt. Past ~15 they are noise and cost tokens. */
+/** How many crowd tags reach `grounded_on`. Past ~15 they are noise. */
 const MAX_TAGS_IN_PROMPT = 15;
 
 function featureSummary(features: TrackRecord['features']): string | null {
@@ -264,6 +124,10 @@ function featureSummary(features: TrackRecord['features']): string | null {
   return parts.length > 0 ? parts.join('; ') : null;
 }
 
+/* ------------------------------------------------------------------------------------ *
+ * Corrections
+ * ------------------------------------------------------------------------------------ */
+
 /**
  * One correction, normalised: `'wrong'` means re-interpret, anything else is the
  * listener's own value for the field. Empty strings are dropped — an empty text box is
@@ -278,7 +142,7 @@ export interface NormalisedCorrection {
 /** The literal a `RunOptions['corrections']` entry uses to mean "re-interpret this field". */
 export const CORRECTION_REJECT = 'wrong';
 
-/** Sorted by field name so the same corrections always hash and prompt identically. */
+/** Sorted by field name so the same corrections always hash and template identically. */
 export function normaliseCorrections(
   corrections: RunOptions['corrections'],
 ): NormalisedCorrection[] {
@@ -298,127 +162,9 @@ export function normaliseCorrections(
 }
 
 /**
- * The volatile half of the call: the hard data as a labelled block, then the listener's
- * corrections if there are any.
- *
- * Exported because the tests assert on the exact text the transport receives — the
- * measured/absent labelling is a product requirement ("Never fabricate"), not a detail.
- */
-export function buildFingerprintUserMessage(
-  track: TrackRecord,
-  corrections: NormalisedCorrection[] = [],
-  previous?: Fingerprint | null,
-): string {
-  const lines: string[] = [];
-  const add = (label: string, value: string) => lines.push(`${label}: ${value}`);
-
-  add('title', track.title);
-  add('artist', track.artist);
-  add('album', track.album ?? ABSENT);
-  add(
-    'year',
-    track.year ? `${track.year.value}  [MEASURED — ${stamp(track.year.source)}]` : ABSENT,
-  );
-  add(
-    'duration',
-    track.durationMs
-      ? `${formatDuration(track.durationMs.value)}  [MEASURED — ${stamp(track.durationMs.source)}]`
-      : ABSENT,
-  );
-  add(
-    'tempo',
-    track.tempoBpm
-      ? `${track.tempoBpm.value} BPM  [MEASURED — ${stamp(track.tempoBpm.source)}]`
-      : `${ABSENT} (no source has a usable BPM for this recording — do not guess one)`,
-  );
-  add(
-    'key',
-    track.keySignature
-      ? `${track.keySignature.value}  [MEASURED — ${stamp(track.keySignature.source)}]`
-      : ABSENT,
-  );
-
-  const features = featureSummary(track.features);
-  add(
-    'audio features',
-    features && track.features
-      ? `${features}  [MEASURED — ${stamp(track.features.source)}]`
-      : `${ABSENT} (none)`,
-  );
-
-  const mb = musicbrainzTags(track);
-  add(
-    'musicbrainz tags/genres',
-    mb ? `${mb.map((t) => t.name).join(', ')}  [CROWD — MusicBrainz]` : `${ABSENT} (none)`,
-  );
-
-  const lfm = lastfmTags(track);
-  add(
-    'lastfm top tags',
-    lfm
-      ? `${lfm
-          .slice(0, MAX_TAGS_IN_PROMPT)
-          .map((t) => `${t.name} (${t.count})`)
-          .join(', ')}  [CROWD — Last.fm track.getTopTags, count is relative listener weight]`
-      : `${ABSENT} (not available)`,
-  );
-
-  const blocks = [
-    '=== SEED TRACK — hard data ===',
-    'Every line below is MEASURED (a fact with its source), CROWD (listener opinion) or',
-    'ABSENT (nobody knows — do not fill it in).',
-    '',
-    ...lines,
-    '=== end of hard data ===',
-  ];
-
-  if (corrections.length > 0) {
-    blocks.push('', '=== LISTENER CORRECTIONS ===');
-    blocks.push(
-      'The person who knows this song reviewed a previous fingerprint of it and disagreed.',
-      '',
-    );
-    for (const c of corrections) {
-      const prior = previous ? previousValueText(previous, c.field) : null;
-      if (c.kind === 'reject') {
-        blocks.push(
-          prior
-            ? `- ${c.field}: REJECTED. The previous reading was "${prior}". The listener says ` +
-              `that is wrong. Re-interpret this field from the data; do not restate the ` +
-              `rejected reading in other words.`
-            : `- ${c.field}: REJECTED. The listener says the previous reading of this field was ` +
-              `wrong. Re-interpret it from the data.`,
-        );
-      } else {
-        blocks.push(
-          `- ${c.field}: the listener's own words are "${c.value}". That is correct and the ` +
-            `engine will use it verbatim; take it as given and let it inform the fields ` +
-            `around it.`,
-        );
-      }
-    }
-    blocks.push('=== end of listener corrections ===');
-  }
-
-  blocks.push('', 'Fingerprint the track above.');
-  return blocks.join('\n');
-}
-
-/** A previous fingerprint value rendered for the "you said X, they say no" line. */
-function previousValueText(previous: Fingerprint, field: FingerprintField): string | null {
-  const value = previous[field];
-  if (Array.isArray(value)) return value.length > 0 ? value.join(', ') : null;
-  return typeof value === 'string' && value.length > 0 ? value : null;
-}
-
-/* ------------------------------------------------------------------------------------ *
- * Cache key
- * ------------------------------------------------------------------------------------ */
-
-/**
- * The `prompt_version` column value: the frozen prompt version, plus a hash of the
- * listener's corrections when there are any. Two different corrections are two different
- * interpretations of the same track and must not share a cache row.
+ * The `prompt_version` column value: the frozen version, plus a hash of the listener's
+ * corrections when there are any. Two different corrections are two different readings of
+ * the same track and must not share a cache row.
  */
 export function fingerprintPromptKey(corrections?: RunOptions['corrections']): string {
   const normalised = normaliseCorrections(corrections);
@@ -428,7 +174,7 @@ export function fingerprintPromptKey(corrections?: RunOptions['corrections']): s
 }
 
 /* ------------------------------------------------------------------------------------ *
- * Grounding
+ * grounded_on
  * ------------------------------------------------------------------------------------ */
 
 /**
@@ -437,9 +183,9 @@ export function fingerprintPromptKey(corrections?: RunOptions['corrections']): s
  * in order to judge the reading, and it is what stops "132 BPM" ever appearing without a
  * source behind it.
  *
- * Deliberately carries no title, artist or album: Channel C is handed the fingerprint
- * with the seed's identity withheld and strips identity-bearing lines from this list, and
- * the cheapest way to survive that is not to write them here.
+ * Deliberately carries no title, artist or album: Channel C is handed the fingerprint with
+ * the seed's identity withheld and strips identity-bearing lines from this list, and the
+ * cheapest way to survive that is not to write them here.
  */
 export function buildGroundedOn(track: TrackRecord): string[] {
   const out: string[] = [];
@@ -493,13 +239,13 @@ function splitList(value: string): string[] {
 }
 
 /**
- * Overwrites the model's value with the listener's for every `replace` correction, sets
+ * Overwrites the engine's value with the listener's for every `replace` correction, sets
  * that field's confidence to `high` (the listener is the authority on their own hearing)
  * and records it in `grounded_on`.
  *
  * `tempo_feel` is the one field a free-text correction cannot always land in: it is a
- * closed enum, so a value outside it is left to the model, which was told about the
- * correction in the user message anyway. Everything else is taken verbatim.
+ * closed enum, so a value outside it is left as the engine templated it. Everything else is
+ * taken verbatim.
  */
 export function applyCorrections(
   fingerprint: Fingerprint,
@@ -520,7 +266,7 @@ export function applyCorrections(
 
     if (c.field === 'tempo_feel') {
       const parsed = TempoFeelSchema.safeParse(c.value.toLowerCase());
-      if (!parsed.success) continue; // not one of the six; the model kept its reading
+      if (!parsed.success) continue; // not one of the six; the templated reading survives
       next.tempo_feel = parsed.data;
     } else if (LIST_FIELDS.has(c.field)) {
       const list = splitList(c.value);
@@ -547,12 +293,15 @@ export interface FingerprintOptions {
   corrections?: RunOptions['corrections'];
   /** Skip the cache READ (the row is still written). Used by `npm run eval` and by a re-run. */
   force?: boolean;
-  /** The run's accumulator, so this call lands in `stats.modelCalls` and the token counts. */
-  usage?: ModelUsage;
   /**
-   * The fingerprint the listener was looking at when they rejected a field, so the prompt
-   * can quote the rejected reading back. Optional: without it the correction still says
-   * the field was rejected, it just cannot name what was rejected.
+   * Carried by the pipeline call-site for shape compatibility; the deterministic engine
+   * makes no model calls, so nothing is counted here. Ignored.
+   */
+  usage?: unknown;
+  /**
+   * The fingerprint the listener was looking at when they rejected a field. Optional and,
+   * for the deterministic engine, unused for re-interpretation (a `reject` correction is a
+   * no-op now: there is nothing to re-ask). Kept for call-site compatibility.
    */
   previous?: Fingerprint | null;
   signal?: AbortSignal;
@@ -564,72 +313,182 @@ export type FingerprintResult =
 
 /**
  * Stage 2. Returns the seed's fingerprint, from cache when one exists for this exact
- * (track, model, prompt + corrections) triple, otherwise from one `high`-effort model
- * call. Never throws: a refusal, a bad parse, a missing key or an abort all come back as
- * `{ ok: false, reason }` and the pipeline degrades on them.
+ * (track, engine id, prompt + corrections) triple, otherwise assembled deterministically
+ * from the record's measured signals. ALWAYS `{ ok: true }` on a well-typed record: there
+ * is no key to be missing and no model to fail. Only an aborted signal short-circuits.
  */
 export async function fingerprintTrack(
   track: TrackRecord,
   opts: FingerprintOptions = {},
 ): Promise<FingerprintResult> {
+  if (opts.signal?.aborted) return { ok: false, reason: 'aborted' };
+
   const corrections = normaliseCorrections(opts.corrections);
   const promptVersion = fingerprintPromptKey(opts.corrections);
-  const cacheKey = { trackKey: track.key, model: MODEL, promptVersion };
+  const cacheKey = { trackKey: track.key, model: ENGINE_MODEL_ID, promptVersion };
 
   if (!opts.force) {
     const cached = readCache(cacheKey);
     if (cached) return { ok: true, fingerprint: cached, cached: true };
   }
 
-  const previous = opts.previous ?? (corrections.length > 0 ? readBaseFingerprint(track) : null);
-
-  const res = await callStructured({
-    name: 'fingerprint',
-    schema: FingerprintModelSchema,
-    system: FINGERPRINT_SYSTEM_PROMPT,
-    user: buildFingerprintUserMessage(track, corrections, previous),
-    effort: 'high',
-    usage: opts.usage,
-    signal: opts.signal,
-  });
-
-  if (!res.ok) return { ok: false, reason: res.reason };
-
-  const fingerprint = applyCorrections(assemble(track, res.value), corrections);
+  const fingerprint = applyCorrections(assemble(track), corrections);
   writeCache(cacheKey, fingerprint);
   return { ok: true, fingerprint, cached: false };
 }
 
-/** `genre_labels` is described as 2-5; a longer list is trimmed rather than rejected. */
+/* ------------------------------------------------------------------------------------ *
+ * Deterministic assembly — the nine judgement fields, templated from measured data
+ * ------------------------------------------------------------------------------------ */
+
+/** `genre_labels` is spec'd as 2-5; a longer list is trimmed. */
 const MAX_GENRE_LABELS = 5;
+/** Concrete tags rendered into `instrumentation`. */
+const MAX_INSTRUMENTATION = 6;
+/** The honest string a field carries when no keyless source can speak to it. */
+const KEYLESS_PLACEHOLDER = 'not interpreted (keyless)';
+/** The felt-motion fallback when no BPM was measured; confidence is `low` alongside it. */
+const DEFAULT_TEMPO_FEEL: TempoFeel = 'walking';
+
+/** A number formatted for prose without trailing noise. */
+function fmt(n: number): string {
+  return (Math.round(n * 100) / 100).toString();
+}
+
+/** BPM (+ danceability) -> a concrete groove sentence. */
+function rhythmicText(p: FeatureProfile): { text: string; confidence: Confidence } {
+  if (p.bpm !== null) {
+    const feel = p.tempoFeel ?? DEFAULT_TEMPO_FEEL;
+    let text = `a ${feel} groove around ${Math.round(p.bpm)} BPM`;
+    if (p.danceability !== null) {
+      const level = p.danceability >= 0.6 ? 'highly danceable' : p.danceability >= 0.4 ? 'moderately danceable' : 'low-danceability';
+      text += `, ${level} (${fmt(p.danceability)})`;
+      return { text, confidence: 'high' };
+    }
+    return { text, confidence: 'medium' };
+  }
+  if (p.danceability !== null) {
+    const level = p.danceability >= 0.6 ? 'highly danceable' : p.danceability >= 0.4 ? 'moderately danceable' : 'low-danceability';
+    return { text: `${level} (${fmt(p.danceability)}); tempo not measured`, confidence: 'low' };
+  }
+  return { text: `rhythm ${KEYLESS_PLACEHOLDER}`, confidence: 'low' };
+}
+
+/** The AB 4-mood vector -> an emotional-stance sentence. */
+function emotionalText(p: FeatureProfile): { text: string; confidence: Confidence } {
+  const m = p.moodVector;
+  const labels: string[] = [];
+  if (m.relaxed !== null && m.relaxed >= 0.5) labels.push('relaxed');
+  if (m.aggressive !== null) {
+    if (m.aggressive >= 0.5) labels.push('aggressive');
+    else if (m.aggressive <= 0.25) labels.push('low-aggression');
+  }
+  if (m.happy !== null && m.happy >= 0.55) labels.push('upbeat');
+  if (m.sad !== null && m.sad >= 0.55) labels.push('melancholy');
+  const any = m.happy !== null || m.sad !== null || m.aggressive !== null || m.relaxed !== null;
+  if (labels.length > 0) {
+    return { text: `classified ${labels.join(', ')}`, confidence: 'medium' };
+  }
+  if (any) {
+    return { text: 'a measured but centrist mood profile (no strong classifier)', confidence: 'low' };
+  }
+  return { text: `emotional register ${KEYLESS_PLACEHOLDER}`, confidence: 'low' };
+}
+
+/** Key + scale -> a harmonic sentence. Never a chord analysis — that has no keyless source. */
+function harmonicText(p: FeatureProfile): { text: string; confidence: Confidence } {
+  if (p.keyName && p.scale) {
+    return { text: `${p.keyName} ${p.scale} tonality`, confidence: 'medium' };
+  }
+  if (p.keyName) {
+    return { text: `centred on ${p.keyName}`, confidence: 'low' };
+  }
+  return { text: `harmonic language ${KEYLESS_PLACEHOLDER}`, confidence: 'low' };
+}
+
+/** Top normalised tags -> a scene-context sentence (soft; genre-guarded downstream). */
+function sceneText(p: FeatureProfile): { text: string; confidence: Confidence } {
+  const labels = topTagNames(p, 3);
+  if (labels.length > 0) {
+    return { text: `filed under ${labels.join(', ')}`, confidence: 'low' };
+  }
+  return { text: `scene context ${KEYLESS_PLACEHOLDER}`, confidence: 'low' };
+}
+
+/** The most-weighted normalised tag names, up to `n`. */
+function topTagNames(p: FeatureProfile, n: number): string[] {
+  return p.normalizedTags.slice(0, n).map((t) => t.name);
+}
+
+/** genre_labels = normalised tags ∪ AB classifier labels, deduped, capped. */
+function genreLabels(p: FeatureProfile): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const name of [...p.normalizedTags.map((t) => t.name), ...p.genreLabels]) {
+    const value = name.trim();
+    if (value.length === 0) continue;
+    const key = value.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(value);
+    if (out.length === MAX_GENRE_LABELS) break;
+  }
+  return out;
+}
 
 /**
- * The model's judgements plus the four fields code owns. `tempo_bpm` and `era` are COPIED
- * from the record — this is the line the "never fabricate" rule lives on.
+ * The deterministic `Fingerprint`. The four code-owned fields (`tempo_bpm`, `era`, `model`,
+ * `grounded_on`) are copied off the record exactly as before; the nine judgement fields are
+ * templated from the shared `FeatureProfile`.
  */
-function assemble(track: TrackRecord, judged: FingerprintModelOutput): Fingerprint {
+function assemble(track: TrackRecord): Fingerprint {
+  const p = buildFeatureProfile(track);
+
+  const rhythmic = rhythmicText(p);
+  const emotional = emotionalText(p);
+  const harmonic = harmonicText(p);
+  const scene = sceneText(p);
+  const instrumentation = topTagNames(p, MAX_INSTRUMENTATION);
+
   const fingerprint: Fingerprint = {
-    ...judged,
-    instrumentation: dedupeStrings(judged.instrumentation),
-    genre_labels: dedupeStrings(judged.genre_labels).slice(0, MAX_GENRE_LABELS),
     tempo_bpm: track.tempoBpm?.value ?? null,
+    tempo_feel: p.tempoFeel ?? DEFAULT_TEMPO_FEEL,
+    rhythmic_character: rhythmic.text,
+    instrumentation,
+    vocal_delivery: `vocal delivery ${KEYLESS_PLACEHOLDER}`,
+    harmonic_language: harmonic.text,
+    emotional_register: emotional.text,
+    production_texture: `production texture ${KEYLESS_PLACEHOLDER}`,
     era: track.year?.value ?? null,
+    scene_context: scene.text,
+    signature_hook: `signature hook ${KEYLESS_PLACEHOLDER}`,
+    genre_labels: genreLabels(p),
+    confidence: {
+      tempo_feel: p.tempoFeel !== null ? 'high' : 'low',
+      rhythmic_character: rhythmic.confidence,
+      instrumentation: 'low',
+      vocal_delivery: 'low',
+      harmonic_language: harmonic.confidence,
+      emotional_register: emotional.confidence,
+      production_texture: 'low',
+      scene_context: scene.confidence,
+      signature_hook: 'low',
+    },
     grounded_on: buildGroundedOn(track),
-    model: MODEL,
+    model: ENGINE_MODEL_ID,
   };
+
   return markGenreRestatements(fingerprint);
 }
 
 /**
- * The two fields the spec says "do the heavy lifting" are the two a tired model is most
- * likely to answer with a genre name — and "new wave" as a signature_hook turns the whole
- * run into the genre engine this product exists to avoid, silently and at full confidence.
+ * The two fields the spec says "do the heavy lifting" (`scene_context`, `signature_hook`)
+ * are the two most likely to reduce to a bare category label — and a genre restatement
+ * asserted at full confidence turns the run into the genre engine this product avoids.
  *
- * `rank.ts` already owns the predicate that recognises a bare category label, so it is
- * applied here too: no new model call, no schema change. The value is kept (it is still
- * the model's answer and the listener can correct it) but its confidence is forced to
- * `low` and the demotion is written into `grounded_on`, which the UI already prints and
- * `channelCPayload` already drops.
+ * `rank.ts` owns the predicate that recognises a bare category label, so it is applied here
+ * too: the value is kept (it is still an honest reading and the listener can correct it) but
+ * its confidence is forced to `low` and the demotion is written into `grounded_on`.
  */
 export function markGenreRestatements(fingerprint: Fingerprint): Fingerprint {
   const fields = ['scene_context', 'signature_hook'] as const;
@@ -649,22 +508,8 @@ export function markGenreRestatements(fingerprint: Fingerprint): Fingerprint {
   return next;
 }
 
-function dedupeStrings(values: string[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const raw of values) {
-    const value = raw.trim();
-    if (value.length === 0) continue;
-    const key = value.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(value);
-  }
-  return out;
-}
-
 /* ------------------------------------------------------------------------------------ *
- * Cache access — a database problem degrades to a live call, never to a failed run
+ * Cache access — a database problem degrades to a fresh assembly, never to a failed run
  * ------------------------------------------------------------------------------------ */
 
 function readCache(key: fingerprintsRepo.FingerprintKey): Fingerprint | null {
@@ -682,13 +527,4 @@ function writeCache(key: fingerprintsRepo.FingerprintKey, fingerprint: Fingerpri
   } catch (err) {
     console.warn('[fingerprint] cache write failed', err);
   }
-}
-
-/** The uncorrected fingerprint of this track — what the listener was looking at. */
-function readBaseFingerprint(track: TrackRecord): Fingerprint | null {
-  return readCache({
-    trackKey: track.key,
-    model: MODEL,
-    promptVersion: FINGERPRINT_PROMPT_VERSION,
-  });
 }

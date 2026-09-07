@@ -40,7 +40,10 @@ export interface TrackRecord {
   ids: { itunes?: number; deezer?: number; spotify?: string; mbid?: string };
   tags: Sourced<{ name: string; count: number }[]> | null;   // Last.fm top tags
   features: { source: SourceRef; danceability?: number; moodHappy?: number; moodAggressive?: number;
-              moodRelaxed?: number; moodSad?: number; genreLabels?: string[] } | null;  // AcousticBrainz high-level
+              moodRelaxed?: number; moodSad?: number; genreLabels?: string[];
+              // AcousticBrainz low/high-level texture, plumbed for the deterministic scorer (all optional/additive)
+              keyStrength?: number; loudness?: number; dynamicComplexity?: number;
+              spectralCentroid?: number; voiceInstrumental?: number } | null;  // AcousticBrainz features
   resolvedAt: number;          // epoch ms
   degraded: string[];          // sources that failed/skipped during resolve, human-readable
 }
@@ -207,6 +210,11 @@ export const TrackRecordSchema = z.object({
       moodRelaxed: z.number().optional(),
       moodSad: z.number().optional(),
       genreLabels: z.array(z.string()).optional(),
+      keyStrength: z.number().optional(),
+      loudness: z.number().optional(),
+      dynamicComplexity: z.number().optional(),
+      spectralCentroid: z.number().optional(),
+      voiceInstrumental: z.number().optional(),
     })
     .nullable(),
   resolvedAt: z.number(),
