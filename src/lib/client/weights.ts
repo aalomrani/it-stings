@@ -63,13 +63,43 @@ export function diffFromDefault(weights: ScoredWeights): WeightsMap {
   return out;
 }
 
-/** The `?weights=` value for a slider state, or `null` when it is exactly the default. */
-export function weightsParam(weights: ScoredWeights): string | null {
+/**
+ * The `?weights=` value for a slider state.
+ *
+ * Normally the diff from the default, or `null` when the state IS the default — an absent
+ * param is the engine's "score with the defaults" signal.
+ *
+ * But an absent param is also what makes the recommend route substitute a trained profile's
+ * LEARNED weights (precedence: explicit `?weights=` > profile learned > default). So for a
+ * browser that has trained a profile, dropping the param on a default state would leave the
+ * sliders at the default while the ranker quietly used the learned mix — the panel lying
+ * about the ranking. When `explicit` is set — the user has actually chosen this state
+ * (dragged a slider, hit "reset to defaults") — emit the FULL default map instead of null,
+ * so the URL is authoritative and the server does not re-apply learned weights. (A full map,
+ * not `{}`: `{}` is not a valid "use defaults" signal, real default values are.)
+ */
+export function weightsParam(weights: ScoredWeights, explicit = false): string | null {
   const diff = diffFromDefault(weights);
-  return Object.keys(diff).length > 0 ? JSON.stringify(diff) : null;
+  if (Object.keys(diff).length > 0) return JSON.stringify(diff);
+  return explicit ? JSON.stringify({ ...DEFAULT_SCORED_WEIGHTS }) : null;
 }
 
 /** True when every slider sits at its default — the "reset" control is dead here. */
 export function isDefaultWeights(weights: ScoredWeights): boolean {
   return SCORED_DIMENSION_KEYS.every((key) => weights[key] === DEFAULT_SCORED_WEIGHTS[key]);
+}
+
+/**
+ * A learned `WeightsMap` (from `/api/profile` or `/api/feedback`) projected onto the panel's
+ * full nine-slider state: every scored dimension present, a missing one falling to the
+ * default, and any non-scored key (`tempo_feel`, junk) simply ignored. This is how the panel
+ * is seeded from what a browser has trained.
+ */
+export function scoredFromLearned(weights: WeightsMap): ScoredWeights {
+  const out: ScoredWeights = { ...DEFAULT_SCORED_WEIGHTS };
+  for (const key of SCORED_DIMENSION_KEYS) {
+    const value = weights[key];
+    if (typeof value === 'number') out[key] = value;
+  }
+  return out;
 }

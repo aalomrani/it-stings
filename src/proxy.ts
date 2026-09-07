@@ -15,9 +15,12 @@
  * local single-user app is unchanged.
  */
 
+import { randomUUID } from 'node:crypto';
+
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { GATE_COOKIE, GATE_COOKIE_MAX_AGE_SECONDS, accessToken, decideAccess } from '@/lib/gate';
+import { PROFILE_COOKIE, isValidProfileId, profileCookieOptions } from '@/lib/profile';
 
 /**
  * Everything except the build's own static output. The per-path bypasses (`/api/health`,
@@ -28,7 +31,32 @@ export const config = {
   matcher: ['/((?!_next/static|_next/image|_next/webpack-hmr).*)'],
 };
 
+/**
+ * The gate, plus one cross-cutting concern: every browser is handed an anonymous
+ * `itstings_profile` cookie so its training has somewhere to live by the time it searches.
+ * The gate decides access; `ensureProfileCookie` mints the identity on whatever response
+ * that produced. Identity provisioning is independent of the gate — it happens even when
+ * the gate is OFF (the local single-user case), so training works locally too.
+ */
 export function proxy(request: NextRequest): NextResponse {
+  const response = gateResponse(request);
+  ensureProfileCookie(request, response);
+  return response;
+}
+
+/**
+ * Set the `itstings_profile` cookie when the request arrived without a valid one. A cookie
+ * that is already present and well-formed is left untouched, so an existing profile keeps
+ * its id across every request. Attributes mirror the gate cookie: httpOnly, SameSite=Lax,
+ * one year, `Secure` only over https.
+ */
+function ensureProfileCookie(request: NextRequest, response: NextResponse): void {
+  const existing = request.cookies.get(PROFILE_COOKIE)?.value ?? null;
+  if (isValidProfileId(existing)) return;
+  response.cookies.set(PROFILE_COOKIE, randomUUID(), profileCookieOptions(isHttps(request)));
+}
+
+function gateResponse(request: NextRequest): NextResponse {
   const token = accessToken();
   if (token === null) return NextResponse.next();
 

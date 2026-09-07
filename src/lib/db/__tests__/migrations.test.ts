@@ -12,15 +12,18 @@ const EXPECTED_MIGRATIONS = [
   '003_counters.sql',
   '004_mention_source.sql',
   '005_spotify_auth.sql',
+  '006_profiles_feedback.sql',
 ];
 
 const EXPECTED_TABLES = [
   'evidence',
+  'feedback',
   'fingerprints',
   'http_cache',
   'mentions',
   'playlist_items',
   'playlists',
+  'profiles',
   'run_counters',
   'runs',
   'schema_migrations',
@@ -132,6 +135,7 @@ describe('004_mention_source', () => {
       '003_counters.sql',
       '004_mention_source.sql',
       '005_spotify_auth.sql',
+      '006_profiles_feedback.sql',
     ]);
 
     const row = db.prepare('SELECT * FROM mentions').get() as Record<string, unknown>;

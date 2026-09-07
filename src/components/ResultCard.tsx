@@ -30,6 +30,7 @@ import {
   SpotifyEmbed,
 } from '@/components/PlayButton';
 import { SavePopover } from '@/components/SavePopover';
+import type { FeedbackLabel, FeedbackSource } from '@/lib/client/train';
 import { evidenceStamp, rank2, score2 } from '@/lib/client/format';
 import { usePlayerSnapshot, usePlayerStore } from '@/lib/client/player';
 import {
@@ -109,6 +110,10 @@ export interface ResultCardProps {
   liveChannels: Channel[];
   /** Alternates the nine-slice edge geometry down the list, so no two neighbours match. */
   alt: boolean;
+  /** This browser's standing vote on this candidate for the current seed, or null. */
+  feedback: FeedbackLabel | null;
+  /** Record (or switch) a vote — the list re-ranks to the re-learned weights after. */
+  onFeedback: (candidateKey: string, label: FeedbackLabel, source: FeedbackSource) => void;
 }
 
 export function ResultCard({
@@ -123,6 +128,8 @@ export function ResultCard({
   elRef,
   liveChannels,
   alt,
+  feedback,
+  onFeedback,
 }: ResultCardProps) {
   const [open, setOpen] = useState(false);
   const [saveSignal, setSaveSignal] = useState(0);
@@ -230,6 +237,30 @@ export function ResultCard({
               onReturnFocus={returnFocus}
             />
             {mode === 'embed' ? <SpotifyEmbed track={track} /> : null}
+            <span className="fb" role="group" aria-label="does this match the seed?">
+              <button
+                type="button"
+                className={feedback === 'match' ? 'btn fb-b on' : 'btn fb-b'}
+                aria-pressed={feedback === 'match'}
+                // Already the standing vote: a re-click is a no-op, not a redundant re-post
+                // and re-rank (the backend has no delete, so there is nothing to toggle off).
+                onClick={() => {
+                  if (feedback !== 'match') onFeedback(track.key, 'match', 'card');
+                }}
+              >
+                {feedback === 'match' ? 'a match ✓' : 'matches'}
+              </button>
+              <button
+                type="button"
+                className={feedback === 'not' ? 'btn fb-b no on' : 'btn fb-b no'}
+                aria-pressed={feedback === 'not'}
+                onClick={() => {
+                  if (feedback !== 'not') onFeedback(track.key, 'not', 'card');
+                }}
+              >
+                {feedback === 'not' ? 'not a match ✓' : 'not a match'}
+              </button>
+            </span>
             <span className="meta">
               {rec.flags.map((flag) => (
                 <span className="flag" key={flag}>

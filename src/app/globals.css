@@ -446,6 +446,20 @@ h3.title{font-family:var(--sans);font-weight:600;font-size:clamp(1.06rem,2.1vw,1
 .btn.saved{color:var(--acid);border-image:var(--e-ch-acid) 6 / 6px / 0 round}
 .btn.bare{border-image:none;border:0;padding:8px 6px 9px}
 .btn:disabled{color:var(--dust);cursor:progress}
+
+/* the two "does this match the seed?" votes on a card. Small chalk rectangles that sit
+   by the save action; the chosen one goes solid — acid for a match, blood for a not — so
+   the confirmed pick reads at a glance. They are ordinary tab stops, never in the roving
+   list, so they cannot disturb j/k/space/enter/s on the card itself. */
+.fb{display:inline-flex;gap:6px;align-items:center}
+.fb-b{font-size:11px;padding:6px 10px 7px}
+.fb-b.on{color:var(--ink);background:var(--acid);
+  border-image:var(--e-ch-acid) 6 / 6px / 0 round}
+.fb-b.no.on{color:var(--ink);background:var(--blood-t);
+  border-image:none;border:6px solid var(--blood-t)}
+.fb-b:hover{color:var(--acid)}
+.fb-b.on:hover{color:var(--ink)}
+
 .time{font-family:var(--mono);font-size:12px;color:var(--acid)}
 .time .tot{color:var(--dust)}
 .meta{font-family:var(--mono);font-size:11.5px;color:var(--dust);margin-left:auto;
@@ -815,3 +829,16 @@ details[open] .lbl-shut{display:none}
 
 .wreset{margin-top:4px}
 .wreset:disabled{color:var(--dust);cursor:default}
+
+/* "tuned to your N picks" — the learned-weights baseline, said in the panel and echoed
+   on the shut summary so a trained user knows the sliders start from their own votes. */
+.wtuned{margin:0 0 12px;font-family:var(--mono);font-size:11px;color:var(--acid)}
+.wtuned-tag{font-family:var(--mono);font-size:11px;color:var(--acid)}
+
+/* "add a song you think matches" — drops to its own row under the results header and
+   reveals the same paper search strip the page uses everywhere else. */
+.addm{flex-basis:100%;order:9;display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.addm-toggle{align-self:flex-start;color:var(--dust)}
+.addm-toggle:hover,.addm-toggle.on{color:var(--acid)}
+.addm-panel{position:relative}
+.addm-hint{margin:6px 0 0;font-family:var(--mono);font-size:11px;color:var(--dust)}

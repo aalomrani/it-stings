@@ -47,6 +47,8 @@ export interface WeightsPanelProps {
   defaultOpen?: boolean;
   /** Placement, for the two anchoring rules in the stylesheet. */
   variant?: 'hero' | 'sheet';
+  /** How many "this matches" picks trained this baseline; 0 hides the personalization line. */
+  tunedCount?: number;
 }
 
 export function WeightsPanel({
@@ -54,6 +56,7 @@ export function WeightsPanel({
   onChange,
   defaultOpen = false,
   variant = 'sheet',
+  tunedCount = 0,
 }: WeightsPanelProps) {
   const atDefault = isDefaultWeights(weights);
   const set = (dim: ScoredDimension, value: number) => onChange({ ...weights, [dim]: value });
@@ -64,9 +67,17 @@ export function WeightsPanel({
         <Caret />
         <span className="lbl-shut">weights — tune the engine</span>
         <span className="lbl-open">weights — hide</span>
+        {tunedCount > 0 ? (
+          <span className="wtuned-tag"> · tuned to your {tunedCount}</span>
+        ) : null}
       </summary>
 
       <div className="wpanel">
+        {tunedCount > 0 ? (
+          <p className="wtuned">
+            tuned to your {tunedCount} pick{tunedCount === 1 ? '' : 's'} — adjust anytime
+          </p>
+        ) : null}
         <p className="wintro">
           how much each trait counts when a candidate is ranked against the seed. drag to 0 to turn
           a trait off. a change re-ranks instantly.

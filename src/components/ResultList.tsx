@@ -14,8 +14,11 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 
+import type { ReactNode } from 'react';
+
 import { ResultCard } from '@/components/ResultCard';
 import { Tear } from '@/components/Icons';
+import type { FeedbackLabel, FeedbackSource } from '@/lib/client/train';
 import type { Channel, Recommendation } from '@/lib/types';
 
 export interface ResultListProps {
@@ -26,6 +29,11 @@ export interface ResultListProps {
   provisional: boolean;
   scored: number;
   verified: number;
+  /** This browser's standing votes for the current seed, keyed by candidate track key. */
+  feedback: Record<string, FeedbackLabel>;
+  onFeedback: (candidateKey: string, label: FeedbackLabel, source: FeedbackSource) => void;
+  /** The "add a song you think matches" control, dropped into the header. */
+  addControl?: ReactNode;
 }
 
 export function ResultList({
@@ -35,6 +43,9 @@ export function ResultList({
   provisional,
   scored,
   verified,
+  feedback,
+  onFeedback,
+  addControl,
 }: ResultListProps) {
   const hintId = useId();
   const [focus, setFocus] = useState(0);
@@ -67,6 +78,7 @@ export function ResultList({
             ? 'streaming as batches land · arrival order until the ranked list arrives'
             : 'sorted by final score · one track per artist'}
         </span>
+        {addControl}
       </div>
       <Tear />
 
@@ -97,6 +109,8 @@ export function ResultList({
               els.current[index] = el;
             }}
             liveChannels={liveChannels}
+            feedback={feedback[rec.track.key] ?? null}
+            onFeedback={onFeedback}
           />
         ))}
       </div>

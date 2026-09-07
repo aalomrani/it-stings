@@ -16,6 +16,7 @@ import {
   hydrateWeights,
   isDefaultWeights,
   readWeights,
+  scoredFromLearned,
   weightsParam,
 } from '@/lib/client/weights';
 import { DEFAULT_DIMENSION_WEIGHTS } from '@/lib/engine/rank';
@@ -93,11 +94,56 @@ describe('weightsParam / diffFromDefault', () => {
     const state = { ...DEFAULT_SCORED_WEIGHTS, rhythmic_character: 0, era: 6 };
     expect(hydrateWeights(weightsParam(state))).toEqual(state);
   });
+
+  // A trained profile makes an ABSENT `?weights=` mean "use my learned weights", so a
+  // default state chosen by the user (a drag back to default, or "reset to defaults") must
+  // still emit an explicit param — the full default map — or the panel would sit at the
+  // default while the ranker quietly used the learned mix.
+  it('explicit=true emits the FULL default map (not null, not {}) for a default state', () => {
+    const param = weightsParam({ ...DEFAULT_SCORED_WEIGHTS }, true);
+    expect(param).not.toBeNull();
+    expect(JSON.parse(param as string)).toEqual(DEFAULT_SCORED_WEIGHTS);
+    // and it still hydrates back to the default state
+    expect(hydrateWeights(param)).toEqual(DEFAULT_SCORED_WEIGHTS);
+  });
+
+  it('explicit is irrelevant once the state already differs — still just the diff', () => {
+    const state = { ...DEFAULT_SCORED_WEIGHTS, era: 5 };
+    expect(JSON.parse(weightsParam(state, true) as string)).toEqual({ era: 5 });
+    expect(weightsParam(state, false)).toBe(weightsParam(state, true));
+  });
 });
 
 describe('isDefaultWeights', () => {
   it('is true only when every slider sits at its default', () => {
     expect(isDefaultWeights({ ...DEFAULT_SCORED_WEIGHTS })).toBe(true);
     expect(isDefaultWeights({ ...DEFAULT_SCORED_WEIGHTS, era: 0 })).toBe(false);
+  });
+});
+
+describe('scoredFromLearned', () => {
+  // How the panel is seeded from what a browser has trained (GET /api/profile) and re-seeded
+  // after a vote (POST /api/feedback). A learned map is partial and may name only some dims.
+  it('projects a learned map onto the full nine sliders, defaulting the ones it omits', () => {
+    const out = scoredFromLearned({ rhythmic_character: 9, era: 0 });
+    expect(out.rhythmic_character).toBe(9);
+    expect(out.era).toBe(0);
+    // an unmentioned dim falls to the engine default
+    expect(out.harmonic_language).toBe(DEFAULT_SCORED_WEIGHTS.harmonic_language);
+    expect(Object.keys(out).sort()).toEqual([...SCORED_DIMENSION_KEYS].sort());
+  });
+
+  it('is exactly the default for an empty (untrained) map', () => {
+    expect(scoredFromLearned({})).toEqual(DEFAULT_SCORED_WEIGHTS);
+  });
+
+  it('accepts a 0 (learned "turn this trait off") rather than treating it as absent', () => {
+    expect(scoredFromLearned({ vocal_delivery: 0 }).vocal_delivery).toBe(0);
+  });
+
+  it('ignores a non-scored key like tempo_feel that a stored map might carry', () => {
+    const out = scoredFromLearned({ tempo_feel: 8, era: 3 } as Record<string, number>);
+    expect('tempo_feel' in out).toBe(false);
+    expect(out.era).toBe(3);
   });
 });

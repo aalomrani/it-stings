@@ -33,8 +33,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="en" className={fontVariables}>
-      <body>
+    <html lang="en" className={fontVariables} suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <SvgDefs />
         <PlayerProvider>{children}</PlayerProvider>
       </body>

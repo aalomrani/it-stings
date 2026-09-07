@@ -25,9 +25,11 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import * as counters from '@/lib/db/repos/counters';
+import * as profilesRepo from '@/lib/db/repos/profiles';
 import * as runsRepo from '@/lib/db/repos/runs';
 import { ENGINE_VERSION, runCacheHash, runPipeline } from '@/lib/engine/pipeline';
 import { clientIp } from '@/lib/gate';
+import { profileIdFrom } from '@/lib/profile';
 import { sseResponse } from '@/lib/sse';
 import {
   RunOptionsSchema,
@@ -125,6 +127,24 @@ function previousFingerprint(seedKey: string): Fingerprint | null {
   }
 }
 
+/**
+ * The weights this browser's profile has learned from its "this matches" feedback, or null
+ * when it has none. Read only to fill in the DEFAULT — an explicit `?weights=` in the
+ * request always wins (precedence: explicit > profile learned > default). Because `weights`
+ * is excluded from the run-cache key, applying a profile's weights re-ranks the cached pool
+ * for free and never spends a run of the budget. A database that cannot answer is treated
+ * as "no learned weights", never a reason to fail the run.
+ */
+function learnedWeights(request: Request): RunOptions['weights'] | null {
+  try {
+    const profileId = profileIdFrom(request);
+    if (!profileId) return null;
+    return profilesRepo.get(profileId)?.weights ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** A refusal is a normal stream carrying one `error` event, then end. */
 function refusal(message: string): Response {
   return sseResponse((sink) => {
@@ -153,10 +173,14 @@ export function GET(request: Request) {
   }
 
   const seedKey = parsed.data.seed;
+  // Precedence: an explicit `?weights=` wins; otherwise this browser's learned weights, if
+  // it has any; otherwise nothing here and `rank` falls back to DEFAULT_DIMENSION_WEIGHTS.
+  // `weights` is not in the run-cache key, so either source is still a free re-rank.
+  const weights = parsed.data.weights ?? learnedWeights(request) ?? undefined;
   const options: RunOptions = {
     includeSameArtist: parsed.data.sameArtist,
     ...(parsed.data.corrections ? { corrections: parsed.data.corrections } : {}),
-    ...(parsed.data.weights ? { weights: parsed.data.weights } : {}),
+    ...(weights ? { weights } : {}),
   };
 
   // Cached replays cost nothing and count for nothing (docs/tasks/phase7-ship.md §5).

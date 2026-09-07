@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+import { AddMatch } from '@/components/AddMatch';
 import { DegradedNotice } from '@/components/DegradedNotice';
 import { EmptyState } from '@/components/EmptyState';
 import { PlaylistsLink } from '@/components/PlaylistsLink';
@@ -27,17 +28,29 @@ import { ShareLink } from '@/components/ShareLink';
 import { StageLine } from '@/components/StageLine';
 import { WeightsPanel } from '@/components/WeightsPanel';
 import { health as getHealth, resolve, type Health, type TypeaheadHit } from '@/lib/client/api';
+import {
+  getProfile,
+  postFeedback,
+  type FeedbackLabel,
+  type FeedbackResult,
+  type FeedbackSource,
+  type ProfileView,
+} from '@/lib/client/train';
 import { mergeDegraded, useRecommendStream } from '@/lib/client/useRecommendStream';
 import { typeaheadHint, useTypeahead } from '@/lib/client/useTypeahead';
 import {
   hydrateWeights,
   readWeights,
+  scoredFromLearned,
   weightsParam,
   type ScoredWeights,
 } from '@/lib/client/weights';
 import type { Channel, FingerprintField } from '@/lib/types';
 
 const CHANNELS: Channel[] = ['A', 'B', 'C'];
+
+/** A stable empty map for the "no votes on this seed yet" case — never a fresh object. */
+const EMPTY_LABELS: Record<string, FeedbackLabel> = {};
 
 /** A weight change re-ranks the same pool for free, but each drag tick would still re-open
  *  the SSE stream, so the URL write (which is what the stream keys on) is debounced. */
@@ -65,6 +78,7 @@ function runHref(
   sameArtist: boolean,
   corrections: Partial<Record<FingerprintField, string>>,
   weights: ScoredWeights,
+  explicitWeights = false,
 ): string {
   const params = new URLSearchParams();
   // Weights survive a `clear` (no seed) so a mix the user is dialling in is not lost when
@@ -72,7 +86,11 @@ function runHref(
   if (seedKey) params.set('seed', seedKey);
   if (sameArtist) params.set('sameArtist', '1');
   if (Object.keys(corrections).length > 0) params.set('corrections', JSON.stringify(corrections));
-  const weights_ = weightsParam(weights);
+  // `explicitWeights` forces the param even when the mix equals the engine default, so a
+  // trained profile's learned weights are not silently re-applied by the recommend route
+  // (see `weightsParam`). Set once the user has touched the panel — from then on the panel
+  // is authoritative about the weights the run uses.
+  const weights_ = weightsParam(weights, explicitWeights);
   if (weights_) params.set('weights', weights_);
   const query = params.toString();
   return query ? `/?${query}` : '/';
@@ -114,6 +132,11 @@ export function App() {
   // The slider updates the draft instantly; the URL (what the stream re-ranks on) follows
   // ~300ms later, so a burst of drags collapses to one replay instead of one per tick.
   const weightsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Once the user has touched the panel (dragged a slider, hit reset), the panel is the
+  // authority on the run's weights: every URL write from here on must carry an explicit
+  // `?weights=` — even a default one — so a trained profile's learned weights are never
+  // silently substituted, and the sliders always show exactly what the ranker used.
+  const panelTouched = useRef(false);
   // Any other URL write (same-artist, a correction, a new seed, clear) already carries the
   // current `weights` draft in its own runHref, so a still-pending weights-only write is
   // redundant AND dangerous: its closure captured the OLD seed/sameArtist/corrections and
@@ -129,7 +152,9 @@ export function App() {
     (on: boolean) => {
       if (!seedKey) return;
       cancelWeightsWrite();
-      router.replace(runHref(seedKey, on, corrections, weights), { scroll: false });
+      router.replace(runHref(seedKey, on, corrections, weights, panelTouched.current), {
+        scroll: false,
+      });
     },
     [router, seedKey, corrections, weights, cancelWeightsWrite],
   );
@@ -138,17 +163,23 @@ export function App() {
     (next: Partial<Record<FingerprintField, string>>) => {
       if (!seedKey) return;
       cancelWeightsWrite();
-      router.replace(runHref(seedKey, sameArtist, next, weights), { scroll: false });
+      router.replace(runHref(seedKey, sameArtist, next, weights, panelTouched.current), {
+        scroll: false,
+      });
     },
     [router, seedKey, sameArtist, weights, cancelWeightsWrite],
   );
 
   const onWeightsChange = useCallback(
     (next: ScoredWeights) => {
+      // A hand-set mix (a drag, or "reset to defaults") makes the panel authoritative: the
+      // URL must carry it explicitly from now on, even at the default, so the server never
+      // falls back to the profile's learned weights behind a default-looking panel.
+      panelTouched.current = true;
       setWeights(next);
       if (weightsTimer.current) clearTimeout(weightsTimer.current);
       weightsTimer.current = setTimeout(() => {
-        router.replace(runHref(seedKey, sameArtist, corrections, next), { scroll: false });
+        router.replace(runHref(seedKey, sameArtist, corrections, next, true), { scroll: false });
       }, WEIGHTS_DEBOUNCE_MS);
     },
     [router, seedKey, sameArtist, corrections],
@@ -177,6 +208,110 @@ export function App() {
     };
   }, []);
 
+  // This browser's anonymous training profile. Loaded once; `count` prints "tuned to your
+  // N picks", and its learned weights become the panel baseline. A dead /api/profile just
+  // leaves the panel on the engine defaults.
+  //
+  // Seeding the sliders happens right here in the load callback (never a setState-in-effect):
+  // only when the URL isn't already carrying an explicit mix — an explicit `?weights=` always
+  // wins and must show as-is — and only when the profile has trained something. No URL write:
+  // with no `weights` param the recommend stream already auto-applies the learned weights
+  // server-side, so the first run is personalised and the panel just displays the baseline.
+  const [profile, setProfile] = useState<ProfileView | null>(null);
+  const seeded = useRef(false);
+  useEffect(() => {
+    let live = true;
+    getProfile()
+      .then((p) => {
+        if (!live) return;
+        setProfile(p);
+        if (!seeded.current && weightsRaw === null && p.count > 0) {
+          seeded.current = true;
+          setWeights(scoredFromLearned(p.weights));
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+    // Mount-only: `weightsRaw` is read as it stood before any interaction, which is exactly
+    // when seeding the baseline is correct.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Per-candidate votes, scoped to the CURRENT seed (optimistic; the server is the record).
+  // Stored WITH the seed they belong to and read back only when the seed still matches, so a
+  // new seed starts clean without an effect writing state — a vote is about "matches THIS seed".
+  const [votes, setVotes] = useState<{ seed: string | null; labels: Record<string, FeedbackLabel> }>({
+    seed: null,
+    labels: {},
+  });
+  const feedback = votes.seed === seedKey ? votes.labels : EMPTY_LABELS;
+  const setLabel = useCallback(
+    (candidateKey: string, label: FeedbackLabel | null) => {
+      setVotes((prev) => {
+        const base = prev.seed === seedKey ? prev.labels : {};
+        const labels = { ...base };
+        if (label === null) delete labels[candidateKey];
+        else labels[candidateKey] = label;
+        return { seed: seedKey, labels };
+      });
+    },
+    [seedKey],
+  );
+
+  // A fresh vote re-learns the weights: adopt them as the new panel baseline and write them
+  // to the URL so the stream re-opens and the pool re-ranks instantly (a free cache replay;
+  // weights are out of the run-cache key). An explicit map in the URL also keeps precedence
+  // unambiguous — what the panel shows is exactly what the ranker used.
+  const applyLearned = useCallback(
+    (result: FeedbackResult) => {
+      seeded.current = true;
+      setProfile((prev) =>
+        prev
+          ? { ...prev, weights: result.weights, count: result.count }
+          : { id: '', displayName: null, weights: result.weights, count: result.count },
+      );
+      const next = scoredFromLearned(result.weights);
+      setWeights(next);
+      cancelWeightsWrite();
+      router.replace(runHref(seedKey, sameArtist, corrections, next, panelTouched.current), {
+        scroll: false,
+      });
+    },
+    [router, seedKey, sameArtist, corrections, cancelWeightsWrite],
+  );
+
+  const onFeedback = useCallback(
+    (candidateKey: string, label: FeedbackLabel, source: FeedbackSource) => {
+      if (!seedKey) return;
+      const previous = feedback[candidateKey] ?? null;
+      setLabel(candidateKey, label);
+      postFeedback({ seedKey, candidateKey, label, source })
+        .then(applyLearned)
+        .catch(() => setLabel(candidateKey, previous)); // never landed — put the button back
+    },
+    [seedKey, feedback, setLabel, applyLearned],
+  );
+
+  // "add a song you think matches": resolve the picked track, then vote it a match. Awaited
+  // so the AddMatch control can show a pending line and surface a resolve failure.
+  const onAddMatch = useCallback(
+    async (hit: TypeaheadHit) => {
+      if (!seedKey) throw new Error('no seed to match against');
+      const track = await resolve(hit);
+      const result = await postFeedback({
+        seedKey,
+        candidateKey: track.key,
+        label: 'match',
+        source: 'added',
+      });
+      setLabel(track.key, 'match');
+      applyLearned(result);
+    },
+    [seedKey, setLabel, applyLearned],
+  );
+
   const onSelect = useCallback(
     (hit: TypeaheadHit) => {
       setOpen(false);
@@ -189,7 +324,9 @@ export function App() {
           // A new seed starts a clean run: no corrections, same-artist back to its default.
           // The weights the user dialled in before searching ride along, though.
           cancelWeightsWrite();
-          router.replace(runHref(track.key, false, {}, weights), { scroll: false });
+          router.replace(runHref(track.key, false, {}, weights, panelTouched.current), {
+            scroll: false,
+          });
         })
         .catch((err: unknown) => {
           setResolveError(
@@ -205,7 +342,7 @@ export function App() {
     setTyped('');
     setResolveError(null);
     cancelWeightsWrite();
-    router.replace(runHref(null, false, {}, weights), { scroll: false });
+    router.replace(runHref(null, false, {}, weights, panelTouched.current), { scroll: false });
   }, [router, weights, cancelWeightsWrite]);
 
   const credits = (
@@ -237,7 +374,12 @@ export function App() {
         resolving={resolving}
         credits={credits}
         weightsPanel={
-          <WeightsPanel weights={weights} onChange={onWeightsChange} variant="hero" />
+          <WeightsPanel
+            weights={weights}
+            onChange={onWeightsChange}
+            variant="hero"
+            tunedCount={profile?.count ?? 0}
+          />
         }
       />
     );
@@ -264,6 +406,13 @@ export function App() {
   // credentials — linking to a search deep link`), and a skipped thing the user cannot
   // see is a lie by omission. `mergeDegraded` dedupes against the run's own array.
   const degraded = resolved ? mergeDegraded(run.degraded, seed.degraded) : run.degraded;
+
+  // "add a song you think matches" is the way to teach the engine a match it missed — which
+  // is most wanted exactly when NOTHING survived verification (the common case on a keyless
+  // instance). So it is one element rendered in BOTH the results header and the empty branch,
+  // never only inside `ResultList` (which is absent when the pool is empty). It hides itself
+  // until the seed resolves.
+  const addMatch = <AddMatch onPick={onAddMatch} disabled={!resolved} />;
 
   return (
     <>
@@ -293,7 +442,12 @@ export function App() {
 
         {/* The weights filter, shut by default so the seed stays the focus. A change here
             debounces into the URL and the stream re-ranks the same scored pool for free. */}
-        <WeightsPanel weights={weights} onChange={onWeightsChange} variant="sheet" />
+        <WeightsPanel
+          weights={weights}
+          onChange={onWeightsChange}
+          variant="sheet"
+          tunedCount={profile?.count ?? 0}
+        />
 
         {/* The bee bar + plain-word phase caption (the mascot rides this page too), and the
             degraded skip list folded into a small "!" badge. A hard run error stays a loud
@@ -329,15 +483,22 @@ export function App() {
             provisional={run.final === null}
             scored={results.length}
             verified={verified}
+            feedback={feedback}
+            onFeedback={onFeedback}
+            addControl={addMatch}
           />
         ) : (
-          <p className="keyhint" role="status">
-            {run.streaming
-              ? 'nothing scored yet — results appear as each candidate verifies, not in one burst at the end'
-              : resolved
-                ? 'no candidate survived verification for this seed.'
-                : 'nothing was searched for — the seed never resolved to a track.'}
-          </p>
+          <>
+            <p className="keyhint" role="status">
+              {run.streaming
+                ? 'nothing scored yet — results appear as each candidate verifies, not in one burst at the end'
+                : resolved
+                  ? 'no candidate survived verification for this seed.'
+                  : 'nothing was searched for — the seed never resolved to a track.'}
+            </p>
+            {/* Survives the empty pool: teach the engine the match it failed to surface. */}
+            {addMatch}
+          </>
         )}
 
         <ProvenanceFoot run={run} health={health} />
