@@ -19,7 +19,7 @@ import { randomUUID } from 'node:crypto';
 
 import { NextResponse, type NextRequest } from 'next/server';
 
-import { GATE_COOKIE, GATE_COOKIE_MAX_AGE_SECONDS, accessToken, decideAccess } from '@/lib/gate';
+import { GATE_COOKIE, GATE_COOKIE_MAX_AGE_SECONDS, accessToken, clientIp, decideAccess } from '@/lib/gate';
 import { PROFILE_COOKIE, isValidProfileId, profileCookieOptions } from '@/lib/profile';
 
 /**
@@ -39,9 +39,31 @@ export const config = {
  * the gate is OFF (the local single-user case), so training works locally too.
  */
 export function proxy(request: NextRequest): NextResponse {
+  logVisit(request);
   const response = gateResponse(request);
   ensureProfileCookie(request, response);
   return response;
+}
+
+/**
+ * One readable line per PAGE OPEN, carrying the requesting IP, to stdout — which the host
+ * (Render) captures in its live log stream. `sec-fetch-dest: document` (with an Accept:
+ * text/html fallback for the rare browser that omits it) isolates a top-level navigation
+ * from the assets and API calls that follow, so a visit is logged once, when someone arrives.
+ * The IP is the same best-guess `clientIp` the rate-limiter uses (the client entry of
+ * `x-forwarded-for`); it is written nowhere but the log. No-op locally, where there is no
+ * forwarded IP and nothing captures stdout in the same way.
+ */
+function logVisit(request: NextRequest): void {
+  const { pathname } = request.nextUrl;
+  if (pathname.startsWith('/api/')) return;
+  const dest = request.headers.get('sec-fetch-dest');
+  const accept = request.headers.get('accept') ?? '';
+  const isPageOpen = dest === 'document' || (dest === null && accept.includes('text/html'));
+  if (!isPageOpen) return;
+  const ip = clientIp(request.headers) ?? 'unknown';
+  const ua = (request.headers.get('user-agent') ?? '').replace(/"/g, '').slice(0, 120);
+  console.log(`[visit] ip=${ip} path=${pathname} ua="${ua}"`);
 }
 
 /**
